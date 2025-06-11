@@ -56,7 +56,7 @@ $msg = $_GET['msg'] ?? null;
       </button>
     </form>
     <div class="mt-3 sm:mt-4 text-center">
-      <a href="#" class="text-gray-400 hover:text-yellow-400 transition text-sm sm:text-base">Esqueceu a senha?.4</a>
+      <a href="#" class="text-gray-400 hover:text-yellow-400 transition text-sm sm:text-base">Esqueceu a senha?.w</a>
     </div>
   </div>
     <?php if ($msg === 'sessao_expirada'): ?>
