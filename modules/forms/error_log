@@ -1,0 +1,42 @@
+[27-May-2025 17:14:32 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.forms' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php:22
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php(22): PDO->query('SELECT id, titl...')
+#1 /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/list_forms.php(22): Modules\Forms\Model\FormModel->getAll()
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php on line 22
+[27-May-2025 17:15:59 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.forms' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php:22
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php(22): PDO->query('SELECT id, titl...')
+#1 /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/list_forms.php(22): Modules\Forms\Model\FormModel->getAll()
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/Model/FormModel.php on line 22
+[27-May-2025 17:20:17 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:20:17 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:20:17 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:20:17 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:20:17 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/list_forms.php:30) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42
+[27-May-2025 17:21:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:21:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:21:53 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:21:53 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:21:53 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/edit_form.php:43) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42
+[27-May-2025 17:27:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:27:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:27:19 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:27:19 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:27:19 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/edit_form.php:43) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42
+[27-May-2025 17:29:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:29:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:29:12 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:29:12 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:29:12 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/edit_form.php:47) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42
+[27-May-2025 17:31:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:31:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:31:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:31:58 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:31:58 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/builder.php:59) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42
+[27-May-2025 17:32:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[27-May-2025 17:32:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[27-May-2025 17:32:25 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 17:32:25 America/Fortaleza] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 6
+[27-May-2025 17:32:25 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/forms/builder.php:59) in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 42

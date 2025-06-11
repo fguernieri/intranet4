@@ -1,0 +1,102 @@
+[24-Apr-2025 13:51:27 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:51:35 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:51:46 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:52:06 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:52:48 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:52:57 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:53:32 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:53:46 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:53:53 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:54:18 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:56:50 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:58:07 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:00:12 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:00:15 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:00:36 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:00:51 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:04:10 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/painel.php(3): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20

@@ -1,0 +1,917 @@
+[23-Apr-2025 13:05:48 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:05:48 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:05:48 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:05:58 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:05:58 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:05:58 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:06:32 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:06:32 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:06:32 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:06:42 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:06:42 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:06:42 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:06:56 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:06:56 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:06:56 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:07:19 America/Fortaleza] PHP Warning:  Undefined array key "bar" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 6
+[23-Apr-2025 13:07:19 America/Fortaleza] PHP Warning:  Undefined array key "user" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 7
+[23-Apr-2025 13:07:19 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:18:12 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_bar.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_bar.php on line 19
+[23-Apr-2025 13:18:22 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_bar.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_bar.php on line 19
+[23-Apr-2025 13:20:27 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 19
+[23-Apr-2025 13:20:37 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 19
+[23-Apr-2025 13:22:44 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 19
+[23-Apr-2025 13:22:52 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 19
+[23-Apr-2025 13:22:52 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 19
+[23-Apr-2025 13:23:23 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:15
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 15
+[23-Apr-2025 13:27:31 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:15
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 15
+[23-Apr-2025 13:44:47 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "stmt" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:34
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 34
+[23-Apr-2025 13:45:11 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "stmt" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php:34
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 34
+[23-Apr-2025 13:45:53 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:47:05 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:48:48 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:49:29 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:50:18 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:50:26 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:50:50 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 13:50:58 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 10
+[23-Apr-2025 14:43:37 America/Fortaleza] PHP Parse error:  syntax error, unexpected token "\" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 220
+[23-Apr-2025 14:43:45 America/Fortaleza] PHP Parse error:  syntax error, unexpected token "\" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php on line 220
+[23-Apr-2025 14:50:57 America/Fortaleza] PHP Parse error:  syntax error, unexpected variable "$_SERVER" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 5
+[23-Apr-2025 14:51:01 America/Fortaleza] PHP Parse error:  syntax error, unexpected variable "$_SERVER" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 5
+[23-Apr-2025 14:56:06 America/Fortaleza] PHP Warning:  require_once(db_config.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 3
+[23-Apr-2025 14:56:06 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required 'db_config.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:3
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 3
+[23-Apr-2025 15:35:33 America/Fortaleza] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:65
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php(65): mysqli_stmt->bind_param('isssssdsss s', 10, NULL, NULL, NULL, NULL, NULL, 'BAR DA FABRICA', NULL, NULL, 'Lucas', '2025-04-23 15:3...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 65
+[23-Apr-2025 21:28:13 America/Fortaleza] PHP Parse error:  syntax error, unexpected token "if" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 44
+[23-Apr-2025 21:30:19 America/Fortaleza] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 12
+[23-Apr-2025 21:30:19 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:12) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 161
+[24-Apr-2025 10:08:24 America/Fortaleza] PHP Warning:  Undefined array key "new_insumo" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 10:08:24 America/Fortaleza] PHP Warning:  foreach() argument must be of type array|object, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 10:58:19 America/Fortaleza] PHP Warning:  Undefined array key "new_insumo" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 10:58:19 America/Fortaleza] PHP Warning:  foreach() argument must be of type array|object, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 11:00:26 America/Fortaleza] PHP Warning:  Undefined array key "new_insumo" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 11:00:26 America/Fortaleza] PHP Warning:  foreach() argument must be of type array|object, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 93
+[24-Apr-2025 11:31:00 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "stmtInsert" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:128
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 128
+[24-Apr-2025 12:04:47 America/Fortaleza] → NOVOS ITENS: count=0
+[24-Apr-2025 12:15:45 America/Fortaleza] PHP Warning:  Undefined array key "new_insumo" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 111
+[24-Apr-2025 12:15:45 America/Fortaleza] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:111
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 111
+[24-Apr-2025 12:18:20 America/Fortaleza] PHP Warning:  Undefined array key "new_insumo" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 111
+[24-Apr-2025 12:18:20 America/Fortaleza] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:111
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 111
+[24-Apr-2025 12:21:21 America/Fortaleza] SALVAR_PEDIDO: existentes inseridos=0, novos inseridos=0
+[24-Apr-2025 12:23:57 America/Fortaleza] SALVAR_PEDIDO: existentes inseridos=0, novos inseridos=0
+[24-Apr-2025 13:24:35 America/Fortaleza] DEBUG: existentes=200 | novos=0
+[24-Apr-2025 13:24:35 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:31:30 America/Fortaleza] DEBUG: existentes=200 | novos=0
+[24-Apr-2025 13:31:30 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:46:11 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:46:11 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:46:14 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:46:14 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:46:14 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:46:14 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:46:14 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:46:14 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:46:15 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:46:15 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:49:19 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 13:49:19 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 13:51:27 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php(5): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 13:51:56 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos.php(4): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:04:23 America/Fortaleza] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'basta920_intra_bastards.user_vendedor_permissoes' doesn't exist in /home2/basta920/intra.bastardsbrewery.com.br/auth.php:20
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/auth.php(20): PDOStatement->execute(Array)
+#1 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php(5): require_once('/home2/basta920...')
+#2 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/auth.php on line 20
+[24-Apr-2025 14:14:22 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 14:14:22 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 14:20:53 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 14:20:53 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 14:27:07 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 14:27:07 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 14:29:40 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 14:29:40 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 14:32:10 America/Fortaleza] PHP Warning:  require_once(/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 13
+[24-Apr-2025 14:32:10 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php:13
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 13
+[24-Apr-2025 14:32:16 America/Fortaleza] PHP Warning:  require_once(/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 13
+[24-Apr-2025 14:32:16 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php:13
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 13
+[24-Apr-2025 14:37:52 America/Fortaleza] PHP Warning:  require_once(/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 10
+[24-Apr-2025 14:37:52 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 10
+[24-Apr-2025 14:38:03 America/Fortaleza] PHP Warning:  require_once(/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 10
+[24-Apr-2025 14:38:03 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required '/home2/basta920/intra.bastardsbrewery.com.br/vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php:10
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 10
+[24-Apr-2025 15:56:31 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 15:56:31 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 16:07:13 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 16:07:13 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 16:14:38 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 16:14:38 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 16:17:49 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 16:17:49 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 16:46:43 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 16:46:43 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:03:34 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:03:34 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:05:46 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:05:46 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:11:01 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:11:01 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:11:15 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:11:15 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:11:15 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:11:15 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 18:14:08 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 18:14:08 America/Fortaleza] salvar_pedido: COMMIT OK
+[24-Apr-2025 20:25:49 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 20:27:39 America/Fortaleza] DEBUG: existentes=330 | novos=0
+[24-Apr-2025 20:28:20 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 20:28:20 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 20:29:30 America/Fortaleza] DEBUG: existentes=376 | novos=0
+[24-Apr-2025 20:38:38 America/Fortaleza] PHP Parse error:  Unmatched '}' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 133
+[24-Apr-2025 20:52:15 America/Fortaleza] PHP Parse error:  Unmatched '}' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 133
+[24-Apr-2025 21:00:44 America/Fortaleza] PHP Parse error:  Unmatched '}' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 133
+[24-Apr-2025 21:01:03 America/Fortaleza] PHP Parse error:  Unmatched '}' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 133
+[24-Apr-2025 21:07:16 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:07:17 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:07:22 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:07:32 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:20:13 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:22:29 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[24-Apr-2025 21:47:49 America/Fortaleza] salvar_pedido.php: filial usada = '7TRAGOS'
+[25-Apr-2025 08:03:55 America/Fortaleza] PHP Warning:  require_once(db_config.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 4
+[25-Apr-2025 08:03:55 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required 'db_config.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:4
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 4
+[25-Apr-2025 08:05:26 America/Fortaleza] PHP Warning:  require_once(db_config.php): Failed to open stream: No such file or directory in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 4
+[25-Apr-2025 08:05:26 America/Fortaleza] PHP Fatal error:  Uncaught Error: Failed opening required 'db_config.php' (include_path='.:/opt/cpanel/ea-php82/root/usr/share/pear') in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php:4
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_pedido.php on line 4
+[25-Apr-2025 10:04:03 America/Fortaleza] PHP Warning:  Undefined variable $filiais in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 15
+[25-Apr-2025 10:04:03 America/Fortaleza] PHP Warning:  foreach() argument must be of type array|object, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 15
+[25-Apr-2025 10:07:29 America/Fortaleza] PHP Warning:  Undefined variable $filiais in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 15
+[25-Apr-2025 10:07:29 America/Fortaleza] PHP Warning:  foreach() argument must be of type array|object, null given in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/select_filial.php on line 15
+[25-Apr-2025 10:08:39 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:08:43 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:08:44 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:08:47 America/Fortaleza] PHP Warning:  Undefined array key "BAR DA FABRICA" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 11
+[25-Apr-2025 10:08:49 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:10:56 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:10:58 America/Fortaleza] PHP Warning:  Undefined array key "BAR DA FABRICA" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 11
+[25-Apr-2025 10:12:56 America/Fortaleza] PHP Warning:  Undefined array key "7TRAGOS" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 11
+[25-Apr-2025 10:12:57 America/Fortaleza] PHP Warning:  Undefined array key "BAR DA FABRICA" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 11
+[25-Apr-2025 11:41:03 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 11:43:07 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 11:43:39 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 11:44:50 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 11:46:38 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 11:51:47 America/Fortaleza] PHP Parse error:  syntax error, unexpected token ";" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/salvar_novos_insumos.php on line 13
+[25-Apr-2025 15:59:14 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php:20
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 20
+[25-Apr-2025 15:59:23 America/Fortaleza] PHP Fatal error:  Uncaught Error: Undefined constant "DB_HOST" in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php:20
+Stack trace:
+#0 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 20
+[28-Apr-2025 09:24:01 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 09:24:01 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 09:24:15 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 09:24:15 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 09:24:25 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 09:24:25 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 09:24:56 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 09:24:56 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 09:26:56 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 09:26:56 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 13:36:27 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 13:36:27 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 15:31:48 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 15:31:48 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 15:31:52 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 15:31:52 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 15:32:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 15:32:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 15:38:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 15:38:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 15:57:31 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 15:57:31 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 16:03:37 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 16:03:37 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 16:09:05 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 16:09:05 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 18:05:41 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 18:05:41 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[28-Apr-2025 21:53:12 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[28-Apr-2025 21:53:12 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 09:52:15 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 09:52:15 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 10:13:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 10:13:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 10:53:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 10:53:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 11:25:54 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 11:25:54 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 13:26:59 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 13:26:59 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 15:20:45 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 15:20:45 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 15:38:35 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 15:38:35 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 15:40:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 15:40:08 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[29-Apr-2025 15:40:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 69
+[29-Apr-2025 15:40:14 America/Fortaleza] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home2/basta920/intra.bastardsbrewery.com.br/sidebar.php:29) in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/exportar_pedido.php on line 70
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 132
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 133
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 235
+[17-May-2025 15:14:19 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 235
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 132
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 133
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 161
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 235
+[17-May-2025 15:14:24 America/Sao_Paulo] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_cross.php on line 235
+[20-May-2025 14:18:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[20-May-2025 14:18:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[20-May-2025 14:18:12 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[20-May-2025 14:18:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[20-May-2025 14:18:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[20-May-2025 14:18:21 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[20-May-2025 15:36:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[20-May-2025 15:36:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[20-May-2025 15:36:32 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[20-May-2025 15:36:45 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[20-May-2025 15:36:45 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[20-May-2025 15:36:45 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[20-May-2025 17:33:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[20-May-2025 17:33:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[20-May-2025 17:33:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[22-May-2025 15:39:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[22-May-2025 15:39:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[22-May-2025 15:39:56 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[22-May-2025 15:40:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[22-May-2025 15:40:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[22-May-2025 15:40:03 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[22-May-2025 15:40:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[22-May-2025 15:40:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[22-May-2025 15:40:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[24-May-2025 21:53:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[24-May-2025 21:53:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[24-May-2025 21:53:39 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[24-May-2025 21:53:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[24-May-2025 21:53:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[24-May-2025 21:53:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:21 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:35 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:38 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:38 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:38 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:49 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:49 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:49 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 00:19:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 00:19:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 00:19:53 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:56:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:56:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:56:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:28 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:32 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:47 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:51 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:57:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:57:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:57:55 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 09:58:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 09:58:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 09:58:11 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 10:12:14 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 10:12:14 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 10:12:14 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 11:07:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 11:07:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 11:07:05 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 11:07:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 11:07:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 11:07:13 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:22:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:22:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:22:25 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:22:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:22:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:22:39 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:22:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:22:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:22:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:22:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:22:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:22:51 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:41:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:41:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:41:08 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:41:15 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:41:15 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:41:15 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 12:41:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 12:41:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 12:41:55 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 17:53:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 17:53:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 17:53:13 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 17:53:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 17:53:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 17:53:32 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 18:02:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 18:02:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 18:02:12 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 18:02:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 18:02:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 18:02:19 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 18:50:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 18:50:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 18:50:22 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 18:50:40 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 18:50:40 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 18:50:40 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:09:37 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:09:37 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:09:37 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:10:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:10:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:10:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:17:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:17:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:17:28 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:19:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:19:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:19:11 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:19:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:19:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:19:20 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:20:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:20:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:20:20 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:22:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:22:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:22:12 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:25:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:25:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:25:35 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:26:10 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:26:10 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:26:10 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:26:18 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:26:18 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:26:18 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:27:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:27:19 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:27:19 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:27:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:27:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:27:51 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:27:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:27:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:27:54 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:27:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:27:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:27:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:28:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:28:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:28:03 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:28:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:28:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:28:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:28:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:28:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:28:48 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:28:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:28:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:28:54 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:38:43 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:38:43 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:38:43 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:38:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:38:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:38:48 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:38:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:38:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:38:55 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:39:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:39:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:39:05 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:42:40 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:42:40 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:42:40 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[25-May-2025 19:42:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[25-May-2025 19:42:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[25-May-2025 19:42:48 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 00:01:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 00:01:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 00:01:11 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 00:01:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 00:01:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 00:01:21 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:13:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:13:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:13:47 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:14:17 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:14:17 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:14:17 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:14:27 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:14:27 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:14:27 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:16:01 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:16:01 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:16:01 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:16:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:16:13 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:16:13 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:19:23 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:19:23 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:19:23 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:19:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:19:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:19:31 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:22:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:22:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:22:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:24:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:24:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:24:53 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:25:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:25:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:25:07 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:25:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:25:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:25:09 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:25:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:25:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:25:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:25:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:25:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:25:51 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:25:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:25:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:25:56 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:26:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:26:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:26:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:26:29 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:26:29 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:26:29 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:26:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:26:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:26:31 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:28:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:28:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:28:09 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:28:18 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:28:18 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:28:18 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:28:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:28:20 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:28:20 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:28:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:28:55 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:28:55 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:34:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:34:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:34:32 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:34:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:34:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:34:54 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:36:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:36:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:36:48 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:36:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:36:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:36:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:37:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:37:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:37:00 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:37:50 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:37:50 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:37:50 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:38:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:38:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:38:11 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:53:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:53:53 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:53:53 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:54:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:54:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:54:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:54:04 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:54:04 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:54:04 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 09:55:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 09:55:09 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 09:55:09 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 10:57:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 10:57:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 10:57:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 13:53:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 13:53:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 13:53:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 13:54:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 13:54:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 13:54:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[26-May-2025 13:54:06 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[26-May-2025 13:54:06 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[26-May-2025 13:54:06 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[27-May-2025 15:48:38 America/Fortaleza] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'CODIGO' in 'field list' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php:30
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php(30): mysqli->prepare('\r\n    SELECT\r\n ...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 30
+[27-May-2025 15:48:50 America/Fortaleza] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'CODIGO' in 'field list' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php:30
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php(30): mysqli->prepare('\r\n    SELECT\r\n ...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 30
+[27-May-2025 15:48:53 America/Fortaleza] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'CODIGO' in 'field list' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php:30
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php(30): mysqli->prepare('\r\n    SELECT\r\n ...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_7tragos.php on line 30
+[27-May-2025 15:50:25 America/Fortaleza] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'Estoquetotal' in 'field list' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php:30
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php(30): mysqli->prepare('\r\n    SELECT\r\n ...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_bardafabrica.php on line 30
+[27-May-2025 15:52:39 America/Fortaleza] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'CODIGO' in 'field list' in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_wearebastards.php:30
+Stack trace:
+#0 /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_wearebastards.php(30): mysqli->prepare('\r\n    SELECT\r\n ...')
+#1 {main}
+  thrown in /home2/basta920/intra.bastardsbrewery.com.br/modules/compras/insumos_wearebastards.php on line 30
+[29-May-2025 17:48:37 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 17:48:37 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 17:48:37 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[29-May-2025 17:48:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 17:48:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 17:48:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[29-May-2025 18:07:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 18:07:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 18:07:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[29-May-2025 18:07:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 18:07:54 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 18:07:54 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[29-May-2025 18:15:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 18:15:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 18:15:22 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[29-May-2025 18:15:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[29-May-2025 18:15:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[29-May-2025 18:15:31 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[30-May-2025 15:19:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[30-May-2025 15:19:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[30-May-2025 15:19:28 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[30-May-2025 17:41:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[30-May-2025 17:41:58 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[30-May-2025 17:41:58 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[30-May-2025 17:42:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[30-May-2025 17:42:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[30-May-2025 17:42:05 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[30-May-2025 17:42:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[30-May-2025 17:42:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[30-May-2025 17:42:08 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:45:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:45:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:45:52 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:46:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:46:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:46:07 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:56:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:56:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:56:34 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:56:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:56:51 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:56:51 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:57:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:57:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:57:34 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:57:45 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:57:45 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:57:45 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:58:59 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:58:59 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:58:59 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 00:59:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 00:59:12 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 00:59:12 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 11:31:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 11:31:21 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 11:31:21 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 11:31:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 11:31:32 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 11:31:32 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 11:31:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 11:31:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 11:31:34 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 11:31:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 11:31:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 11:31:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 11:59:26 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 11:59:26 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 11:59:26 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 19:09:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 19:09:56 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 19:09:56 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 19:10:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 19:10:07 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 19:10:07 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 19:10:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 19:10:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 19:10:25 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[01-Jun-2025 20:24:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[01-Jun-2025 20:24:28 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[01-Jun-2025 20:24:28 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 08:52:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 08:52:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 08:52:52 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:15:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:15:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:15:34 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:15:42 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:15:42 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:15:42 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:17:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:17:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:17:39 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:17:42 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:17:42 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:17:42 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:19:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:19:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:19:05 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:19:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:19:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:19:08 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:19:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:19:39 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:19:39 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:19:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:19:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:19:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:20:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:20:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:20:30 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[02-Jun-2025 09:21:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[02-Jun-2025 09:21:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[02-Jun-2025 09:21:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[05-Jun-2025 17:27:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[05-Jun-2025 17:27:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[05-Jun-2025 17:27:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[05-Jun-2025 17:27:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[05-Jun-2025 17:27:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[05-Jun-2025 17:27:52 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 01:32:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 01:32:35 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 01:32:35 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 01:32:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 01:32:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 01:32:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 02:50:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 02:50:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 02:50:30 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 12:26:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 12:26:05 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 12:26:05 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 12:26:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 12:26:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 12:26:22 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 12:26:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 12:26:25 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 12:26:25 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 12:26:36 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 12:26:36 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 12:26:36 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:57:24 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:57:24 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:57:24 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:57:41 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:57:41 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:57:41 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:57:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:57:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:57:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:57:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:57:47 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:57:47 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:58:57 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:58:57 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:58:57 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 14:59:04 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 14:59:04 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 14:59:04 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 15:40:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 15:40:08 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 15:40:08 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 15:40:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 15:40:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 15:40:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 21:59:43 America/Fortaleza] salvar_pedido_wearebastards.php erro: Column 'CODIGO' cannot be null
+[08-Jun-2025 23:31:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 23:31:02 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 23:31:02 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[08-Jun-2025 23:31:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[08-Jun-2025 23:31:11 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[08-Jun-2025 23:31:11 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 01:11:43 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 01:11:43 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 01:11:43 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 01:11:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 01:11:52 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 01:11:52 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:15:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:15:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:15:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:15:29 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:15:29 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:15:29 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:17:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:17:46 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:17:46 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:28:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:28:48 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:28:48 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:29:14 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:29:14 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:29:14 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:30:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:30:03 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:30:03 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:30:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:30:16 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:30:16 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:30:24 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:30:24 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:30:24 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:35:26 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:35:26 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:35:26 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:35:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:35:30 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:35:30 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 09:35:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 09:35:34 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 09:35:34 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 11:49:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 11:49:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 11:49:00 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 11:49:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 11:49:22 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 11:49:22 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 14:32:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 14:32:31 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 14:32:31 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[09-Jun-2025 14:32:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[09-Jun-2025 14:32:44 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[09-Jun-2025 14:32:44 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 4
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  ini_set(): Session ini settings cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 5
+[10-Jun-2025 18:52:00 America/Fortaleza] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed when a session is active in /home2/basta920/intra.bastardsbrewery.com.br/config/session_config.php on line 6

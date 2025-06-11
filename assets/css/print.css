@@ -1,0 +1,39 @@
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+/* Esconde UI que não deve imprimir */
+.no-print { display: none !important; }
+
+/* Garante uma única coluna no print para evitar “fluxo colunar” bugado */
+.print-container {
+  display: block !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Evita quebra dentro de cada seção */
+.section-ingredientes,
+.section-preparo,
+.section-montagem,
+.section-observacoes {
+  page-break-inside: avoid;
+  break-inside: avoid-page;  /* para navegadores mais novos */
+}
+
+/* Força começar o preparo em nova página, se não couber inteiro */
+.section-preparo {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* Repete cabeçalho de tabela se ela ultrapassar página */
+thead { display: table-header-group }
+
+/* Impede corte de linhas no meio */
+tr, table, img, ul, ol, .prose {
+  page-break-inside: avoid;
+  break-inside: avoid-page;
+}

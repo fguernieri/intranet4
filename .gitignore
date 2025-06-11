@@ -1,0 +1,6 @@
+/config/db.php
+/config/db_dw.php
+/modules/ficha_tecnica/uploads/
+teste_sql.php
+/modules/funil/
+modules/ficha_tecnica/import_csv.log

@@ -1,0 +1,4 @@
+---
+deployment:
+  tasks:
+    - /bin/cp -r . /home2/basta920/intra.bastardsbrewery.com.br/

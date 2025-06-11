@@ -1,0 +1,227 @@
+.btn-acao {
+  min-width: 90px;
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #eab308; 
+  color: #111827;            
+  transition: background-color 0.2s;
+}
+
+.btn-acao:hover {
+  background-color: #ca8a04;
+}
+
+.btn-acao-vermelho {
+  min-width: 90px;
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #dc2626; /* bg-red-600 */
+  color: #ffffff;            /* white */
+  transition: background-color 0.2s;
+}
+
+.btn-acao-vermelho:hover {
+  background-color: #b91c1c; /* bg-red-700 */
+}
+
+.btn-acao-azul {
+  min-width: 90px;
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 0.25rem;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2563EB; /* blue-600 */
+  color: #ffffff;            /* white */
+  transition: background-color 0.2s;
+}
+
+.btn-acao-azul:hover {
+  background-color: #1D4ED8; /* blue-700 */
+}
+
+.btn-acao-verde {
+  min-width: 90px;
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 0.25rem;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #16A34A; /* green-600 */
+  color: #ffffff;            /* white */
+  transition: background-color 0.2s;
+}
+
+.btn-acao-verde:hover {
+  background-color: #15803D; /* green-700 */
+}
+
+.divider_yellow {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: none;
+  border-top: 1px solid #eab308; /* cor semelhante ao yellow-500 do Tailwind */
+}
+
+.card1 {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease-in-out;
+}
+.card1:hover {
+  transform: scale(1.1);
+}
+.card1 p:first-child {
+  font-size: 0.875rem; /* text-sm */
+  color: #d1d5db;      /* gray-300 */
+}
+.card1 p:last-child {
+  font-size: 1.5rem;   /* text-2xl */
+  font-weight: bold;
+}
+
+.card1.no-hover:hover {
+  transform: none !important;
+}
+
+main {
+  overflow-y: auto;
+}
+
+
+/* 1. Container do switch */
+.custom-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* 2. Checkbox “invisível” (sr-only) */
+.custom-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 3. Track do switch */
+.custom-switch-slider {
+  width: 44px;              /* w-11 */
+  height: 24px;             /* h-6 */
+  background-color: #e5e7eb;/* bg-gray-200 */
+  border-radius: 9999px;    /* rounded-full */
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+/* 4. Thumb (a “bolinha”) */
+.custom-switch-slider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;              /* h-5/w-5 */
+  height: 20px;
+  background-color: #ffffff;/* bg-white */
+  border-radius: 9999px;    /* rounded-full */
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 5. Estado ligado (checked) */
+.custom-switch-input:checked + .custom-switch-slider {
+  background-color: #2563eb;/* bg-blue-600 */
+}
+.custom-switch-input:checked + .custom-switch-slider::after {
+  transform: translateX(20px);
+}
+
+/* 6. Foco (análogo ao ring) */
+.custom-switch-input:focus + .custom-switch-slider {
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.5); /* ring-blue-300 */
+}
+
+/* 7. Label de texto ao lado */
+.custom-switch-label {
+  margin-left: 0.75rem;     /* ml-3 */
+  font-size: 0.875rem;      /* text-sm */
+  font-weight: 500;         /* font-medium */
+  color: #e5e7eb;           /* text-gray-200 */
+}
+
+/* Switch menor */
+/* Switch menor - sobrescrevendo completamente */
+.custom-switch.custom-switch-small .custom-switch-slider {
+  width: 36px;
+  height: 20px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.custom-switch.custom-switch-small .custom-switch-slider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.custom-switch.custom-switch-small .custom-switch-input:checked + .custom-switch-slider {
+  background-color: #2563eb;
+}
+
+.custom-switch.custom-switch-small .custom-switch-input:checked + .custom-switch-slider::after {
+  transform: translateX(16px);
+}
+
+.custom-switch.custom-switch-small .custom-switch-input:focus + .custom-switch-slider {
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.5);
+}
+
+/* Modo escuro também para o switch pequeno */
+@media (prefers-color-scheme: dark) {
+  .custom-switch.custom-switch-small .custom-switch-slider {
+    background-color: #374151;
+  }
+  .custom-switch.custom-switch-small .custom-switch-input:checked + .custom-switch-slider {
+    background-color: #2563eb;
+  }
+}
+
+/* /assets/style.css */
+.apexcharts-tooltip {
+  background: rgba(0,0,0,0.85) !important;  /* fundo escuro */
+  color: #fff !important;                   /* texto claro   */
+  border-color: #444 !important;            /* borda discreta */
+}

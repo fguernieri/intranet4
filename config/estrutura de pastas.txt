@@ -1,0 +1,156 @@
+├───assets
+│   ├───css
+│   └───img
+├───components
+├───config
+├───modules
+│   ├───comercial
+│   ├───compras
+│   ├───dash_cozinha
+│   ├───estoque
+│   ├───fechamentos
+│   │   └───tmp
+│   ├───ficha_tecnica
+│   │   └───uploads
+│   └───usuarios
+└───vendor
+    ├───composer
+    │   └───pcre
+    │       └───src
+    │           └───PHPStan
+    ├───maennchen
+    │   └───zipstream-php
+    │       ├───.github
+    │       │   ├───ISSUE_TEMPLATE
+    │       │   ├───PULL_REQUEST_TEMPLATE
+    │       │   └───workflows
+    │       ├───.phive
+    │       ├───.phpdoc
+    │       │   └───template
+    │       ├───guides
+    │       ├───src
+    │       │   ├───Exception
+    │       │   ├───Zip64
+    │       │   └───Zs
+    │       └───test
+    │           ├───Zip64
+    │           └───Zs
+    ├───markbaker
+    │   ├───complex
+    │   │   ├───.github
+    │   │   │   └───workflows
+    │   │   ├───classes
+    │   │   │   └───src
+    │   │   └───examples
+    │   └───matrix
+    │       ├───.github
+    │       │   └───workflows
+    │       ├───classes
+    │       │   └───src
+    │       │       ├───Decomposition
+    │       │       └───Operators
+    │       └───examples
+    ├───phpoffice
+    │   └───phpspreadsheet
+    │       └───src
+    │           └───PhpSpreadsheet
+    │               ├───Calculation
+    │               │   ├───Database
+    │               │   ├───DateTimeExcel
+    │               │   ├───Engine
+    │               │   │   └───Operands
+    │               │   ├───Engineering
+    │               │   ├───Financial
+    │               │   │   ├───CashFlow
+    │               │   │   │   ├───Constant
+    │               │   │   │   │   └───Periodic
+    │               │   │   │   └───Variable
+    │               │   │   └───Securities
+    │               │   ├───Information
+    │               │   ├───Internal
+    │               │   ├───locale
+    │               │   │   ├───bg
+    │               │   │   ├───cs
+    │               │   │   ├───da
+    │               │   │   ├───de
+    │               │   │   ├───en
+    │               │   │   │   └───uk
+    │               │   │   ├───es
+    │               │   │   ├───fi
+    │               │   │   ├───fr
+    │               │   │   ├───hu
+    │               │   │   ├───it
+    │               │   │   ├───nb
+    │               │   │   ├───nl
+    │               │   │   ├───pl
+    │               │   │   ├───pt
+    │               │   │   │   └───br
+    │               │   │   ├───ru
+    │               │   │   ├───sv
+    │               │   │   └───tr
+    │               │   ├───Logical
+    │               │   ├───LookupRef
+    │               │   ├───MathTrig
+    │               │   │   └───Trig
+    │               │   ├───Statistical
+    │               │   │   ├───Averages
+    │               │   │   └───Distributions
+    │               │   ├───TextData
+    │               │   ├───Token
+    │               │   └───Web
+    │               ├───Cell
+    │               ├───Chart
+    │               │   └───Renderer
+    │               ├───Collection
+    │               │   └───Memory
+    │               ├───Document
+    │               ├───Helper
+    │               ├───Reader
+    │               │   ├───Csv
+    │               │   ├───Gnumeric
+    │               │   ├───Ods
+    │               │   ├───Security
+    │               │   ├───Xls
+    │               │   │   ├───Color
+    │               │   │   └───Style
+    │               │   ├───Xlsx
+    │               │   └───Xml
+    │               │       └───Style
+    │               ├───RichText
+    │               ├───Shared
+    │               │   ├───Escher
+    │               │   │   ├───DgContainer
+    │               │   │   │   └───SpgrContainer
+    │               │   │   └───DggContainer
+    │               │   │       └───BstoreContainer
+    │               │   │           └───BSE
+    │               │   ├───OLE
+    │               │   │   └───PPS
+    │               │   └───Trend
+    │               ├───Style
+    │               │   ├───ConditionalFormatting
+    │               │   │   └───Wizard
+    │               │   └───NumberFormat
+    │               │       └───Wizard
+    │               ├───Worksheet
+    │               │   ├───AutoFilter
+    │               │   │   └───Column
+    │               │   ├───Drawing
+    │               │   └───Table
+    │               └───Writer
+    │                   ├───Ods
+    │                   │   └───Cell
+    │                   ├───Pdf
+    │                   ├───Xls
+    │                   │   └───Style
+    │                   └───Xlsx
+    └───psr
+        ├───http-client
+        │   └───src
+        ├───http-factory
+        │   └───src
+        ├───http-message
+        │   ├───docs
+        │   └───src
+        └───simple-cache
+            └───src
