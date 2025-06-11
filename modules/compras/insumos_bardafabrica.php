@@ -24,7 +24,6 @@ $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset('utf8mb4');
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
-  
 }
 
 // busca todos os insumos dessa filial
@@ -66,33 +65,6 @@ if (empty($insumos)) {
 }
 $stmt->close();
 $conn->close();
-
-// Deduplicar insumos por CODIGO (ou INSUMO+UNIDADE+CATEGORIA se não houver CODIGO)
-$insumos_dedup = [];
-$insumos_seen = [];
-foreach ($insumos as $row) {
-    $key = isset($row['CODIGO']) ? $row['CODIGO'] : ($row['INSUMO'].'|'.$row['UNIDADE'].'|'.$row['CATEGORIA']);
-    if (!isset($insumos_seen[$key])) {
-        $insumos_dedup[] = $row;
-        $insumos_seen[$key] = true;
-    }
-}
-$insumos = $insumos_dedup;
-
-// DEDUPLICAÇÃO DE INSUMOS ANTES DE RENDERIZAR A TABELA
-$insumosUnicos = [];
-$chavesVistas = [];
-foreach ($insumos as $row) {
-    // Usa CODIGO se existir, senão INSUMO+CATEGORIA+UNIDADE como chave composta
-    $chave = isset($row['CODIGO']) && $row['CODIGO'] !== ''
-        ? $row['CODIGO']
-        : $row['INSUMO'] . '|' . $row['CATEGORIA'] . '|' . $row['UNIDADE'];
-    if (!isset($chavesVistas[$chave])) {
-        $insumosUnicos[] = $row;
-        $chavesVistas[$chave] = true;
-    }
-}
-$insumos = $insumosUnicos;
 
 $categorias = array_values(array_unique(array_column($insumos, 'CATEGORIA')));
 $unidades   = array_values(array_unique(array_column($insumos, 'UNIDADE')));
@@ -608,5 +580,4 @@ if (
     document.getElementById('btn-scroll-bottom').onclick = ()=> window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
   </script>
 </body>
-</html><?php
-echo '<pre>'; var_dump($insumos[0]); echo '</pre>';
+</html>
