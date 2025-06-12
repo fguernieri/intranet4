@@ -114,7 +114,8 @@ $stmtInsert = $pdo_dw->prepare($sqlInsert);
 
 $handle = fopen($csvFile, 'r');
 // Usa ponto-e-vírgula como delimitador
-$header = fgetcsv($handle, 0, "	", '"')  // usa tabulação como delimitador;
+$header = fgetcsv($handle, 0, "	", '"');  // usa tabulação como delimitador
+
 
 if (isset($header[0]) && $header[0] === 'Cód. ref.Produto') {
     array_splice($header, 0, 1, ['Cód. ref.', 'Produto']);
@@ -130,7 +131,7 @@ $proc = $up = $in = $err = 0;
 $line = 1;
 $csvMap = [];
 
-while (($cells = fgetcsv($handle, 0, "	", '"')  // usa tabulação como delimitador) !== false) {
+while (($cells = fgetcsv($handle, 0, "	", '"')) !== false) {  // usa tabulação como delimitador {
     $line++;
     if (count($cells) < count($dbColumns)) { $err++; continue; }
     $cells = array_slice($cells, 0, count($dbColumns));
