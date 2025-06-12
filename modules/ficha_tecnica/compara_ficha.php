@@ -1,7 +1,8 @@
 <?php
 require_once '../../config/db.php';      // Intranet (ficha_tecnica)
 require_once '../../config/db_dw.php';   // Cloudify (insumos_bastards)
-include '../../sidebar.php';
+include '../../auth.php';
+
 
 $codigo_prato = isset($_GET['cod']) ? trim($_GET['cod']) : '';
 $ficha_intranet = [];
@@ -82,6 +83,8 @@ if ($codigo_prato !== '') {
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-900 text-white">
+<?php include '../../sidebar.php'; ?>
+
   <main class="ml-64 p-6">
     <div class="max-w-7xl mx-auto relative">
       <h1 class="text-3xl font-bold mb-6 text-yellow-400">Comparação de Fichas Técnicas</h1>
