@@ -34,7 +34,7 @@ if ($codigo_prato !== '') {
         $ficha_intranet[$row['codigo_insumo']] = $row;
     }
 
-    $sql_cloud = "SELECT `Cód. ref..1` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde.` AS quantidade
+    $sql_cloud = "SELECT `Cód. ref.` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde.` AS quantidade
                   FROM insumos_bastards
                   WHERE `Cód. ref.` = :codigo";
     $stmt2 = $pdo_dw->prepare($sql_cloud);
