@@ -31,9 +31,9 @@ $ingredientes = $stmtIngs->fetchAll(PDO::FETCH_ASSOC);
 $codigos = array_column($ingredientes, 'codigo');
 if ($codigos) {
     $placeholders = implode(',', array_fill(0, count($codigos), '?'));
-    $sqlCusto = "SELECT `Cód. Ref.` AS codigo, COALESCE(`Custo médio`,0) AS custo_unitario
-                 FROM ProdutosBares
-                 WHERE `Cód. Ref.` IN ($placeholders)";
+    $sqlCusto = "SELECT `CODIGO` AS codigo, COALESCE(`Custo unit..1`,0) AS custo_unitario
+                 FROM insumos_bastards
+                 WHERE `CODIGO` IN ($placeholders)";
     $stmtC = $pdo_dw->prepare($sqlCusto);
     $stmtC->execute($codigos);
 
