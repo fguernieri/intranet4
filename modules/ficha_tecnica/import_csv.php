@@ -101,11 +101,9 @@ $chkSql = "
 $chkStmt = $pdo_dw->prepare($chkSql);
 
 $updCols    = array_diff($dbColumns, $keyCols);
-// Substituído arrow functions por closures para compatibilidade
 $setParts   = array_map(function($c){ return "`$c` = :" . paramName($c); }, $updCols);
-$whereParts = array_map(function($k){ return "`$k` = :" . paramName($k); }, $keyCols);
+$whereParts = array_map(function($k){ return "`$k` = :" .	paramName($k); }, $keyCols);
 
-// Prepare update e insert dinamicamente
 $sqlUpdate  = "UPDATE `$table` SET " . implode(', ', $setParts) . " WHERE " . implode(' AND ', $whereParts);
 $stmtUpdate = $pdo_dw->prepare($sqlUpdate);
 
@@ -115,7 +113,8 @@ $sqlInsert  = "INSERT INTO `$table` ($colList) VALUES ($paramList)";
 $stmtInsert = $pdo_dw->prepare($sqlInsert);
 
 $handle = fopen($csvFile, 'r');
-$header = fgetcsv($handle, 0, "	", '"');
+// Usa ponto-e-vírgula como delimitador
+$header = fgetcsv($handle, 0, ";", '"');
 
 if (isset($header[0]) && $header[0] === 'Cód. ref.Produto') {
     array_splice($header, 0, 1, ['Cód. ref.', 'Produto']);
@@ -131,7 +130,7 @@ $proc = $up = $in = $err = 0;
 $line = 1;
 $csvMap = [];
 
-while (($cells = fgetcsv($handle, 0, "	", '"')) !== false) {
+while (($cells = fgetcsv($handle, 0, ";", '"')) !== false) {
     $line++;
     if (count($cells) < count($dbColumns)) { $err++; continue; }
     $cells = array_slice($cells, 0, count($dbColumns));
@@ -145,6 +144,7 @@ while (($cells = fgetcsv($handle, 0, "	", '"')) !== false) {
     foreach ($dbColumns as $col) {
         $val = $row[$col];
         if (in_array($col, $numericCols, true)) {
+            // Remove separador de milhar e ajusta decimal
             $clean = str_replace('.', '', $val);
             $clean = str_replace(',', '.', $clean);
             $params[paramName($col)] = ($clean === '' ? null : (float)$clean);
@@ -153,8 +153,8 @@ while (($cells = fgetcsv($handle, 0, "	", '"')) !== false) {
         }
     }
 
-    $codRef     = $params[paramName('Cód. ref.')];
-    $codInsumo  = $params[paramName('CODIGO')];
+    $codRef    = $params[paramName('Cód. ref.')];
+    $codInsumo = $params[paramName('CODIGO')];
     $csvMap[$codRef][] = $codInsumo;
 
     // Checa existência no banco
