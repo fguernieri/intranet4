@@ -358,10 +358,18 @@ $(function() {
         columns: [
             { data: 'cliente' },
             { data: 'vendedor' },
-            { data: 'valor',   className: 'valor', render: d => money(d) }, // Formata como moeda
+            { 
+                data: 'valor', 
+                className: 'valor', 
+                render: {
+                    _: d => money(d),
+                    sort: d => Number(d),
+                    type: d => Number(d)
+                }
+            },
             { 
                 data: 'dias',
-                className: 'dias', // Para alinhamento e outros estilos base se necessário
+                className: 'dias',
                 createdCell: function(td, cellData, rowData, row, col) {
                     const diasVencidos = parseInt(cellData);
                     if (diasVencidos > 0) {
@@ -372,8 +380,9 @@ $(function() {
             },
             { data: 'venc' }
         ],
-        order: [[3,'desc']], paging:false, searching:false, info:true,
-        language:{ /* search:'Buscar:', */ info:'_TOTAL_ clientes', infoEmpty:'Nenhum', infoFiltered:'(de _MAX_)' }, // Removida a tradução de 'search'
+        order: [[2,'desc']], // <-- coluna 2 é VALOR (R$)
+        paging:false, searching:false, info:true,
+        language:{ info:'_TOTAL_ clientes', infoEmpty:'Nenhum', infoFiltered:'(de _MAX_)' },
         rowId:'id_cli'
     });
 
