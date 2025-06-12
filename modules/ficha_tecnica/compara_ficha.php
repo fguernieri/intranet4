@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 require_once '../../config/db.php';      // Intranet (ficha_tecnica)
 require_once '../../config/db_dw.php';   // Cloudify (insumos_bastards)
+require_once '../../auth.php';  
 
 
 $codigo_prato = isset($_GET['cod']) ? trim($_GET['cod']) : '';
