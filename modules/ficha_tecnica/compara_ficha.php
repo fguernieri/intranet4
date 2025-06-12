@@ -3,10 +3,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once '../../config/db.php';      // Intranet (ficha_tecnica)
-require_once '../../config/db_dw.php';   // Cloudify (insumos_bastards)
-require_once '../../auth.php';  
-
+require_once __DIR__ . '/../../config/db.php';      // Intranet (ficha_tecnica)
+require_once __DIR__ . '/../../config/db_dw.php';   // Cloudify (insumos_bastards)
+require_once __DIR__ . '/../../auth.php';  
 
 $codigo_prato = isset($_GET['cod']) ? trim($_GET['cod']) : '';
 $ficha_intranet = [];
@@ -16,14 +15,17 @@ $nome_cloudify = '-';
 $farol_status = 'gray';
 
 if ($codigo_prato !== '') {
+    // Intranet
     $stmt = $pdo->prepare("SELECT nome_prato FROM ficha_tecnica WHERE codigo_cloudify = :codigo");
     $stmt->execute([':codigo' => $codigo_prato]);
     $nome_intranet = $stmt->fetchColumn() ?: '-';
 
+    // Cloudify
     $stmt2 = $pdo_dw->prepare("SELECT DISTINCT `Produto` FROM insumos_bastards WHERE `Cód. ref.` = :codigo");
     $stmt2->execute([':codigo' => $codigo_prato]);
     $nome_cloudify = $stmt2->fetchColumn() ?: '-';
 
+    // Busca intranet
     $sql_intranet = "SELECT codigo AS codigo_insumo, descricao AS nome_insumo, unidade, quantidade
                      FROM ingredientes
                      WHERE ficha_id = (
@@ -35,7 +37,8 @@ if ($codigo_prato !== '') {
         $ficha_intranet[$row['codigo_insumo']] = $row;
     }
 
-    $sql_cloud = "SELECT `Cód. ref.` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde` AS quantidade
+    // Busca Cloudify (corrigido: usa Cód. ref..1 para insumo)
+    $sql_cloud = "SELECT `CODIGO` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde` AS quantidade
                   FROM insumos_bastards
                   WHERE `Cód. ref.` = :codigo";
     $stmt2 = $pdo_dw->prepare($sql_cloud);
@@ -44,11 +47,13 @@ if ($codigo_prato !== '') {
         $ficha_cloudify[$row['codigo_insumo']] = $row;
     }
 
+    // União dos códigos
     $todos_codigos = array_unique(array_merge(
         array_keys($ficha_intranet),
         array_keys($ficha_cloudify)
     ));
 
+    // Status dos dados
     if (empty($ficha_intranet) || empty($ficha_cloudify)) {
         $farol_status = 'red';
     } else {
@@ -56,7 +61,6 @@ if ($codigo_prato !== '') {
         foreach ($todos_codigos as $cod) {
             $a = $ficha_intranet[$cod] ?? null;
             $b = $ficha_cloudify[$cod] ?? null;
-
             if ($a && $b) {
                 if (
                     trim($a['nome_insumo']) !== trim($b['nome_insumo']) ||
@@ -75,7 +79,6 @@ if ($codigo_prato !== '') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
