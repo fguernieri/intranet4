@@ -3,10 +3,54 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// ==================== [ ADIÇÃO 1: TRATAMENTO POST ] ====================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
+    $connPost = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $connPost->set_charset('utf8mb4');
+    if ($connPost->connect_error) {
+        echo json_encode(['sucesso' => false, 'erro' => "Conexão falhou: " . $connPost->connect_error]);
+        exit;
+    }
+    $jsonData = json_decode(file_get_contents('php://input'), true);
+    $metas = $jsonData['metas'] ?? [];
+    $dataMeta = $jsonData['data'] ?? date('Y-m-d');
+
+    if (empty($metas)) {
+        echo json_encode(['sucesso' => false, 'erro' => 'Dados ausentes (metas vazias).']);
+        exit;
+    }
+
+    // Exclui previamente as metas da data escolhida (para sobrescrever)
+    $stmtDel = $connPost->prepare("DELETE FROM fMetasFabrica WHERE Data = ?");
+    $stmtDel->bind_param("s", $dataMeta);
+    $stmtDel->execute();
+    $stmtDel->close();
+
+    $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Data) VALUES (?, ?, ?, ?)");
+    if (!$stmt) {
+        echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
+        exit;
+    }
+    foreach ($metas as $m) {
+        $cat  = $m['categoria']    ?? '';
+        $sub  = $m['subcategoria'] ?? '';
+        $meta = floatval($m['meta']) ?? 0;
+        $stmt->bind_param("ssds", $cat, $sub, $meta, $dataMeta);
+        $stmt->execute();
+    }
+    $stmt->close();
+    $connPost->close();
+
+    echo json_encode(['sucesso' => true]);
+    exit;
+}
+// ==================== [ FIM DO TRATAMENTO POST ] ====================
+
 // Sidebar e autenticação
 require_once __DIR__ . '/../../sidebar.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -27,7 +71,7 @@ if ($conn->connect_error) {
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
 
-// Carregue todas as parcelas do ano para médias e totais (pagas e em aberto)
+// Carregue todas as parcelas do ano para médias e totais
 $sql = "
     SELECT 
         c.ID_CONTA,
@@ -45,25 +89,22 @@ $sql = "
 $res = $conn->query($sql);
 $linhas = [];
 while ($f = $res->fetch_assoc()) {
-    $id = $f['ID_CONTA'];
-    $valor = $f['VALOR'];
-    $data  = $f['DATA_VENCIMENTO'];
     $linhas[] = [
-        'ID_CONTA'        => $id,
+        'ID_CONTA'        => $f['ID_CONTA'],
         'CATEGORIA'       => $f['CATEGORIA'],
         'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
         'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
         'PARCELA'         => $f['PARCELA'],
-        'VALOR_EXIBIDO'   => $valor,
-        'DATA_VENCIMENTO' => $data,
+        'VALOR_EXIBIDO'   => $f['VALOR'],
+        'DATA_VENCIMENTO' => $f['DATA_VENCIMENTO'],
         'STATUS'          => $f['STATUS'],
     ];
 }
 
 // Organiza em matriz por categoria, subcategoria, descrição e mês
 $meses = [
-  1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
-  7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
+    1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
+    7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
 ];
 $matriz = [];
 foreach ($linhas as $linha) {
@@ -134,9 +175,9 @@ foreach ($mesesUltimos3 as $m) {
     $soma3Rec += $receitaPorMes[$m] ?? 0;
 }
 $media3Rec = $soma3Rec / 3;
-$atualRec = $receitaPorMes[$mesAtual] ?? 0;
+$atualRec   = $receitaPorMes[$mesAtual] ?? 0;
 
-// Ordena as categorias, deixando "OPERACOES EXTERNAS" por último
+// Ordena as categorias, colocando "OPERACOES EXTERNAS" por último
 $matrizOrdenada = [];
 foreach ($matriz as $cat => $subs) {
     if (mb_strtoupper(trim($cat)) !== 'OPERACOES EXTERNAS') {
@@ -145,50 +186,17 @@ foreach ($matriz as $cat => $subs) {
 }
 if (isset($matriz['OPERACOES EXTERNAS'])) {
     $matrizOrdenada['OPERACOES EXTERNAS'] = $matriz['OPERACOES EXTERNAS'];
-} elseif (isset($matriz['Operacoes Externas'])) {
-    $matrizOrdenada['Operacoes Externas'] = $matriz['Operacoes Externas'];
-} elseif (isset($matriz['operações externas'])) {
-    $matrizOrdenada['operações externas'] = $matriz['operações externas'];
 }
 
-// Consulta: traz todas as parcelas do mês atual, para exibição detalhada
-$dataIni = sprintf('%04d-%02d-01', $anoAtual, $mesAtual);
-$dataFim = date('Y-m-d', strtotime("$dataIni +1 month"));
-$sqlParcelas = "
-    SELECT
-        c.CATEGORIA,
-        c.SUBCATEGORIA,
-        c.DESCRICAO_CONTA,
-        d.PARCELA,
-        d.DATA_VENCIMENTO,
-        d.VALOR
-    FROM
-        fContasAPagar AS c
-    INNER JOIN
-        fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE
-        d.DATA_VENCIMENTO >= ?
-        AND d.DATA_VENCIMENTO < ?
-    ORDER BY
-        c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
-";
-$stmt = $conn->prepare($sqlParcelas);
-$stmt->bind_param('ss', $dataIni, $dataFim);
-$stmt->execute();
-$res = $stmt->get_result();
-
-$matrizParcelas = [];
-while ($row = $res->fetch_assoc()) {
-    $cat = $row['CATEGORIA'] ?? 'SEM CATEGORIA';
-    $sub = $row['SUBCATEGORIA'] ?? 'SEM SUBCATEGORIA';
-    $desc = $row['DESCRICAO_CONTA'] ?? 'SEM DESCRIÇÃO';
-    $parcela = $row['PARCELA'] ?? 'SEM PARCELA';
-    $matrizParcelas[$cat][$sub][$desc][$parcela] = [
-        'valor' => floatval($row['VALOR']),
-        'data_venc' => $row['DATA_VENCIMENTO']
-    ];
+// Consulta para carregar as metas cadastradas (para a data atual)
+$sqlMetas = "SELECT Categoria, IFNULL(Subcategoria, '') AS Subcategoria, Meta FROM fMetasFabrica WHERE Data = CURDATE()";
+$resMetas = $conn->query($sqlMetas);
+$metasArray = [];
+while ($m = $resMetas->fetch_assoc()){
+    $cat = $m['Categoria'];
+    $sub = $m['Subcategoria'];
+    $metasArray[$cat][$sub] = $m['Meta'];
 }
-$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -202,22 +210,20 @@ $stmt->close();
     .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; }
     .dre-sub    { background: #383858; font-weight: 500; cursor:pointer; }
     .dre-detalhe{ background: #232946; }
-    .dre-hide { display: none; }
+    .dre-hide   { display: none; }
     table, th, td {
       font-family: 'Segoe UI', Arial, sans-serif;
       font-size: 11px;
-      border: 0.5px solid #fff; /* divisória branca e fina */
+      border: 0.5px solid #fff;
       border-collapse: collapse;
     }
     .dre-cat, .dre-sub {
       font-size: 12px;
     }
-    th, td {
-      border: 0.5px solid #fff; /* divisória branca e fina */
-    }
+    th, td { border: 0.5px solid #fff; }
     .col-atual {
-      background-color: #1e293b !important; /* azul escuro */
-      color: #ffb703 !important;            /* laranja/amarelo */
+      background-color: #1e293b !important;
+      color: #ffb703 !important;
       border-left: 2px solid #ffb703;
       border-right: 2px solid #ffb703;
     }
@@ -251,84 +257,147 @@ $stmt->close();
     DRE Financeiro - <?=$anoAtual?> / <?=$meses[$mesAtual]?>
   </h1>
   <span id="msg-atualiza-json" class="ml-2 text-xs"></span>
-  <table class="min-w-full text-xs mx-auto border border-gray-700 rounded">
-    <thead class="bg-gray-700 text-yellow-400">
+  
+  <!-- Tabela de Simulação com Blocos -->
+  <table id="tabelaSimulacao" class="min-w-full text-xs mx-auto border border-gray-700 rounded">
+    <thead>
       <tr>
-        <th class="p-2 text-left">Categoria</th>
-        <th class="p-2 text-center">Média 3 meses</th>
-        <th class="p-2 text-center">Simulação</th> <!-- NOVA COLUNA -->
-        <th class="p-2 text-center">% s/ Receita (Média)</th>
-        <th class="p-2 text-center">% s/ Receita (Simulação)</th> <!-- NOVA COLUNA -->
-        <th class="p-2 text-right font-bold col-atual" style="font-weight: bold;">Mês Atual</th>
-        <th class="p-2 text-center font-bold col-atual" style="font-weight: bold;">% s/ Receita (Atual)</th>
+        <th rowspan="2" class="p-2 text-center bg-gray-800">Categoria &gt; SubCategoria</th>
+        <th colspan="2" class="p-2 text-center bg-blue-900">Média -3m / % Média-3m S/ FAT.</th>
+        <th colspan="3" class="p-2 text-center bg-green-900">Simulação / % Simulação S/ FAT. / Diferença (R$)</th>
+        <th colspan="2" class="p-2 text-center bg-red-900">Meta / % Meta s/ FAT.</th>
+        <th colspan="3" class="p-2 text-center bg-purple-900">Realizado / % Realizado s/ FAT. / Comparação Meta</th>
+      </tr>
+      <tr>
+        <th class="p-2 text-center bg-blue-700">Média -3m</th>
+        <th class="p-2 text-center bg-blue-700">% Média-3m S/ FAT.</th>
+        <th class="p-2 text-center bg-green-700">Simulação</th>
+        <th class="p-2 text-center bg-green-700">% Simulação S/ FAT.</th>
+        <th class="p-2 text-center bg-green-700">Diferença (R$)</th>
+        <th class="p-2 text-center bg-red-700">Meta</th>
+        <th class="p-2 text-center bg-red-700">% Meta s/ FAT.</th>
+        <th class="p-2 text-center bg-purple-700">Realizado</th>
+        <th class="p-2 text-center bg-purple-700">% Realizado s/ FAT.</th>
+        <th class="p-2 text-center bg-purple-700">Comparação Meta</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Receita operacional -->
+      <!-- Linha Receita operacional -->
       <tr class="dre-cat" style="background:#102c14;">
-        <td class="p-2 font-bold" style="font-weight: bold;"><b>Receita operacional</b></td>
-        <td class="p-2 text-right font-bold" style="font-weight: bold;"><b><?= 'R$ '.number_format($media3Rec,2,',','.') ?></b></td>
-        <td class="p-2 text-right font-bold" style="font-weight: bold;">
-          <input type="text" data-receita="1" class="simul-valor font-bold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1" value="<?= number_format($media3Rec,2,',','.') ?>">
+        <td class="p-2 text-left">Receita operacional</td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($media3Rec,2,',','.') ?></td>
+        <td class="p-2 text-center"><b>100,00%</b></td>
+        <td class="p-2 text-right">
+          <input type="text" data-receita="1" class="simul-valor font-bold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                 value="<?= number_format($media3Rec,2,',','.') ?>">
         </td>
-        <td class="p-2 text-center font-bold" style="font-weight: bold;"><b>100,00%</b></td>
-        <td class="p-2 text-center font-bold" style="font-weight: bold;">
-          <input type="text" class="simul-perc font-bold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" value="100,00%">
+        <td class="p-2 text-center">
+          <input type="text" class="simul-perc font-bold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;"
+                 value="100,00%">
         </td>
-        <td class="p-2 text-right font-bold" style="font-weight: bold;"><b><?= 'R$ '.number_format($atualRec,2,',','.') ?></b></td>
-        <td class="p-2 text-center font-bold col-atual" style="font-weight: bold;"><b>100,00%</b></td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
+        <td class="p-2 text-right">
+          <?= isset($metasArray['Receita operacional']['']) ? 'R$ '.number_format($metasArray['Receita operacional'][''],2,',','.') : '' ?>
+        </td>
+        <td class="p-2 text-center">
+          <?= ($media3Rec > 0 && isset($metasArray['Receita operacional'][''])) ? number_format(($metasArray['Receita operacional']['']/$media3Rec)*100,2,',','.').'%' : '' ?>
+        </td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($atualRec,2,',','.') ?></td>
+        <td class="p-2 text-center">
+          <?= $atualRec > 0 ? number_format(($atualRec/$atualRec)*100,2,',','.').'%' : '-' ?>
+        </td>
+        <td class="p-2 text-center">
+          <?php
+            if(isset($metasArray['Receita operacional'][''])) {
+              $compMeta = $atualRec - $metasArray['Receita operacional'][''];
+              echo 'R$ '. number_format($compMeta,2,',','.');
+            }
+          ?>
+        </td>
       </tr>
-      <?php foreach ($matrizOrdenada as $cat => $subs): 
+      
+      <!-- Linhas para Categorias/Subcategorias -->
+      <?php foreach ($matrizOrdenada as $cat => $subs):
         $catId = 'cat_' . md5($cat);
       ?>
-        <!-- Linha da categoria -->
-        <tr class="dre-cat <?= $catId ?>">
-          <td class="p-2 font-bold">
-            <span class="toggle-icon" style="margin-right:6px;">+</span>
-            <?=$cat?>
+        <!-- Linha Categoria -->
+        <tr class="dre-cat <?= $catId ?>" onclick="toggleRows('<?= $catId ?>', this)">
+          <td class="p-2 text-left"><?= $cat ?></td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$cat],2,',','.') ?></td>
+          <td class="p-2 text-center">
+            <?= $media3Rec > 0 ? number_format(($media3Cat[$cat]/$media3Rec)*100,2,',','.') .'%' : '-' ?>
           </td>
-          <td class="p-2 text-right font-bold"><?= 'R$ '.number_format($media3Cat[$cat],2,',','.') ?></td>
-          <td class="p-2 text-right font-bold">
-            <input type="text" class="simul-valor font-bold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1" value="<?= number_format($media3Cat[$cat],2,',','.') ?>">
+          <td class="p-2 text-right">
+            <input type="text" class="simul-valor font-bold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                   value="<?= number_format($media3Cat[$cat],2,',','.') ?>">
           </td>
-          <td class="p-2 text-center font-bold">
-            <?= $media3Rec > 0 ? number_format(($media3Cat[$cat]/$media3Rec)*100, 2, ',', '.') . '%' : '-' ?>
+          <td class="p-2 text-center">
+            <input type="text" class="simul-perc font-bold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                   style="width:60px;" value="<?= $media3Rec > 0 ? number_format(($media3Cat[$cat]/$media3Rec)*100,2,',','.') : '' ?>">
           </td>
-          <td class="p-2 text-center font-bold">
-            <input type="text" class="simul-perc font-bold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" value="<?= $media3Rec > 0 ? number_format(($media3Cat[$cat]/$media3Rec)*100, 2, ',', '.') : '' ?>">
+          <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
+          <td class="p-2 text-right">
+            <?= isset($metasArray[$cat]['']) ? 'R$ '.number_format($metasArray[$cat][''],2,',','.') : '' ?>
           </td>
-          <td class="p-2 text-right font-bold"><?= 'R$ '.number_format($atualCat[$cat],2,',','.') ?></td>
-          <td class="p-2 text-center font-bold col-atual">
-            <?= $atualRec > 0 ? number_format(($atualCat[$cat]/$atualRec)*100, 2, ',', '.') . '%' : '-' ?>
+          <td class="p-2 text-center">
+            <?= ($media3Rec > 0 && isset($metasArray[$cat][''])) ? number_format(($metasArray[$cat]['']/$media3Rec)*100,2,',','.').'%' : '' ?>
+          </td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$cat],2,',','.') ?></td>
+          <td class="p-2 text-center">
+            <?= $atualRec > 0 ? number_format(($atualCat[$cat]/$atualRec)*100,2,',','.') .'%' : '-' ?>
+          </td>
+          <td class="p-2 text-center">
+            <?php
+              if(isset($metasArray[$cat][''])) {
+                $compMeta = $atualCat[$cat] - $metasArray[$cat][''];
+                echo 'R$ '. number_format($compMeta,2,',','.');
+              }
+            ?>
           </td>
         </tr>
-        <?php foreach ($subs as $sub => $descricoes): 
+        
+        <?php foreach ($subs as $sub => $descricoes):
           $subId = $catId . '_sub_' . md5($sub);
         ?>
-          <!-- Linha da subcategoria -->
-          <tr class="dre-sub <?= $catId ?> dre-hide">
-            <td class="p-2 font-semibold" style="padding-left:2em;">
-              <span class="toggle-icon" style="margin-right:6px;">+</span>
-              <?=$sub?>
+          <!-- Linha Subcategoria -->
+          <tr class="dre-sub <?= $catId ?> dre-hide" onclick="toggleRows('<?= $subId ?>', this)">
+            <td class="p-2 text-left"><?= $cat ?> &gt; <?= $sub ?></td>
+            <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$cat][$sub],2,',','.') ?></td>
+            <td class="p-2 text-center">
+              <?= $media3Rec > 0 ? number_format(($media3Sub[$cat][$sub]/$media3Rec)*100,2,',','.') .'%' : '-' ?>
             </td>
-            <td class="p-2 text-right font-semibold"><?= 'R$ '.number_format($media3Sub[$cat][$sub],2,',','.') ?></td>
-            <td class="p-2 text-right font-semibold">
-              <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1" value="<?= number_format($media3Sub[$cat][$sub],2,',','.') ?>">
+            <td class="p-2 text-right">
+              <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                     value="<?= number_format($media3Sub[$cat][$sub],2,',','.') ?>">
             </td>
-            <td class="p-2 text-center font-semibold">
-              <?= $media3Rec > 0 ? number_format(($media3Sub[$cat][$sub]/$media3Rec)*100, 2, ',', '.') . '%' : '-' ?>
+            <td class="p-2 text-center">
+              <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                     style="width:60px;" value="<?= $media3Rec > 0 ? number_format(($media3Sub[$cat][$sub]/$media3Rec)*100,2,',','.') : '-' ?>">
             </td>
-            <td class="p-2 text-center font-semibold">
-              <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center w-16 rounded px-1" value="<?= $media3Rec > 0 ? number_format(($media3Sub[$cat][$sub]/$media3Rec)*100, 2, ',', '.') . '%' : '-' ?>">
+            <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
+            <td class="p-2 text-right">
+              <?= isset($metasArray[$cat][$sub]) ? 'R$ '.number_format($metasArray[$cat][$sub],2,',','.') : '' ?>
             </td>
-            <td class="p-2 text-right font-semibold"><?= 'R$ '.number_format($atualSub[$cat][$sub],2,',','.') ?></td>
-            <td class="p-2 text-center font-semibold">
-              <?= $atualRec > 0 ? number_format(($atualSub[$cat][$sub]/$atualRec)*100, 2, ',', '.') . '%' : '-' ?>
+            <td class="p-2 text-center">
+              <?= ($media3Rec > 0 && isset($metasArray[$cat][$sub])) ? number_format(($metasArray[$cat][$sub]/$media3Rec)*100,2,',','.') .'%' : '' ?>
+            </td>
+            <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub[$cat][$sub],2,',','.') ?></td>
+            <td class="p-2 text-center">
+              <?= $atualRec > 0 ? number_format(($atualSub[$cat][$sub]/$atualRec)*100,2,',','.') .'%' : '-' ?>
+            </td>
+            <td class="p-2 text-center">
+              <?php
+                if(isset($metasArray[$cat][$sub])) {
+                  $compMeta = $atualSub[$cat][$sub] - $metasArray[$cat][$sub];
+                  echo 'R$ '. number_format($compMeta,2,',','.');
+                }
+              ?>
             </td>
           </tr>
+          
           <?php foreach ($descricoes as $desc => $mesValores): ?>
-            <tr class="dre-detalhe <?=$subId?> dre-hide">
-              <td class="p-2" style="padding-left:3em;"><?=$desc?></td>
+            <tr class="dre-detalhe <?= $subId ?> dre-hide">
+              <td class="p-2 text-left"></td>
               <td class="p-2 text-right">
                 <?php
                   $soma3 = 0;
@@ -339,37 +408,24 @@ $stmt->close();
                       }
                     }
                   }
-                  echo 'R$ '.number_format($soma3/3,2,',','.');
+                  $mediaDet = $soma3 / 3;
+                  echo 'R$ '.number_format($mediaDet,2,',','.');
                 ?>
               </td>
-              <td class="p-2 text-right">
-                <input type="text" class="simul-valor bg-gray-800 text-yellow-400 text-right w-24 rounded px-1" value="<?php
-                  $soma3 = 0;
-                  foreach ($mesesUltimos3 as $m) {
-                    if (isset($mesValores[$m])) {
-                      foreach ($mesValores[$m] as $ids) {
-                        $soma3 += array_sum($ids);
-                      }
-                    }
-                  }
-                  echo number_format($soma3/3,2,',','.');
-                ?>">
-              </td>
-              <td class="p-2"></td>
               <td class="p-2 text-center">
-                <input type="text" class="simul-perc bg-gray-800 text-yellow-400 text-center w-16 rounded px-1" value="<?php
-                  $soma3 = 0;
-                  foreach ($mesesUltimos3 as $m) {
-                    if (isset($mesValores[$m])) {
-                      foreach ($mesValores[$m] as $ids) {
-                        $soma3 += array_sum($ids);
-                      }
-                    }
-                  }
-                  $perc = $media3Rec > 0 ? number_format(($soma3/3/$media3Rec)*100, 2, ',', '.') . '%' : '-';
-                  echo $perc;
-                ?>">
+                <?= $media3Rec > 0 ? number_format(($mediaDet/$media3Rec)*100,2,',','.') .'%' : '-' ?>
               </td>
+              <td class="p-2 text-right">
+                <input type="text" class="simul-valor bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                       value="<?= number_format($mediaDet,2,',','.') ?>">
+              </td>
+              <td class="p-2 text-center">
+                <input type="text" class="simul-perc bg-gray-800 text-yellow-400 text-center rounded px-1"
+                       style="width:60px;" value="<?= $media3Rec > 0 ? number_format(($mediaDet/$media3Rec)*100,2,',','.') : '' ?>">
+              </td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
+              <td class="p-2 text-right"></td>
+              <td class="p-2 text-center"></td>
               <td class="p-2 text-right">
                 <?php
                   $somaAtual = 0;
@@ -378,130 +434,129 @@ $stmt->close();
                       $somaAtual += array_sum($ids);
                     }
                   }
-                  echo 'R$ '.number_format($somaAtual,2,',','.');
+                  echo 'R$ '.number_format($somaAtual,2,',','.');
                 ?>
               </td>
-              <td class="p-2"></td>
+              <td class="p-2 text-center">
+                <?= $atualRec > 0 ? number_format(($somaAtual/$atualRec)*100,2,',','.') .'%' : '-' ?>
+              </td>
+              <td class="p-2 text-center"><!-- Comparação Meta não se aplica --></td>
             </tr>
           <?php endforeach; ?>
         <?php endforeach; ?>
       <?php endforeach; ?>
     </tbody>
   </table>
+  
+  <!-- Botão para salvar metas -->
+  <button id="salvarMetasBtn" class="mt-4 bg-green-600 px-3 py-2 rounded font-bold">SALVAR METAS</button>
+  
 </main>
+
+<!-- Scripts de Atualização, Toggle etc. (mantidos) -->
 <script>
-function toggleRows(cl, el) {
-  document.querySelectorAll('.'+cl).forEach(row => {
-    row.classList.toggle('dre-hide');
-  });
-  // Alterna o ícone +/- apenas na linha clicada
-  if (el) {
-    let icon = el.querySelector('.toggle-icon');
-    if (icon) icon.textContent = icon.textContent === '+' ? '-' : '+';
-  }
+// Função para alternar a visibilidade das linhas filhas
+function toggleRows(className, triggerRow) {
+    const rows = document.querySelectorAll("tr." + className);
+    rows.forEach((row) => {
+        if (row !== triggerRow) {
+            row.classList.toggle("dre-hide");
+        }
+    });
 }
 
-// Travar apenas as categorias (exceto receita operacional)
-document.querySelectorAll('tr.dre-cat .simul-valor').forEach(function(input) {
-  if (!input.hasAttribute('data-receita')) {
-    input.setAttribute('readonly', 'readonly');
-    input.style.background = '#22223b';
-    input.style.cursor = 'not-allowed';
-  }
-});
-
-// Função para buscar o valor da receita operacional da simulação
-function getReceitaSimulacao() {
-  // Pega o input de simulação da receita operacional (linha que tem data-receita="1")
-  let receita = document.querySelector('tr.dre-cat .simul-valor[data-receita="1"]');
-  if (!receita) receita = document.querySelector('.simul-valor[data-receita="1"]');
-  return parseFloat(receita.value.replace(/\./g,'').replace(',','.')) || 1;
+// Função para converter "1.234,56" em número (1234.56)
+function parseBRL(str) {
+    return parseFloat(str.replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
 }
 
-// Atualiza o percentual ao editar o valor
-document.querySelectorAll('.simul-valor').forEach(function(input) {
-  input.addEventListener('input', function() {
-    const tr = input.closest('tr');
-    const receitaVal = getReceitaSimulacao();
-    const valor = parseFloat(input.value.replace(/\./g,'').replace(',','.')) || 0;
-    const percInput = tr.querySelector('.simul-perc');
-    if (percInput) percInput.value = receitaVal > 0 ? (valor / receitaVal * 100).toFixed(2).replace('.', ',') : '';
-  });
-});
-
-// Atualiza o valor ao editar o percentual
-document.querySelectorAll('.simul-perc').forEach(function(input) {
-  input.addEventListener('input', function() {
-    const tr = input.closest('tr');
-    const receitaVal = getReceitaSimulacao();
-    const perc = parseFloat(input.value.replace(/\./g,'').replace(',','.')) || 0;
-    const valorInput = tr.querySelector('.simul-valor');
-    if (valorInput) valorInput.value = (receitaVal * perc / 100).toFixed(2).replace('.', ',');
-  });
-});
-
-// Atualiza o valor e percentual da receita operacional ao carregar a página
+// Atualiza percentuais quando o input é alterado (mantido do seu código)
 document.addEventListener('DOMContentLoaded', function() {
-  let receitaInput = document.querySelector('.simul-valor[data-receita="1"]');
-  if (receitaInput) {
-    receitaInput.dispatchEvent(new Event('input'));
-  }
-});
-
-// Atualiza todas as porcentagens ao editar a receita operacional
-let receitaInput = document.querySelector('.simul-valor[data-receita="1"]');
-function atualizarPercentuais(receitaVal) {
-  document.querySelectorAll('tr.dre-sub .simul-valor').forEach(function(input) {
-    const tr = input.closest('tr');
-    const valor = parseFloat(input.value.replace(',', '.')) || 0;
-    const percInput = tr.querySelector('.simul-perc');
-    if (percInput) percInput.value = receitaVal > 0 ? (valor / receitaVal * 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '0,00%';
-    // Atualiza categoria pai
+  document.querySelectorAll('.simul-valor').forEach(function(input) {
+    input.addEventListener('input', function() {
+      const row = input.closest('tr');
+      // Pega o valor de receita se for a linha data-receita="1"
+      let receitaInput = document.querySelector('.simul-valor[data-receita="1"]');
+      let receitaVal = receitaInput ? parseBRL(receitaInput.value) : 1;
+      let simulNum = parseBRL(input.value);
+      let percInput = row.querySelector('.simul-perc');
+      if (percInput && receitaVal > 0) {
+        let perc = (simulNum / receitaVal) * 100;
+        percInput.value = perc.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%';
+      }
+      // Diferença (coluna 6, index 5)
+      const mediaCell = row.cells[1];
+      const mediaNum = mediaCell ? parseBRL(mediaCell.textContent) : 0;
+      const diff = simulNum - mediaNum;
+      if(row.cells.length >= 6) {
+        row.cells[5].textContent = 'R$ ' + diff.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+      }
+    });
+    // Dispara ao carregar
     input.dispatchEvent(new Event('input'));
   });
-}
-if (receitaInput) {
-  receitaInput.addEventListener('input', function() {
-    const receitaVal = parseFloat(receitaInput.value.replace(',', '.')) || 1;
-    atualizarPercentuais(receitaVal);
-  });
-}
+});
 
-// Efeito expandir/recolher subcategorias ao clicar na categoria
-document.querySelectorAll('tr.dre-cat').forEach(function(catTr) {
-  catTr.addEventListener('click', function() {
-    const classes = Array.from(catTr.classList).filter(c => c.startsWith('cat_'));
-    if (classes.length) {
-      const catClass = classes[0];
-      document.querySelectorAll('tr.dre-sub.' + catClass).forEach(function(subTr) {
-        subTr.classList.toggle('dre-hide');
-      });
-      // Alterna o ícone +/-
-//       const icon = catTr.querySelector('.toggle-icon');
-//       if (icon) icon.textContent = icon.textContent === '+' ? '-' : '+';
+// ===================== [ ADIÇÃO 2: SALVAR METAS – VERSÃO AJUSTADA ] =====================
+document.getElementById('salvarMetasBtn').addEventListener('click', function() {
+    const tabela = document.getElementById('tabelaSimulacao');
+    if (!tabela) {
+      alert("Tabela de Simulação não encontrada.");
+      return;
     }
-  });
-});
 
-document.querySelectorAll('.btn-perc-minus').forEach(function(btn) {
-  btn.addEventListener('click', function(event) {
-    event.stopPropagation(); // Impede expandir/recolher
-    const input = btn.parentElement.querySelector('.simul-perc');
-    let val = parseFloat(input.value.replace(',', '.')) || 0;
-    val = Math.max(0, val - 0.05);
-    input.value = val.toFixed(2).replace('.', ',');
-    input.dispatchEvent(new Event('input'));
-  });
-});
-document.querySelectorAll('.btn-perc-plus').forEach(function(btn) {
-  btn.addEventListener('click', function(event) {
-    event.stopPropagation(); // Impede expandir/recolher
-    const input = btn.parentElement.querySelector('.simul-perc');
-    let val = parseFloat(input.value.replace(',', '.')) || 0;
-    val = val + 0.05;
-    input.value = val.toFixed(2).replace('.', ',');
-    input.dispatchEvent(new Event('input'));
-  });
+    // Seleciona todas as linhas que sejam "dre-cat" ou "dre-sub"
+    const linhas = tabela.querySelectorAll('tbody tr');
+    const metas = [];
+
+    linhas.forEach(linha => {
+        if (!(linha.classList.contains('dre-cat') || linha.classList.contains('dre-sub'))) return;
+        const cells = linha.querySelectorAll('td');
+        if (!cells.length) return;
+        
+        // Use textContent para garantir que mesmo linhas ocultas sejam lidas
+        let txt = cells[0].textContent.trim();
+        let partes = txt.split('>');
+        let categoria = partes[0].trim();
+        let subcategoria = (partes.length > 1) ? partes[1].trim() : '';
+        
+        // Procura o input na 4ª coluna (índice 3) – que contém o valor de Simulação
+        let inputSimul = cells[3] ? cells[3].querySelector('.simul-valor') : null;
+        if (!inputSimul) return;
+        let metaVal = parseBRL(inputSimul.value.trim());
+        metas.push({ categoria, subcategoria, meta: metaVal });
+    });
+
+    if (!metas.length) {
+      alert("Nenhum valor de simulação encontrado. Verifique se os inputs existem.");
+      return;
+    }
+
+    // Pede a data ao usuário
+    const dataMeta = prompt("Informe a data da meta (AAAA-MM-DD):", new Date().toISOString().slice(0,10));
+    if (!dataMeta) {
+      alert("Data não informada. Cancelado.");
+      return;
+    }
+
+    // Envia via fetch (POST) para o mesmo arquivo
+    fetch(location.href, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metas: metas, data: dataMeta })
+    })
+    .then(r => r.json())
+    .then(result => {
+      if (result.sucesso) {
+        alert("Metas (Simulação) salvas com sucesso!");
+      } else {
+        alert("Erro ao salvar metas: " + (result.erro || ''));
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Erro na solicitação!");
+    });
 });
 </script>
 </body>
