@@ -101,7 +101,7 @@ while ($f = $res->fetch_assoc()) {
     ];
 }
 
-// Organiza em matriz por categoria, subcategoria, descrição e mês
+// Organiza em matriz somente por categoria, subcategoria e mês
 $meses = [
     1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
     7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
@@ -110,10 +110,9 @@ $matriz = [];
 foreach ($linhas as $linha) {
     $cat = $linha['CATEGORIA'] ?? 'SEM CATEGORIA';
     $sub = $linha['SUBCATEGORIA'] ?? 'SEM SUBCATEGORIA';
-    $desc = $linha['DESCRICAO_CONTA'] ?? 'SEM DESCRIÇÃO';
-    $mes = (int)date('n', strtotime($linha['DATA_VENCIMENTO']));
-    $id = $linha['ID_CONTA'];
-    $matriz[$cat][$sub][$desc][$mes][$id][] = floatval($linha['VALOR_EXIBIDO']);
+    $mes = (int) date('n', strtotime($linha['DATA_VENCIMENTO']));
+    $id  = $linha['ID_CONTA'];
+    $matriz[$cat][$sub][$mes][$id][] = floatval($linha['VALOR_EXIBIDO']);
 }
 
 // Calcule os 3 últimos meses fechados a partir do mês selecionado
@@ -124,31 +123,29 @@ for ($i = 1; $i <= 3; $i++) {
     $mesesUltimos3[] = $m;
 }
 
-// Calcule média e mês atual para cada categoria e subcategoria
+// Cálculos para médias e totais ajustados:
 $media3Cat = [];
-$atualCat = [];
+$atualCat   = [];
 $media3Sub = [];
-$atualSub = [];
+$atualSub   = [];
 foreach ($matriz as $cat => $subs) {
     $soma3Cat = 0;
     $somaAtualCat = 0;
-    foreach ($subs as $sub => $descricoes) {
+    foreach ($subs as $sub => $mesValores) {
         $soma3Sub = 0;
         $somaAtualSub = 0;
-        foreach ($descricoes as $desc => $mesValores) {
-            foreach ($mesesUltimos3 as $m) {
-                if (isset($mesValores[$m])) {
-                    foreach ($mesValores[$m] as $ids) {
-                        $soma3Cat += array_sum($ids);
-                        $soma3Sub += array_sum($ids);
-                    }
+        foreach ($mesesUltimos3 as $m) {
+            if (isset($mesValores[$m])) {
+                foreach ($mesValores[$m] as $ids) {
+                    $soma3Cat += array_sum($ids);
+                    $soma3Sub += array_sum($ids);
                 }
             }
-            if (isset($mesValores[$mesAtual])) {
-                foreach ($mesValores[$mesAtual] as $ids) {
-                    $somaAtualCat += array_sum($ids);
-                    $somaAtualSub += array_sum($ids);
-                }
+        }
+        if (isset($mesValores[$mesAtual])) {
+            foreach ($mesValores[$mesAtual] as $ids) {
+                $somaAtualCat += array_sum($ids);
+                $somaAtualSub += array_sum($ids);
             }
         }
         $media3Sub[$cat][$sub] = $soma3Sub / 3;
@@ -180,22 +177,7 @@ $atualRec   = $receitaPorMes[$mesAtual] ?? 0;
 // Ordena as categorias, colocando "OPERACOES EXTERNAS" por último
 $matrizOrdenada = [];
 foreach ($matriz as $cat => $subs) {
-    if (mb_strtoupper(trim($cat)) !== 'OPERACOES EXTERNAS') {
-        $matrizOrdenada[$cat] = $subs;
-    }
-}
-if (isset($matriz['OPERACOES EXTERNAS'])) {
-    $matrizOrdenada['OPERACOES EXTERNAS'] = $matriz['OPERACOES EXTERNAS'];
-}
-
-// Consulta para carregar as metas cadastradas (para a data atual)
-$sqlMetas = "SELECT Categoria, IFNULL(Subcategoria, '') AS Subcategoria, Meta FROM fMetasFabrica WHERE Data = CURDATE()";
-$resMetas = $conn->query($sqlMetas);
-$metasArray = [];
-while ($m = $resMetas->fetch_assoc()){
-    $cat = $m['Categoria'];
-    $sub = $m['Subcategoria'];
-    $metasArray[$cat][$sub] = $m['Meta'];
+    $matrizOrdenada[$cat] = $subs;
 }
 ?>
 <!DOCTYPE html>
@@ -457,8 +439,9 @@ while ($m = $resMetas->fetch_assoc()){
 <script>
 // Função para alternar a visibilidade das linhas filhas
 function toggleRows(className, triggerRow) {
-    const rows = document.querySelectorAll("tr." + className);
-    rows.forEach((row) => {
+    // Seleciona somente linhas com a classe desejada, ignorando as com "dre-detalhe"
+    const rows = document.querySelectorAll("tr." + className + ":not(.dre-detalhe)");
+    rows.forEach(row => {
         if (row !== triggerRow) {
             row.classList.toggle("dre-hide");
         }
