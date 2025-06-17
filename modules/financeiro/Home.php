@@ -185,35 +185,50 @@ if (isset($matriz['Z - SAIDA DE REPASSE'])) {
     $matrizOrdenada['Z - SAIDA DE REPASSE'] = $matriz['Z - SAIDA DE REPASSE'];
 }
 
-// Consulta para carregar as metas cadastradas (para a data atual)
+// Consulta para carregar a ÚLTIMA meta gravada para cada Categoria/Subcategoria
 $sqlMetas = "
-    SELECT m1.Categoria, m1.Meta
-    FROM fMetasFabrica m1
+    SELECT 
+        fm1.Categoria, 
+        fm1.Subcategoria, 
+        fm1.Meta
+    FROM 
+        fMetasFabrica fm1
     INNER JOIN (
-        SELECT Categoria, MAX(Data) as MaxData
-        FROM fMetasFabrica
-        GROUP BY Categoria
-    ) m2 ON m1.Categoria = m2.Categoria AND m1.Data = m2.MaxData
+        SELECT 
+            Categoria, 
+            Subcategoria, 
+            MAX(Data) as MaxData
+        FROM 
+            fMetasFabrica
+        GROUP BY 
+            Categoria, Subcategoria
+    ) fm2 
+    ON fm1.Categoria = fm2.Categoria 
+    AND IFNULL(fm1.Subcategoria, '') = IFNULL(fm2.Subcategoria, '') -- Trata Subcategoria NULL ou vazia de forma consistente
+    AND fm1.Data = fm2.MaxData
 ";
 $resMetas = $conn->query($sqlMetas);
 $metasArray = [];
-while ($m = $resMetas->fetch_assoc()){
-    $cat = $m['Categoria'];
-    $metasArray[$cat] = $m['Meta'];
+if ($resMetas) {
+    while ($m = $resMetas->fetch_assoc()){
+        $cat = $m['Categoria'];
+        $sub = $m['Subcategoria'] ?? ''; // Usar string vazia se Subcategoria for NULL/vazia
+        $metasArray[$cat][$sub] = $m['Meta'];
+    }
 }
 
 // Certifique-se de que as metas da Receita, Tributos e Custo Variável estejam definidas,
 // utilizando 0 como valor padrão se não existirem.
-$metaReceita         = $metasArray['Receita operacional']['']   ?? 0;
-$metaTributos        = $metasArray['TRIBUTOS']['']                ?? 0;
-$metaCustoVariavel   = $metasArray['CUSTO VARIÁVEL']['']           ?? 0;
+$metaReceita         = $metasArray['RECEITA BRUTA']['']      ?? 0; // Ajustado para 'RECEITA BRUTA'
+$metaTributos        = $metasArray['TRIBUTOS']['']           ?? 0;
+$metaCustoVariavel   = $metasArray['CUSTO VARIÁVEL']['']      ?? 0;
 // Calcula o Lucro Bruto da meta: Receita - Tributos - Custo Variável
 $metaLucro = $metaReceita - $metaTributos - $metaCustoVariavel;
 
 // Para as despesas, use 0 caso não existam
-$metaCustoFixo      = $metasArray['CUSTO FIXO']['']   ?? 0;
-$metaDespesaFixa    = $metasArray['DESPESA FIXA']['']  ?? 0;
-$metaDespesaVenda   = $metasArray['DESPESA VENDA'][''] ?? 0;
+$metaCustoFixo      = $metasArray['CUSTO FIXO']['']      ?? 0;
+$metaDespesaFixa    = $metasArray['DESPESA FIXA']['']     ?? 0;
+$metaDespesaVenda   = $metasArray['DESPESA VENDA']['']    ?? 0;
 $totalMetaDespesas  = $metaCustoFixo + $metaDespesaFixa + $metaDespesaVenda;
 
 // Lucro Líquido da meta: Lucro Bruto - (Custo Fixo + Despesa Fixa + Despesa Venda)
@@ -406,16 +421,16 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
                  value="100,00%">
         </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
-        <td class="p-2 text-right"><?= isset($metasArray['Receita operacional']['']) ? 'R$ '.number_format($metasArray['Receita operacional'][''],2,',','.') : '' ?></td>
+        <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metasArray['RECEITA BRUTA'][''],2,',','.') : '' ?></td>
         <td class="p-2 text-center">
-          <?= ($media3Rec > 0 && isset($metasArray['Receita operacional'][''])) ? number_format(($metasArray['Receita operacional']['']/$media3Rec)*100,2,',','.') .'%' : '' ?>
+          <?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format(($metasArray['RECEITA BRUTA']['']/$media3Rec)*100,2,',','.') .'%' : '' ?>
         </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualRec,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $atualRec > 0 ? '100,00%' : '-' ?></td>
         <td class="p-2 text-center">
           <?php
-            if(isset($metasArray['Receita operacional'][''])) {
-              $comp = $atualRec - $metasArray['Receita operacional'][''];
+            if(isset($metasArray['RECEITA BRUTA'][''])) {
+              $comp = $atualRec - $metasArray['RECEITA BRUTA'][''];
               echo 'R$ '.number_format($comp,2,',','.');
             }
           ?>
@@ -440,9 +455,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
              style="width:60px;" value="<?= $media3Rec>0 ? number_format((($media3Cat['TRIBUTOS'] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
     </td>
-    <td class="p-2 text-right">-</td>
-    <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS']) ? 'R$ '.number_format($metasArray['TRIBUTOS'],2,',','.') : '' ?></td>
-    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'])) ? number_format(($metasArray['TRIBUTOS']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+    <td class="p-2 text-right">-</td> <!-- Diferença -->
+    <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS']['']) ? 'R$ '.number_format($metasArray['TRIBUTOS'][''],2,',','.') : '' ?></td>
+    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'][''])) ? number_format(($metasArray['TRIBUTOS']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-right"><?= ($atualRec>0)?number_format((($atualCat['TRIBUTOS'] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-center">-</td>
@@ -514,9 +529,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
              style="width:60px;" value="<?= $media3Rec>0 ? number_format((($media3Cat['CUSTO VARIÁVEL'] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
     </td>
-    <td class="p-2 text-right">-</td>
-    <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL']) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'],2,',','.') : '' ?></td>
-    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['CUSTO VARIÁVEL'])) ? number_format(($metasArray['CUSTO VARIÁVEL']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+    <td class="p-2 text-right">-</td> <!-- Diferença -->
+    <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL']['']) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][''],2,',','.') : '' ?></td>
+    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['CUSTO VARIÁVEL'][''])) ? number_format(($metasArray['CUSTO VARIÁVEL']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center"><?= ($atualRec>0)?number_format((($atualCat['CUSTO VARIÁVEL'] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-center">-</td>
@@ -574,7 +589,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- 6. CUSTO FIXO, 7. DESPESA FIXA e 8. DESPESA VENDA (permanecem editáveis) -->
       <?php 
-        foreach(['CUSTO FIXO','DESPESA FIXA','DESPESA VENDA'] as $catName):
+        foreach(['CUSTO FIXO','DESPESA FIXA','DESPESA VENDA'] as $catName): // Loop para CUSTO FIXO, DESPESA FIXA, DESPESA VENDA
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
@@ -589,9 +604,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
            style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
   </td>
-  <td class="p-2 text-right">-</td>
-  <td class="p-2 text-right"><?= isset($metasArray[$catName]) ? 'R$ '.number_format($metasArray[$catName],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName])) ? number_format(($metasArray[$catName]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+  <td class="p-2 text-right">-</td> <!-- Diferença -->
+  <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
+  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualCat[$catName] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-center">-</td>
@@ -642,8 +657,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" readonly>
   </td>
   <td class="p-2 text-right">-</td>
-  <td class="p-2 text-right"><?= isset($metasArray['Receita operacional']['']) ? 'R$ '.number_format($metaLucroLiquido ?? 0,2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['Receita operacional'][''])) ? number_format((($metaLucroLiquido ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+  <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metaLucroLiquido ?? 0,2,',','.') : '' ?></td>
+  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format((($metaLucroLiquido ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroLiquido,2,',','.') ?></td>
   <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualLucroLiquido / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-center">-</td>
@@ -711,7 +726,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- 10. INVESTIMENTO INTERNO, INVESTIMENTO EXTERNO e AMORTIZAÇÃO (editáveis) -->
       <?php
-        foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO'] as $catName):
+        foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO'] as $catName): // AMORTIZAÇÃO pode ter meta, mesmo que não seja exibida como editável em alguns cenários
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
@@ -726,9 +741,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
            style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
   </td>
-  <td class="p-2 text-right">-</td>
-  <td class="p-2 text-right"><?= isset($metasArray[$catName]) ? 'R$ '.number_format($metasArray[$catName],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName])) ? number_format(($metasArray[$catName]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+  <td class="p-2 text-right">-</td> <!-- Diferença -->
+  <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
+  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= ($atualRec>0)?number_format((($atualCat[$catName] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-center">-</td>
@@ -779,8 +794,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
                    style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catNameSR] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
           </td>
           <td class="p-2 text-right">-</td> <!-- Diferença -->
-          <td class="p-2 text-right"><?= isset($metasArray[$catNameSR]) ? 'R$ '.number_format($metasArray[$catNameSR],2,',','.') : '' ?></td>
-          <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR])) ? number_format(($metasArray[$catNameSR]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+          <td class="p-2 text-right"><?= isset($metasArray[$catNameSR]['']) ? 'R$ '.number_format($metasArray[$catNameSR][''],2,',','.') : '' ?></td>
+          <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][''])) ? number_format(($metasArray[$catNameSR]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catNameSR] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualCat[$catNameSR] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
           <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
@@ -833,8 +848,16 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </tbody>
   </table>
   
-  <!-- Botão para salvar metas -->
-  <button id="salvarMetasBtn" class="mt-4 bg-green-600 px-3 py-2 rounded font-bold">SALVAR METAS</button>
+  <!-- Controles para salvar metas -->
+  <div class="mt-6 flex items-end gap-4">
+    <div>
+      <label for="dataMetaInput" class="block text-sm font-medium text-gray-300 mb-1">Data para Salvar Metas:</label>
+      <input type="date" id="dataMetaInput" name="dataMetaInput"
+             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+             value="<?= $anoAtual ?>-<?= str_pad($mesAtual, 2, '0', STR_PAD_LEFT) ?>-01">
+    </div>
+    <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS</button>
+  </div>
   
 </main>
 
@@ -1028,5 +1051,108 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Cálculo inicial ao carregar a página
   recalcularTudo();
+
+  // Salvar Metas
+  document.getElementById('salvarMetasBtn').addEventListener('click', function() {
+    const botaoSalvar = this;
+    botaoSalvar.disabled = true; // Desabilitar botão para evitar cliques duplos
+    botaoSalvar.textContent = 'SALVANDO...';
+
+    const metasParaSalvar = [];
+    // Construir a data da meta com base no filtro da DRE (primeiro dia do mês)
+    const dataMetaInput = document.getElementById('dataMetaInput');
+    const dataMeta = dataMetaInput.value;
+
+    if (!dataMeta) {
+        alert('Por favor, selecione uma data para salvar as metas.');
+        botaoSalvar.disabled = false;
+        botaoSalvar.textContent = 'SALVAR METAS';
+        return;
+    }
+
+    let categoriaAtualContexto = '';
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+
+        // Atualizar contexto de categoria mesmo se a linha de categoria não for uma meta em si (ex: se for readonly)
+        if (row.classList.contains('dre-cat')) {
+             categoriaAtualContexto = primeiroTd.textContent.trim();
+        }
+
+        // Pular linhas que não têm input de valor ou cujo input é readonly
+        if (!inputValorSimul || inputValorSimul.readOnly) {
+            return;
+        }
+
+        const valorMeta = parseBRL(inputValorSimul.value);
+        let categoriaMeta = '';
+        let subcategoriaMeta = '';
+
+        if (row.classList.contains('dre-cat')) {
+            categoriaMeta = primeiroTd.textContent.trim(); // Já é o categoriaAtualContexto
+            subcategoriaMeta = ''; // Meta para a categoria principal
+            metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+
+        } else if (row.classList.contains('dre-sub')) {
+            if (categoriaAtualContexto) { // Garante que temos um contexto de categoria
+                categoriaMeta = categoriaAtualContexto;
+                subcategoriaMeta = primeiroTd.textContent.trim();
+                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+            }
+        } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
+            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+
+                categoriaMeta = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
+                subcategoriaMeta = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
+                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+            }
+        }
+    });
+
+    if (metasParaSalvar.length === 0) {
+        alert('Nenhuma meta editável encontrada para salvar.');
+        botaoSalvar.disabled = false;
+        botaoSalvar.textContent = 'SALVAR METAS';
+        return;
+    }
+
+    // console.log('Enviando para salvar:', { metas: metasParaSalvar, data: dataMeta });
+
+    fetch('/modules/financeiro/salvar_metas.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ metas: metasParaSalvar, data: dataMeta }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { // Tenta ler o corpo do erro como texto
+                throw new Error(`Erro ${response.status}: ${response.statusText}. Detalhes: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.sucesso) {
+            alert('Metas salvas com sucesso!');
+        } else {
+            alert('Erro ao salvar metas: ' + (data.erro || 'Erro desconhecido retornado pelo servidor.'));
+        }
+    })
+    .catch((error) => {
+        console.error('Erro na requisição AJAX:', error);
+        alert(`Erro ao conectar com o servidor para salvar metas. ${error.message}`);
+    })
+    .finally(() => {
+        botaoSalvar.disabled = false;
+        botaoSalvar.textContent = 'SALVAR METAS';
+    });
+  });
 });
 </script>
