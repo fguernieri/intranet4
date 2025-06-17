@@ -396,6 +396,15 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
 <?php
   $mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
   $atualReceitaLiquida = $atualRec - ($atualCat['TRIBUTOS'] ?? 0);
+
+  $mediaLucroBruto = $mediaReceitaLiquida - ($media3Cat['CUSTO VARIÁVEL'] ?? 0);
+  $atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
+
+  $mediaLucroLiquido = $mediaLucroBruto - ($media3Cat['DESPESAS FIXAS'] ?? 0);
+  $atualLucroLiquido = $atualLucroBruto - ($atualCat['DESPESAS FIXAS'] ?? 0);
+
+  // As variáveis de simulação ($simReceitaLiquida, $simLucroBruto, $simLucroLiquido)
+  // são calculadas e preenchidas pelo JavaScript.
 ?>
 <tr id="rowFatLiquido" class="dre-cat" style="background:#1a4c2b;">
   <td class="p-2 text-left">RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)</td>
@@ -635,9 +644,19 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
 
 <!-- Scripts de Atualização, Toggle etc. (mantidos) -->
 <script>
+// Funções Utilitárias
 function parseBRL(str) {
   const stringValue = String(str || '');
   return parseFloat(stringValue.replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+}
+
+function formatSimValue(value) { // Formata para campos de input de simulação (sem R$)
+  return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatSimPerc(value, base) { // Formata percentual para campos de input de simulação
+  if (base === 0 || isNaN(base) || isNaN(value)) return '0,00%';
+  return ((value / base) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 }
 
 function getReceitaBrutaSimulada() {
@@ -645,252 +664,149 @@ function getReceitaBrutaSimulada() {
   return inputReceita ? parseBRL(inputReceita.value) : 0;
 }
 
+function findCategoryRow(categoryName) {
+  const catRows = document.querySelectorAll('tr.dre-cat');
+  for (const row of catRows) {
+    const firstCell = row.cells[0];
+    if (firstCell && firstCell.textContent.trim().toUpperCase().startsWith(categoryName.toUpperCase())) {
+      return row;
+    }
+  }
+  return null;
+}
+
+function getSimulatedValueFromInput(row) {
+    if (!row) return 0;
+    const input = row.querySelector('input.simul-valor');
+    return input ? parseBRL(input.value) : 0;
+}
+
+// Atualiza os totais das categorias principais com base em suas subcategorias (se houver)
+function atualizarTotaisCategorias() {
+  document.querySelectorAll('tr.dre-cat').forEach(catRow => {
+    const catSimulValorInput = catRow.querySelector('input.simul-valor');
+    // Só atualiza se o input da categoria existir e NÃO for readonly (ex: Receita Bruta é editável, Lucro Líquido não)
+    // E se tiver subcategorias.
+    if (!catSimulValorInput || catSimulValorInput.readOnly) {
+        return;
+    }
+
+    let subtotal = 0;
+    let hasSubCategories = false;
+    let currentRow = catRow.nextElementSibling;
+
+    while (currentRow && currentRow.classList.contains('dre-sub')) {
+      hasSubCategories = true;
+      const subInput = currentRow.querySelector('input.simul-valor');
+      if (subInput) {
+        subtotal += parseBRL(subInput.value);
+      }
+      currentRow = currentRow.nextElementSibling;
+    }
+
+    if (hasSubCategories) {
+      catSimulValorInput.value = formatSimValue(subtotal);
+      // O percentual será atualizado por atualizarPercentuaisSimulacao
+    }
+  });
+}
+
+// Atualiza os campos de percentual de simulação para todas as linhas com inputs .simul-valor
+function atualizarPercentuaisSimulacao() {
+  const receitaBrutaSimulada = getReceitaBrutaSimulada();
+  document.querySelectorAll('tr').forEach(row => {
+    const simulValorInput = row.querySelector('input.simul-valor');
+    const simulPercInput = row.querySelector('input.simul-perc');
+
+    if (simulValorInput && simulPercInput && !simulPercInput.readOnly) { // Apenas atualiza % de inputs editáveis de %
+        const valor = parseBRL(simulValorInput.value);
+        // Não atualiza o % da Receita Bruta aqui, pois ele é sempre 100% ou editável manualmente
+        if (!simulValorInput.hasAttribute('data-receita')) {
+             simulPercInput.value = formatSimPerc(valor, receitaBrutaSimulada);
+        }
+    }
+  });
+}
+
+// Atualiza linhas sintéticas (RECEITA LÍQUIDA, LUCRO BRUTO, etc)
 function recalcSinteticas() {
   const receitaBrutaSimulada = getReceitaBrutaSimulada();
 
-  // Pega o valor SIMULADO de Tributos
-  const inputTributos = document.querySelector('tr.cat_trib input.simul-valor');
-  const tributosSimulados = inputTributos ? parseBRL(inputTributos.value) : 0;
+  const rowTributos = document.querySelector('tr.cat_trib');
+  const simTributos = getSimulatedValueFromInput(rowTributos);
 
-  // Pega o valor SIMULADO de Custo Variável
-  const inputCustoVariavel = document.querySelector('tr.cat_cvar input.simul-valor');
-  const custoVariavelSimulado = inputCustoVariavel ? parseBRL(inputCustoVariavel.value) : 0;
+  const rowCustoVariavel = document.querySelector('tr.cat_cvar');
+  const simCustoVariavel = getSimulatedValueFromInput(rowCustoVariavel);
 
-  // 1. Calcula e atualiza SIMULAÇÃO da RECEITA LÍQUIDA
-  const receitaLiquidaSimulada = receitaBrutaSimulada - tributosSimulados;
-  const rowReceitaLiquida = document.getElementById('rowFatLiquido');
-  if (rowReceitaLiquida) {
-    const valorCell = rowReceitaLiquida.cells[3]; // Coluna "Simulação"
-    const percCell = rowReceitaLiquida.cells[4];  // Coluna "% Simulação"
-
-    if (valorCell) valorCell.textContent = receitaLiquidaSimulada.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    if (percCell) percCell.textContent = receitaBrutaSimulada > 0 ? (receitaLiquidaSimulada / receitaBrutaSimulada * 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '-';
+  // 1. RECEITA LÍQUIDA (rowFatLiquido)
+  const simReceitaLiquida = receitaBrutaSimulada - simTributos;
+  const rowRL = document.getElementById('rowFatLiquido');
+  if (rowRL) {
+    const inputRLValor = rowRL.querySelector('input.simul-valor');
+    const inputRLPerc = rowRL.querySelector('input.simul-perc');
+    if (inputRLValor) inputRLValor.value = formatSimValue(simReceitaLiquida);
+    if (inputRLPerc) inputRLPerc.value = formatSimPerc(simReceitaLiquida, receitaBrutaSimulada);
   }
 
-  // 2. Calcula e atualiza SIMULAÇÃO do LUCRO BRUTO
-  const lucroBrutoSimulado = receitaLiquidaSimulada - custoVariavelSimulado;
-  const rowLucroBruto = document.getElementById('rowLucroBruto');
-  if (rowLucroBruto) {
-    const valorCell = rowLucroBruto.cells[3]; // Coluna "Simulação"
-    const percCell = rowLucroBruto.cells[4];  // Coluna "% Simulação"
-
-    if (valorCell) valorCell.textContent = lucroBrutoSimulado.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    if (percCell) percCell.textContent = receitaBrutaSimulada > 0 ? (lucroBrutoSimulado / receitaBrutaSimulada * 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '-';
+  // 2. LUCRO BRUTO (rowLucroBruto)
+  const simLucroBruto = simReceitaLiquida - simCustoVariavel;
+  const rowLB = document.getElementById('rowLucroBruto');
+  if (rowLB) {
+    const inputLBValor = rowLB.querySelector('input.simul-valor');
+    const inputLBPerc = rowLB.querySelector('input.simul-perc');
+    if (inputLBValor) inputLBValor.value = formatSimValue(simLucroBruto);
+    if (inputLBPerc) inputLBPerc.value = formatSimPerc(simLucroBruto, receitaBrutaSimulada);
   }
 
-  // 3. Calcula e atualiza SIMULAÇÃO do LUCRO LÍQUIDO
-  let totalDespesasSimuladas = 0;
-  document.querySelectorAll('.dre-cat').forEach(row => {
-    const categoriaTexto = row.cells[0] ? row.cells[0].textContent.trim() : '';
-    if (['CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA'].includes(categoriaTexto)) {
-      const inputValorDespesa = row.querySelector('.simul-valor');
-      if (inputValorDespesa) {
-        totalDespesasSimuladas += parseBRL(inputValorDespesa.value);
-      }
-    }
-  });
+  // Despesas para Lucro Líquido
+  const simCustoFixo = getSimulatedValueFromInput(findCategoryRow('CUSTO FIXO'));
+  const simDespesaFixa = getSimulatedValueFromInput(findCategoryRow('DESPESA FIXA'));
+  const simDespesaVenda = getSimulatedValueFromInput(findCategoryRow('DESPESA VENDA'));
+  const totalOutrasDespesasSim = simCustoFixo + simDespesaFixa + simDespesaVenda;
 
-  const lucroLiquidoSimulado = lucroBrutoSimulado - totalDespesasSimuladas;
-  const rowLucroLiquido = document.getElementById('rowLucroLiquido');
-  if (rowLucroLiquido) {
-    const valorCell = rowLucroLiquido.cells[3]; // Coluna "Simulação"
-    const percCell = rowLucroLiquido.cells[4];  // Coluna "% Simulação"
-
-    if (valorCell) valorCell.textContent = lucroLiquidoSimulado.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    if (percCell) percCell.textContent = receitaBrutaSimulada > 0 ? (lucroLiquidoSimulado / receitaBrutaSimulada * 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '-';
+  // 3. LUCRO LÍQUIDO
+  const simLucroLiquido = simLucroBruto - totalOutrasDespesasSim;
+  const rowLL = findCategoryRow('LUCRO LÍQUIDO');
+  if (rowLL) {
+    const inputLLValor = rowLL.querySelector('input.simul-valor');
+    const inputLLPerc = rowLL.querySelector('input.simul-perc');
+    if (inputLLValor) inputLLValor.value = formatSimValue(simLucroLiquido);
+    if (inputLLPerc) inputLLPerc.value = formatSimPerc(simLucroLiquido, receitaBrutaSimulada);
   }
-}
-
-// Função para Recalcular o Subtotal da Simulação
-function recalcularSubtotalSimulacao() {
-  let subtotalSimulacao = 0;
-  document.querySelectorAll('td:nth-child(4)').forEach(cell => { // Coluna "Simulação"
-    if (cell.textContent && !isNaN(parseBRL(cell.textContent))) {
-      subtotalSimulacao += parseBRL(cell.textContent);
-    }
-  });
-
-  // Exibir o Subtotal
-  const subtotalElement = document.getElementById('subtotalSimulacao'); // Elemento onde o subtotal será exibido
-  if (subtotalElement) {
-    subtotalElement.textContent = subtotalSimulacao.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  }
-}
-
-// Atualiza o percentual de simulação de TODAS as linhas sempre em relação à RECEITA BRUTA da simulação
-function atualizarPercentuaisSimulacao() {
-  const recIn = getReceitaBrutaSimulada();
-  document.querySelectorAll('.simul-valor').forEach(input => {
-    const row = input.closest('tr');
-    const percEl = row.querySelector('.simul-perc');
-    if (percEl) {
-      const valor = parseBRL(input.value);
-      percEl.value = recIn > 0 ? (valor / recIn * 100).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '-';
-    }
-  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.simul-valor, .simul-perc').forEach(function(input) {
-    input.addEventListener('input', function() {
-      // Atualiza percentuais de todas as linhas
-      atualizarPercentuaisSimulacao();
-      // Atualiza linhas sintéticas
-      recalcSinteticas();
-      // Recalcula o subtotal da simulação
-      recalcularSubtotalSimulacao();
-    });
-    // Dispara ao iniciar
-    input.dispatchEvent(new Event('input'));
-  });
-
-  // Chamar o recálculo do subtotal no início para popular os campos com base nos valores iniciais
-  recalcularSubtotalSimulacao();
-});
-</script>
-<script>
-// Função para converter "1.234,56" em número (1234.56)
-function parseBRL(str) {
-    return parseFloat(String(str).replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
-}
-function formatBRL(v){
-  return 'R$ '+ v.toLocaleString('pt-BR',{minimumFractionDigits:2});
-}
-
-// recalc das linhas sintéticas
-function recalcSinteticas(){
-  const recIn  = parseBRL(document.querySelector('.simul-valor[data-receita="1"]').value);
-  const tribIn = parseBRL(document.querySelector('.dre-cat.cat_trib .simul-valor').value);
-  const cvIn   = parseBRL(document.querySelector('.dre-cat.cat_cvar .simul-valor').value);
-
-  // FAT LIQUIDO
-  const fatSim = recIn - tribIn;
-  const rowFat = document.getElementById('rowFatLiquido');
-  const mediaFat = parseBRL(rowFat.cells[1].textContent);
-  rowFat.cells[3].textContent = formatBRL(fatSim);
-  rowFat.cells[4].textContent = recIn>0? (fatSim/recIn*100).toFixed(2)+'%':'-';
-  rowFat.cells[5].textContent = formatBRL(fatSim - mediaFat);
-
-  // LUCRO BRUTO
-  const lbSim = fatSim - cvIn;
-  const rowLB = document.getElementById('rowLucroBruto');
-  const mediaLB = parseBRL(rowLB.cells[1].textContent);
-  rowLB.cells[3].textContent = formatBRL(lbSim);
-  rowLB.cells[4].textContent = recIn>0? (lbSim/recIn*100).toFixed(2)+'%':'-';
-  rowLB.cells[5].textContent = formatBRL(lbSim - mediaLB);
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  // corrija a declaração de metas (remova duplicata)
-  let metas = [];
-
-  document.querySelectorAll('.simul-valor').forEach(input => {
-    input.addEventListener('input', e => {
-      const row = e.target.closest('tr');
-      const recIn = parseBRL(document.querySelector('.simul-valor[data-receita="1"]').value)||1;
-      const simul = parseBRL(e.target.value);
-      const percEl = row.querySelector('.simul-perc');
-      if (percEl) {
-        percEl.value = recIn>0
-          ? (simul/recIn*100).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '%'
-          : '-';
-      }
-      const media = parseBRL(row.cells[1].textContent);
-      if (row.cells[5]) {
-        row.cells[5].textContent =
-          'R$ ' + (simul - media).toLocaleString('pt-BR',{minimumFractionDigits:2});
-      }
-      // Recalcula FAT LIQUIDO e LUCRO BRUTO
-      recalcSinteticas();
-    });
-    // dispare ao iniciar
-    input.dispatchEvent(new Event('input'));
-  });
-
-  // Botão salvar metas
-  document.getElementById('salvarMetasBtn').addEventListener('click', function() {
-    metas = [];
-    document.querySelectorAll('tbody tr').forEach(linha => {
-      if (!linha.classList.contains('dre-cat') && !linha.classList.contains('dre-sub')) return;
-      const cells = linha.querySelectorAll('td');
-      let txt = cells[0].textContent.trim();
-      let partes = txt.split('>');
-      let categoria = partes[0].trim();
-      let subcategoria = (partes[1]||'').trim();
-      let inputSim = cells[3]?.querySelector('.simul-valor');
-      if (!inputSim) return;
-      metas.push({
-        categoria,
-        subcategoria,
-        meta: parseBRL(inputSim.value)
-      });
-    });
-    if (!metas.length) { alert("Nenhum valor encontrado."); return; }
-    const dataMeta = prompt("Data (AAAA-MM-DD):", new Date().toISOString().slice(0,10));
-    if (!dataMeta) { alert("Cancelado."); return; }
-    fetch(location.href, {
-      method: 'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({metas,data:dataMeta})
-    })
-    .then(r=>r.json())
-    .then(js=>{
-      alert(js.sucesso ? "Salvo!" : "Erro: "+js.erro);
-    })
-    .catch(()=>alert("Falha no envio."));
-  });
-});
-
-function onCategoriaChange(categoria) {
-    var inputPercentual = document.getElementById('inputPercentual');
-    var inputValor = document.getElementById('inputValor');
-    
-    // Resetando ambos os campos para bloqueio total
-    inputPercentual.disabled = true;
-    inputValor.disabled = true;
-    
-    if (categoria === 'CUSTO VARIÁVEL' || categoria === 'TRIBUTOS' || categoria === 'DESPESA VENDA') {
-        inputPercentual.disabled = false;
-    } else if (categoria === 'DESPESA FIXA' || categoria === 'CUSTO FIXO') {
-        inputValor.disabled = false;
-    }
-}
-</script>
-<script>
-// parse e formatadores:
-function parseBRL(str){
-  return parseFloat(str.replace(/[R$\s\.]/g,'').replace(',', '.'))||0;
-}
-function formatBRL(v){
-  return 'R$ '+ v.toLocaleString('pt-BR',{minimumFractionDigits:2});
-}
-
-// recalc FAT LIQUIDO e LUCRO BRUTO (já supondo que #rowFatLiquido e #rowLucroBruto existam)
-function recalcSinteticas(){
-  const rec = parseBRL(document.querySelector('.simul-valor[data-receita="1"]').value);
-  const trib = parseBRL(document.querySelector('.cat_trib .simul-valor').value);
-  const cv   = parseBRL(document.querySelector('.cat_cvar .simul-valor').value);
-
-  // FAT
-  const fat = rec - trib;
-  const rowF = document.getElementById('rowFatLiquido');
-  const mediaF = parseBRL(rowF.cells[1].textContent);
-  let row = rowCat.nextElementSibling;
-  while (row && !row.classList.contains('dre-cat')) {
-    if (row.classList.contains('dre-sub')) {
-      let input = row.querySelector('.simul-valor');
-      if (input) soma += parseBRL(input.value);
-    }
-    row = row.nextElementSibling;
+  // Função para recalcular tudo
+  function recalcularTudo() {
+    atualizarTotaisCategorias(); // Soma subcategorias para totais de categoria (se aplicável)
+    atualizarPercentuaisSimulacao(); // Atualiza % de linhas editáveis
+    recalcSinteticas(); // Calcula linhas sintéticas (Receita Líquida, Lucro Bruto, Lucro Líquido)
   }
 
-  // Atualiza o input da categoria
-  let inputCat = rowCat.querySelector('.simul-valor');
-  if (inputCat) inputCat.value = soma.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  // Adiciona listener para todos os inputs de simulação de valor
+  document.querySelectorAll('.simul-valor').forEach(function(input) {
+    input.addEventListener('input', function() {
+      recalcularTudo();
+    });
+  });
 
-  // Atualiza também o campo de % da categoria
-  let recIn = parseBRL(document.querySelector('.simul-valor[data-receita="1"]').value)||1;
-  let percCat = rowCat.querySelector('.simul-perc');
-  if (percCat) percCat.value = recIn>0 ? (soma/recIn*100).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2}) + '%' : '-';
-}
+  // Adiciona listener para os inputs de simulação de percentual (caso o usuário edite diretamente o %)
+  document.querySelectorAll('input.simul-perc').forEach(function(inputPerc) {
+    inputPerc.addEventListener('input', function() {
+        const row = inputPerc.closest('tr');
+        const inputValor = row.querySelector('input.simul-valor');
+        const receitaBrutaSimulada = getReceitaBrutaSimulada();
+
+        if (inputValor && !inputValor.readOnly && receitaBrutaSimulada > 0) {
+            const percentual = parseBRL(inputPerc.value); // parseBRL pode lidar com '%'
+            const novoValor = (percentual / 100) * receitaBrutaSimulada;
+            inputValor.value = formatSimValue(novoValor);
+            recalcularTudo(); // Recalcula tudo após alterar valor via percentual
+        }
+    });
+  });
+
+  // Cálculo inicial ao carregar a página
+  recalcularTudo();
+});
 </script>
