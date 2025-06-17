@@ -42,8 +42,15 @@ $stmt = $conn->prepare("
         FROM EstoqueBDF
         GROUP BY CODIGO
     ) e ON i.CODIGO = e.CODIGO
-    LEFT JOIN vw_consumo_insumos_3m vw ON i.CODIGO = vw.cod_insumo
+    LEFT JOIN (
+        SELECT cod_insumo, 
+               SUM(total_insumo_usado_9dias) AS total_insumo_usado_9dias,
+               SUM(sugestao_compra) AS sugestao_compra
+        FROM vw_consumo_insumos_3m
+        GROUP BY cod_insumo
+    ) vw ON i.CODIGO = vw.cod_insumo
     WHERE i.FILIAL = ?
+    GROUP BY i.INSUMO, i.CATEGORIA, i.UNIDADE, i.CODIGO, e.ESTOQUE_ATUAL, vw.total_insumo_usado_9dias, vw.sugestao_compra
     ORDER BY i.CATEGORIA, i.INSUMO
 ");
 if (!$stmt) {
@@ -208,7 +215,8 @@ if (
                   <input type="hidden"   name="insumo[]"    value="<?=$ins?>">
                   <input type="hidden"   name="categoria[]" value="<?=$cat?>">
                   <input type="hidden"   name="unidade[]"   value="<?=$uni?>">
-                  <input type="number"   name="quantidade[]" min="0" step="0.01" value="0"
+                  <input type="number"   name="quantidade[]" min="0" step="0.01"
+                         value="<?= number_format((float)($row['SUGESTAO_COMPRA'] ?? 0), 2, '.', '') ?>"
                          class="qtd-input bg-gray-600 text-white text-xs p-1 rounded">
                   <div class="qty-btn increment">+</div>
                 </div>
