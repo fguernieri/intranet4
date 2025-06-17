@@ -208,8 +208,10 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           <div class="p-2"><p><strong>Período disponível:</strong> <?= $data_inicial? date('d/m/Y',$data_inicial):'' ?> a <?= $data_final? date('d/m/Y',$data_final):'' ?></p></div>
           <div><p class="p-2 text-sm text-gray-400 mt-auto">Última Atualização em: <?=date('d/m/Y H:i:s', strtotime($UltimaAtualizacao))?></p></div>
           <div class="flex justify-end gap-4">
+            <button id="btnCarregarMetas" class="btn-acao" type="button">Carregar Clientes</button>
             <a class="btn-acao" href="metas.php">Cadastro Metas</a>
-            <button type="submit" class="btn-acao">Aplicar Filtros</button></div>
+            <button type="submit" class="btn-acao">Aplicar Filtros</button>
+          </div>
         </div>
       </form>
       
@@ -526,8 +528,83 @@ $UltimaAtualizacao = $stmt->fetchColumn();
         const el = document.getElementById("tabelaPedidosWrapper");
         el.classList.toggle("hidden");
       }
-    </script>
-    
+
+  // Exibe ou oculta o modal
+  function toggleModal(show) {
+    const modal = document.getElementById('modalCarregarMetas');
+    if (show) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    } else {
+      modal.classList.remove('flex');
+      modal.classList.add('hidden');
+    }
+  }
+
+  // Validação básica antes do submit
+  function validarArquivo() {
+    const input = document.querySelector('input[name="arquivo_metas"]');
+    const file  = input.files[0];
+    if (!file) {
+      alert('Selecione um arquivo .xlsx');
+      return false;
+    }
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'xlsx') {
+      alert('Formato inválido. Use somente .xlsx');
+      return false;
+    }
+    return true;
+  }
+
+  // Atrela clique do botão de abertura
+  document.getElementById('btnCarregarMetas')
+          .addEventListener('click', () => toggleModal(true));
+</script>
+
 
 </body>
+
+<!-- Modal backdrop -->
+<div
+  id="modalCarregarMetas"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center"
+>
+  <div class="bg-gray-700 rounded-lg shadow-lg w-96 p-6">
+    <h2 class="text-xl font-semibold mb-4">Importar Base de Clientes</h2>
+    <form
+      action="import_cadastros.php"
+      method="POST"
+      enctype="multipart/form-data"
+      onsubmit="return validarArquivo()"
+    >
+      <label class="block mb-2">
+        <span class="text-gray-700">Arquivo .xlsx</span>
+        <input
+          type="file"
+          name="arquivo_metas"
+          accept=".xlsx"
+          required
+          class="mt-1 block w-full"
+        />
+      </label>
+      <div class="flex justify-end space-x-2 mt-4">
+        <button
+          type="button"
+          onclick="toggleModal(false)"
+          class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Importar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </html>
