@@ -402,7 +402,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <th class="p-2 text-center bg-red-700">Meta</th>
         <th class="p-2 text-center bg-red-700">% Meta s/ FAT.</th>
         <th class="p-2 text-center bg-purple-700">Realizado</th>
-        <th class="p-2 text-center bg-purple-700">% Realizado s/ FAT.</th>
+        <th class="p-2 text-center bg-purple-700">% Realizado s/ Meta.</th>
         <th class="p-2 text-center bg-purple-700">Comparação Meta</th>
       </tr>
     </thead>
@@ -426,13 +426,23 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           <?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format(($metasArray['RECEITA BRUTA']['']/$media3Rec)*100,2,',','.') .'%' : '' ?>
         </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualRec,2,',','.') ?></td>
-        <td class="p-2 text-center"><?= $atualRec > 0 ? '100,00%' : '-' ?></td>
         <td class="p-2 text-center">
           <?php
-            if(isset($metasArray['RECEITA BRUTA'][''])) {
-              $comp = $atualRec - $metasArray['RECEITA BRUTA'][''];
-              echo 'R$ '.number_format($comp,2,',','.');
-            }
+            $meta_rb_val = $metasArray['RECEITA BRUTA'][''] ?? null;
+            if (isset($meta_rb_val) && $meta_rb_val != 0) {
+              echo number_format(($atualRec / $meta_rb_val) * 100, 2, ',', '.') . '%';
+            } else { echo '-'; }
+          ?>
+        </td>
+        <td class="p-2 text-center">
+          <?php 
+            $meta_val = $metasArray['RECEITA BRUTA'][''] ?? null;
+            $realizado_val = $atualRec;
+            if (isset($meta_val)) {
+              $comparacao = $meta_val - $realizado_val;
+              $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+              echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+            } else { echo '-'; }
           ?>
         </td>
       </tr>
@@ -459,8 +469,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS']['']) ? 'R$ '.number_format($metasArray['TRIBUTOS'][''],2,',','.') : '' ?></td>
     <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'][''])) ? number_format(($metasArray['TRIBUTOS']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
-    <td class="p-2 text-right"><?= ($atualRec>0)?number_format((($atualCat['TRIBUTOS'] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-    <td class="p-2 text-center">-</td>
+    <td class="p-2 text-center">
+      <?php
+        $meta_t_val = $metasArray['TRIBUTOS'][''] ?? null;
+        $realizado_t_val = $atualCat['TRIBUTOS'] ?? 0;
+        if (isset($meta_t_val) && $meta_t_val != 0) {
+          echo number_format(($realizado_t_val / $meta_t_val) * 100, 2, ',', '.') . '%';
+        } else { echo '-'; }
+      ?>
+    </td>
+    <td class="p-2 text-center">
+      <?php 
+        $meta_val = $metasArray['TRIBUTOS'][''] ?? null;
+        $realizado_val = $atualCat['TRIBUTOS'] ?? 0;
+        if (isset($meta_val)) {
+          $comparacao = $meta_val - $realizado_val;
+          $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+          echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+        } else { echo '-'; } ?>
+    </td>
   </tr>
   <?php foreach($matrizOrdenada['TRIBUTOS'] as $sub => $mesValores): ?>
     <?php if($sub): ?>
@@ -482,8 +509,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS'][$sub]) ? 'R$ '.number_format($metasArray['TRIBUTOS'][$sub],2,',','.') : '' ?></td>
         <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'][$sub])) ? number_format(($metasArray['TRIBUTOS'][$sub]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['TRIBUTOS'][$sub] ?? 0,2,',','.') ?></td>
-        <td class="p-2 text-center"><?= ($atualRec>0)?number_format((($atualSub['TRIBUTOS'][$sub] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-        <td class="p-2 text-center">-</td>
+        <td class="p-2 text-center">
+          <?php
+            $meta_ts_val = $metasArray['TRIBUTOS'][$sub] ?? null;
+            $realizado_ts_val = $atualSub['TRIBUTOS'][$sub] ?? 0;
+            if (isset($meta_ts_val) && $meta_ts_val != 0) {
+              echo number_format(($realizado_ts_val / $meta_ts_val) * 100, 2, ',', '.') . '%';
+            } else { echo '-'; }
+          ?>
+        </td>
+        <td class="p-2 text-center">
+          <?php 
+            $meta_val = $metasArray['TRIBUTOS'][$sub] ?? null;
+            $realizado_val = $atualSub['TRIBUTOS'][$sub] ?? 0;
+            if (isset($meta_val)) {
+              $comparacao = $meta_val - $realizado_val;
+              $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+              echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+            } else { echo '-'; } ?>
+        </td>
       </tr>
     <?php endif; ?>
   <?php endforeach; ?>
@@ -511,7 +555,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"></td> <!-- Meta -->
   <td class="p-2 text-center"></td> <!-- % Meta -->
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualReceitaLiquida,2,',','.') ?></td>
-  <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualReceitaLiquida / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+  <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
   <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
 </tr>
 
@@ -533,8 +577,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL']['']) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][''],2,',','.') : '' ?></td>
     <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['CUSTO VARIÁVEL'][''])) ? number_format(($metasArray['CUSTO VARIÁVEL']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
-    <td class="p-2 text-center"><?= ($atualRec>0)?number_format((($atualCat['CUSTO VARIÁVEL'] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-    <td class="p-2 text-center">-</td>
+    <td class="p-2 text-center">
+      <?php
+        $meta_cv_val = $metasArray['CUSTO VARIÁVEL'][''] ?? null;
+        $realizado_cv_val = $atualCat['CUSTO VARIÁVEL'] ?? 0;
+        if (isset($meta_cv_val) && $meta_cv_val != 0) {
+          echo number_format(($realizado_cv_val / $meta_cv_val) * 100, 2, ',', '.') . '%';
+        } else { echo '-'; }
+      ?>
+    </td>
+    <td class="p-2 text-center">
+      <?php 
+        $meta_val = $metasArray['CUSTO VARIÁVEL'][''] ?? null;
+        $realizado_val = $atualCat['CUSTO VARIÁVEL'] ?? 0;
+        if (isset($meta_val)) {
+          $comparacao = $meta_val - $realizado_val;
+          $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+          echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+        } else { echo '-'; } ?>
+    </td>
 </tr>
 
 <?php endif; ?>
@@ -556,8 +617,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL'][$sub]) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][$sub],2,',','.') : '' ?></td>
   <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['CUSTO VARIÁVEL'][$sub])) ? number_format(($metasArray['CUSTO VARIÁVEL'][$sub]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['CUSTO VARIÁVEL'][$sub] ?? 0,2,',','.') ?></td>
-  <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualSub['CUSTO VARIÁVEL'][$sub] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-  <td class="p-2 text-center">-</td>
+  <td class="p-2 text-center">
+    <?php
+      $meta_cvs_val = $metasArray['CUSTO VARIÁVEL'][$sub] ?? null;
+      $realizado_cvs_val = $atualSub['CUSTO VARIÁVEL'][$sub] ?? 0;
+      if (isset($meta_cvs_val) && $meta_cvs_val != 0) {
+        echo number_format(($realizado_cvs_val / $meta_cvs_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php 
+      $meta_val = $metasArray['CUSTO VARIÁVEL'][$sub] ?? null;
+      $realizado_val = $atualSub['CUSTO VARIÁVEL'][$sub] ?? 0;
+      if (isset($meta_val)) {
+        $comparacao = $meta_val - $realizado_val;
+        $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+      } else { echo '-'; } ?>
+  </td>
 </tr>
 
     <?php endif; ?>
@@ -582,7 +660,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"></td> <!-- Meta -->
   <td class="p-2 text-center"></td> <!-- % Meta -->
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroBruto,2,',','.') ?></td>
-  <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualLucroBruto / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+  <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
   <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
 </tr>
 
@@ -608,8 +686,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
   <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
-  <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualCat[$catName] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-  <td class="p-2 text-center">-</td>
+  <td class="p-2 text-center">
+    <?php
+      $meta_c_val = $metasArray[$catName][''] ?? null;
+      $realizado_c_val = $atualCat[$catName] ?? 0;
+      if (isset($meta_c_val) && $meta_c_val != 0) {
+        echo number_format(($realizado_c_val / $meta_c_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php 
+      $meta_val = $metasArray[$catName][''] ?? null;
+      $realizado_val = $atualCat[$catName] ?? 0;
+      if (isset($meta_val)) {
+        $comparacao = $meta_val - $realizado_val;
+        $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+      } else { echo '-'; } ?>
+  </td>
 </tr>
 
         <?php foreach($matrizOrdenada[$catName] as $sub => $mesValores): ?>
@@ -632,8 +727,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '' ?></td>
   <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
-  <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualSub[$catName][$sub] ?? 0) / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-  <td class="p-2 text-center">-</td>
+  <td class="p-2 text-center">
+    <?php
+      $meta_cs_val = $metasArray[$catName][$sub] ?? null;
+      $realizado_cs_val = $atualSub[$catName][$sub] ?? 0;
+      if (isset($meta_cs_val) && $meta_cs_val != 0) {
+        echo number_format(($realizado_cs_val / $meta_cs_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php 
+      $meta_val = $metasArray[$catName][$sub] ?? null;
+      $realizado_val = $atualSub[$catName][$sub] ?? 0;
+      if (isset($meta_val)) {
+        $comparacao = $meta_val - $realizado_val;
+        $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+      } else { echo '-'; } ?>
+  </td>
 </tr>
 
           <?php endif; ?>
@@ -660,8 +772,24 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metaLucroLiquido ?? 0,2,',','.') : '' ?></td>
   <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format((($metaLucroLiquido ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroLiquido,2,',','.') ?></td>
-  <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualLucroLiquido / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-  <td class="p-2 text-center">-</td>
+  <td class="p-2 text-center">
+    <?php
+      $meta_ll_val = $metaLucroLiquido ?? null; // Meta para Lucro Líquido já calculada
+      if (isset($meta_ll_val) && $meta_ll_val != 0 && isset($metasArray['RECEITA BRUTA'][''])) { // Só mostra se houver meta de receita base
+        echo number_format(($atualLucroLiquido / $meta_ll_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php 
+      $meta_val = $metaLucroLiquido ?? null; // Meta para Lucro Líquido já calculada
+      $realizado_val = $atualLucroLiquido;
+      if (isset($meta_val) && isset($metasArray['RECEITA BRUTA'][''])) { // Só mostra se houver meta de receita base
+        $comparacao = $meta_val - $realizado_val;
+        $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+      } else { echo '-'; } ?>
+  </td>
 </tr>
 
       <!-- ==================== [NOVA SEÇÃO: RECEITAS NAO OPERACIONAIS] ==================== -->
@@ -679,7 +807,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <td class="p-2 text-right"></td> <!-- Meta -->
         <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
         <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualOutrasRecGlobal,2,',','.') ?></td>
-        <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($totalAtualOutrasRecGlobal / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha principal de Outras Receitas -->
         <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
       </tr>
 
@@ -716,7 +844,15 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               <td class="p-2 text-right"></td> <!-- Meta -->
               <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
               <td class="p-2 text-right"><?= 'R$ '.number_format($atualSubOR,2,',','.') ?></td>
-              <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualSubOR / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+              <td class="p-2 text-center">
+                <?php
+                  // Para Outras Receitas, a meta é salva com Categoria = $catNomeOR e Subcategoria = $subNomeOR
+                  $meta_or_val = $metasArray[$catNomeOR][$subNomeOR] ?? null;
+                  if (isset($meta_or_val) && $meta_or_val != 0) {
+                    echo number_format(($atualSubOR / $meta_or_val) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+              </td>
               <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
             </tr>
           <?php endforeach; // Fim do loop de subcategorias de Outras Receitas ?>
@@ -745,8 +881,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
   <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
-  <td class="p-2 text-center"><?= ($atualRec>0)?number_format((($atualCat[$catName] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-  <td class="p-2 text-center">-</td>
+  <td class="p-2 text-center">
+    <?php
+      $meta_inv_val = $metasArray[$catName][''] ?? null;
+      $realizado_inv_val = $atualCat[$catName] ?? 0;
+      if (isset($meta_inv_val) && $meta_inv_val != 0) {
+        echo number_format(($realizado_inv_val / $meta_inv_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php 
+      $meta_val = $metasArray[$catName][''] ?? null;
+      $realizado_val = $atualCat[$catName] ?? 0;
+      if (isset($meta_val)) {
+        $comparacao = $meta_val - $realizado_val;
+        $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+      } else { echo '-'; } ?>
+  </td>
 </tr>
     <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $mesValores): ?>
       <?php if($sub): ?>
@@ -768,8 +921,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '' ?></td>
           <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
           <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
-          <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualSub[$catName][$sub] ?? 0) / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-          <td class="p-2 text-center">-</td>
+          <td class="p-2 text-center">
+            <?php
+              $meta_invs_val = $metasArray[$catName][$sub] ?? null;
+              $realizado_invs_val = $atualSub[$catName][$sub] ?? 0;
+              if (isset($meta_invs_val) && $meta_invs_val != 0) {
+                echo number_format(($realizado_invs_val / $meta_invs_val) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+          </td>
+          <td class="p-2 text-center">
+            <?php 
+              $meta_val = $metasArray[$catName][$sub] ?? null;
+              $realizado_val = $atualSub[$catName][$sub] ?? 0;
+              if (isset($meta_val)) {
+                $comparacao = $meta_val - $realizado_val;
+                $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+              } else { echo '-'; } ?>
+          </td>
         </tr>
       <?php endif; ?>
     <?php endforeach; ?>
@@ -797,8 +967,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           <td class="p-2 text-right"><?= isset($metasArray[$catNameSR]['']) ? 'R$ '.number_format($metasArray[$catNameSR][''],2,',','.') : '' ?></td>
           <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][''])) ? number_format(($metasArray[$catNameSR]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catNameSR] ?? 0,2,',','.') ?></td>
-          <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualCat[$catNameSR] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
-          <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+          <td class="p-2 text-center">
+            <?php
+              $meta_sr_val = $metasArray[$catNameSR][''] ?? null;
+              $realizado_sr_val = $atualCat[$catNameSR] ?? 0;
+              if (isset($meta_sr_val) && $meta_sr_val != 0) {
+                echo number_format(($realizado_sr_val / $meta_sr_val) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+          </td>
+          <td class="p-2 text-center">
+            <?php 
+              $meta_val = $metasArray[$catNameSR][''] ?? null;
+              $realizado_val = $atualCat[$catNameSR] ?? 0;
+              if (isset($meta_val)) {
+                $comparacao = $meta_val - $realizado_val;
+                $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+              } else { echo '-'; } ?>
+          </td>
         </tr>
         <?php foreach(($matrizOrdenada[$catNameSR] ?? []) as $sub => $mesValores): ?>
           <?php if($sub): ?>
@@ -820,8 +1007,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               <td class="p-2 text-right"><?= isset($metasArray[$catNameSR][$sub]) ? 'R$ ' . number_format($metasArray[$catNameSR][$sub], 2, ',', '.') : '' ?></td>
               <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][$sub])) ? number_format(($metasArray[$catNameSR][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
               <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catNameSR][$sub] ?? 0, 2, ',', '.') ?></td>
-              <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualSub[$catNameSR][$sub] ?? 0) / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-              <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+              <td class="p-2 text-center">
+                <?php
+                  $meta_srs_val = $metasArray[$catNameSR][$sub] ?? null;
+                  $realizado_srs_val = $atualSub[$catNameSR][$sub] ?? 0;
+                  if (isset($meta_srs_val) && $meta_srs_val != 0) {
+                    echo number_format(($realizado_srs_val / $meta_srs_val) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+              </td>
+              <td class="p-2 text-center">
+                <?php 
+                  $meta_val = $metasArray[$catNameSR][$sub] ?? null;
+                  $realizado_val = $atualSub[$catNameSR][$sub] ?? 0;
+                  if (isset($meta_val)) {
+                    $comparacao = $meta_val - $realizado_val;
+                    $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                    echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+                  } else { echo '-'; } ?>
+              </td>
             </tr>
           <?php endif; ?>
         <?php endforeach; ?>
@@ -842,7 +1046,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <td class="p-2 text-right"></td> <!-- Meta -->
         <td class="p-2 text-center"></td> <!-- % Meta -->
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualFluxoCaixa,2,',','.') ?></td>
-        <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualFluxoCaixa / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
         <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
       </tr>
     </tbody>
