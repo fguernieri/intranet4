@@ -856,6 +856,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
              class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
              value="<?= $anoAtual ?>-<?= str_pad($mesAtual, 2, '0', STR_PAD_LEFT) ?>-01">
     </div>
+    <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
     <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS</button>
   </div>
   
@@ -1153,6 +1154,30 @@ document.addEventListener('DOMContentLoaded', function() {
         botaoSalvar.disabled = false;
         botaoSalvar.textContent = 'SALVAR METAS';
     });
+  });
+
+  // Botão Ponto de Equilíbrio
+  document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
+    const rowFC = document.getElementById('rowFluxoCaixa');
+    if (!rowFC) {
+      alert('Linha do Fluxo de Caixa não encontrada.');
+      return;
+    }
+    const inputFCValorSimul = rowFC.querySelector('input.simul-valor');
+    if (!inputFCValorSimul) {
+      alert('Campo de simulação do Fluxo de Caixa não encontrado.');
+      return;
+    }
+
+    const fluxoCaixaSimulado = parseBRL(inputFCValorSimul.value);
+
+    if (fluxoCaixaSimulado < 0) {
+      const inputReceitaBrutaSimul = document.querySelector('.simul-valor[data-receita="1"]');
+      const receitaBrutaAtual = parseBRL(inputReceitaBrutaSimul.value);
+      const novaReceitaBruta = receitaBrutaAtual + Math.abs(fluxoCaixaSimulado);
+      inputReceitaBrutaSimul.value = formatSimValue(novaReceitaBruta);
+      recalcularTudo(); // Recalcula toda a DRE com a nova receita
+    }
   });
 });
 </script>
