@@ -177,12 +177,12 @@ $atualRec   = $receitaPorMes[$mesAtual] ?? 0;
 // Ordena as categorias, colocando "OPERACOES EXTERNAS" por último
 $matrizOrdenada = [];
 foreach ($matriz as $cat => $subs) {
-    if (mb_strtoupper(trim($cat)) !== 'OPERACOES EXTERNAS') {
+    if (mb_strtoupper(trim($cat)) !== 'Z - SAIDA DE REPASSE') {
         $matrizOrdenada[$cat] = $subs;
     }
 }
-if (isset($matriz['OPERACOES EXTERNAS'])) {
-    $matrizOrdenada['OPERACOES EXTERNAS'] = $matriz['OPERACOES EXTERNAS'];
+if (isset($matriz['Z - SAIDA DE REPASSE'])) {
+    $matrizOrdenada['Z - SAIDA DE REPASSE'] = $matriz['Z - SAIDA DE REPASSE'];
 }
 
 // Consulta para carregar as metas cadastradas (para a data atual)
@@ -225,6 +225,88 @@ $atualFATLiquido = ($atualRec - ($atualCat['TRIBUTOS'] ?? 0));
 
 $mediaCustoVariavel = $media3Cat['CUSTO VARIÁVEL'] ?? 0;
 $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
+
+// ==================== [NOVA SEÇÃO: BUSCAR DADOS DE fOutrasReceitas] ====================
+$outrasReceitasPorCatSubMes = []; // Estrutura: [categoria][subcategoria][mes] = valor
+$sqlOutrasRec = "
+    SELECT CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA, SUM(VALOR) AS TOTAL
+    FROM fOutrasReceitas
+    WHERE YEAR(DATA_COMPETENCIA) = $anoAtual
+    GROUP BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
+    ORDER BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
+";
+$resOutrasRec = $conn->query($sqlOutrasRec);
+if ($resOutrasRec) {
+    while ($row = $resOutrasRec->fetch_assoc()) {
+        $catOR = !empty($row['CATEGORIA']) ? $row['CATEGORIA'] : 'NÃO CATEGORIZADO';
+        $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
+        $mesOR = (int)date('n', strtotime($row['DATA_COMPETENCIA']));
+        $outrasReceitasPorCatSubMes[$catOR][$subOR][$mesOR] = ($outrasReceitasPorCatSubMes[$catOR][$subOR][$mesOR] ?? 0) + floatval($row['TOTAL']);
+    }
+}
+
+// Calcular médias e atuais para cada categoria e subcategoria de fOutrasReceitas
+$media3OutrasRecSub = []; // [cat][sub] = media
+$atualOutrasRecSub   = []; // [cat][sub] = atual
+$totalMedia3OutrasRecGlobal = 0; // Total geral da média para a linha principal "RECEITAS NAO OPERACIONAIS"
+$totalAtualOutrasRecGlobal  = 0; // Total geral atual para a linha principal "RECEITAS NAO OPERACIONAIS"
+
+if (!empty($outrasReceitasPorCatSubMes)) {
+    foreach ($outrasReceitasPorCatSubMes as $catOR => $subcategoriasOR) {
+        foreach ($subcategoriasOR as $subOR => $valoresMensaisOR) {
+            $soma3 = 0;
+            foreach ($mesesUltimos3 as $m) {
+                $soma3 += $valoresMensaisOR[$m] ?? 0;
+            }
+            $media3OutrasRecSub[$catOR][$subOR] = (count($mesesUltimos3) > 0) ? $soma3 / count($mesesUltimos3) : 0;
+             if (count($mesesUltimos3) == 0) $media3OutrasRecSub[$catOR][$subOR] = 0;
+
+
+            $atualOutrasRecSub[$catOR][$subOR] = $valoresMensaisOR[$mesAtual] ?? 0;
+
+            $totalMedia3OutrasRecGlobal += $media3OutrasRecSub[$catOR][$subOR];
+            $totalAtualOutrasRecGlobal  += $atualOutrasRecSub[$catOR][$subOR];
+        }
+    }
+}
+// ==================== [FIM DA NOVA SEÇÃO] ====================
+
+// ==================== [CÁLCULO LUCRO LÍQUIDO - PHP (ANTECIPADO)] ====================
+$mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
+$atualReceitaLiquida = $atualRec - ($atualCat['TRIBUTOS'] ?? 0);
+
+$mediaLucroBruto = $mediaReceitaLiquida - ($media3Cat['CUSTO VARIÁVEL'] ?? 0);
+$atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
+
+$mediaCustoFixo    = $media3Cat['CUSTO FIXO']   ?? 0;
+$mediaDespesaFixa  = $media3Cat['DESPESA FIXA']  ?? 0;
+$mediaDespesaVenda = $media3Cat['DESPESA VENDA'] ?? 0;
+$totalMediaDespesas = $mediaCustoFixo + $mediaDespesaFixa + $mediaDespesaVenda;
+$mediaLucroLiquido = $mediaLucroBruto - $totalMediaDespesas;
+
+$atualCustoFixo    = $atualCat['CUSTO FIXO']   ?? 0;
+$atualDespesaFixa  = $atualCat['DESPESA FIXA']  ?? 0;
+$atualDespesaVenda = $atualCat['DESPESA VENDA'] ?? 0;
+$totalAtualDespesas = $atualCustoFixo + $atualDespesaFixa + $atualDespesaVenda;
+$atualLucroLiquido = $atualLucroBruto - $totalAtualDespesas;
+// ==================== [FIM CÁLCULO LUCRO LÍQUIDO - PHP (ANTECIPADO)] ====================
+
+// ==================== [CÁLCULO FLUXO DE CAIXA - PHP] ====================
+$mediaInvestInterno = $media3Cat['INVESTIMENTO INTERNO'] ?? 0;
+$mediaInvestExterno = $media3Cat['INVESTIMENTO EXTERNO'] ?? 0;
+$mediaSaidaRepasse  = $media3Cat['Z - SAIDA DE REPASSE'] ?? 0;
+$mediaAmortizacao   = $media3Cat['AMORTIZAÇÃO'] ?? 0;
+$mediaFluxoCaixa = ($mediaLucroLiquido + $totalMedia3OutrasRecGlobal) - ($mediaInvestInterno + $mediaInvestExterno + $mediaSaidaRepasse + $mediaAmortizacao);
+
+$atualInvestInterno = $atualCat['INVESTIMENTO INTERNO'] ?? 0;
+$atualInvestExterno = $atualCat['INVESTIMENTO EXTERNO'] ?? 0;
+$atualSaidaRepasse  = $atualCat['Z - SAIDA DE REPASSE'] ?? 0;
+$atualAmortizacao   = $atualCat['AMORTIZAÇÃO'] ?? 0;
+$atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
+// ==================== [FIM CÁLCULO FLUXO DE CAIXA - PHP] ====================
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -397,12 +479,6 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
   $mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
   $atualReceitaLiquida = $atualRec - ($atualCat['TRIBUTOS'] ?? 0);
 
-  $mediaLucroBruto = $mediaReceitaLiquida - ($media3Cat['CUSTO VARIÁVEL'] ?? 0);
-  $atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
-
-  $mediaLucroLiquido = $mediaLucroBruto - ($media3Cat['DESPESAS FIXAS'] ?? 0);
-  $atualLucroLiquido = $atualLucroBruto - ($atualCat['DESPESAS FIXAS'] ?? 0);
-
   // As variáveis de simulação ($simReceitaLiquida, $simLucroBruto, $simLucroLiquido)
   // são calculadas e preenchidas pelo JavaScript.
 ?>
@@ -554,17 +630,6 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
 
       <!-- 9. LUCRO LIQUIDO = LUCRO BRUTO - (CUSTO FIXO + DESPESA FIXA + DESPESA VENDA) (DINÂMICO, não editável) -->
       <?php 
-  $mediaCustoFixo    = $media3Cat['CUSTO FIXO']   ?? 0;
-  $mediaDespesaFixa  = $media3Cat['DESPESA FIXA']  ?? 0;
-  $mediaDespesaVenda = $media3Cat['DESPESA VENDA'] ?? 0;
-  $totalMediaDespesas = $mediaCustoFixo + $mediaDespesaFixa + $mediaDespesaVenda;
-  $mediaLucroLiquido = $mediaLucroBruto - $totalMediaDespesas;
-
-  $atualCustoFixo    = $atualCat['CUSTO FIXO']   ?? 0;
-  $atualDespesaFixa  = $atualCat['DESPESA FIXA']  ?? 0;
-  $atualDespesaVenda = $atualCat['DESPESA VENDA'] ?? 0;
-  $totalAtualDespesas = $atualCustoFixo + $atualDespesaFixa + $atualDespesaVenda;
-  $atualLucroLiquido = $atualLucroBruto - $totalAtualDespesas;
 ?>
 <tr class="dre-cat" style="background:#102c14;">
   <td class="p-2 text-left">LUCRO LÍQUIDO</td>
@@ -583,22 +648,83 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
   <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualLucroLiquido / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-center">-</td>
 </tr>
+
+      <!-- ==================== [NOVA SEÇÃO: RECEITAS NAO OPERACIONAIS] ==================== -->
+      <tr class="dre-cat-principal bg-gray-700 text-white font-bold">
+        <td class="p-2 text-left" colspan="1">RECEITAS NAO OPERACIONAIS</td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3OutrasRecGlobal,2,',','.') ?></td>
+        <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-right simul-total-cat" data-cat-total-simul="RECEITAS NAO OPERACIONAIS">
+            <?= 'R$ '.number_format($totalMedia3OutrasRecGlobal,2,',','.') ?>
+        </td> <!-- Total Simulado (será atualizado por JS) -->
+        <td class="p-2 text-center simul-perc-cat" data-cat-perc-simul="RECEITAS NAO OPERACIONAIS">
+            <?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
+        </td> <!-- % Total Simulado s/ FAT. (será atualizado por JS) -->
+        <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
+        <td class="p-2 text-right"></td> <!-- Meta -->
+        <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+        <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualOutrasRecGlobal,2,',','.') ?></td>
+        <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($totalAtualOutrasRecGlobal / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+      </tr>
+
+      <?php if (!empty($outrasReceitasPorCatSubMes)): ?>
+        <?php foreach ($outrasReceitasPorCatSubMes as $catNomeOR => $subcategoriasOR): ?>
+          <!-- Linha da Categoria de Outras Receitas -->
+          <tr class="dre-subcat-l1">
+            <td class="p-2 pl-6 text-left font-semibold" colspan="11"><?= htmlspecialchars($catNomeOR) ?></td>
+          </tr>
+
+          <?php foreach ($subcategoriasOR as $subNomeOR => $valoresMensaisOR): ?>
+            <?php
+              $mediaSubOR = $media3OutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
+              $atualSubOR = $atualOutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
+              // Usar nomes de categoria e subcategoria para data attributes, normalizando-os para JS
+              $dataCatKey = htmlspecialchars(str_replace(' ', '_', $catNomeOR));
+              $dataSubKey = htmlspecialchars(str_replace(' ', '_', $subNomeOR));
+            ?>
+            <tr class="dre-subcat-l2">
+              <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeOR) ?></td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($mediaSubOR,2,',','.') ?></td>
+              <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+              <td class="p-2 text-right">
+                <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                       data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKey ?>" data-sub-sub-cat="<?= $dataSubKey ?>"
+                       value="<?= number_format($mediaSubOR,2,',','.') ?>">
+              </td>
+              <td class="p-2 text-center">
+                <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                       style="width:60px;" data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKey ?>" data-sub-sub-cat="<?= $dataSubKey ?>"
+                       value="<?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
+              </td>
+              <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
+              <td class="p-2 text-right"></td> <!-- Meta -->
+              <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+              <td class="p-2 text-right"><?= 'R$ '.number_format($atualSubOR,2,',','.') ?></td>
+              <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualSubOR / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+              <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+            </tr>
+          <?php endforeach; // Fim do loop de subcategorias de Outras Receitas ?>
+        <?php endforeach; // Fim do loop de categorias de Outras Receitas ?>
+      <?php endif; ?>
+      <!-- ==================== [FIM DA NOVA SEÇÃO] ==================== -->
+
       <!-- 10. INVESTIMENTO INTERNO, INVESTIMENTO EXTERNO e AMORTIZAÇÃO (editáveis) -->
-      <?php 
+      <?php
         foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO'] as $catName):
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
   <td class="p-2 text-left"><?= $catName ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catName] ?? 0,2,',','.') ?></td>
-  <td class="p-2 text-center"><?= $media3Rec>0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
+  <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-right">
     <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
            value="<?= number_format($media3Cat[$catName] ?? 0,2,',','.') ?>">
   </td>
   <td class="p-2 text-center">
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
-           style="width:60px;" value="<?= $media3Rec>0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
+           style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
   </td>
   <td class="p-2 text-right">-</td>
   <td class="p-2 text-right"><?= isset($metasArray[$catName]) ? 'R$ '.number_format($metasArray[$catName],2,',','.') : '' ?></td>
@@ -634,6 +760,76 @@ $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
     <?php endforeach; ?>
   <?php endif; ?>
 <?php endforeach; ?>
+
+      <!-- Z - SAIDA DE REPASSE -->
+      <?php
+        $catNameSR = 'Z - SAIDA DE REPASSE';
+        if(isset($matrizOrdenada[$catNameSR])):
+      ?>
+        <tr class="dre-cat">
+          <td class="p-2 text-left"><?= htmlspecialchars($catNameSR) ?></td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catNameSR] ?? 0,2,',','.') ?></td>
+          <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catNameSR] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
+          <td class="p-2 text-right">
+            <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                   value="<?= number_format($media3Cat[$catNameSR] ?? 0,2,',','.') ?>">
+          </td>
+          <td class="p-2 text-center">
+            <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                   style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catNameSR] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
+          </td>
+          <td class="p-2 text-right">-</td> <!-- Diferença -->
+          <td class="p-2 text-right"><?= isset($metasArray[$catNameSR]) ? 'R$ '.number_format($metasArray[$catNameSR],2,',','.') : '' ?></td>
+          <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR])) ? number_format(($metasArray[$catNameSR]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catNameSR] ?? 0,2,',','.') ?></td>
+          <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualCat[$catNameSR] ?? 0)/$atualRec)*100,2,',','.') .'%' : '-' ?></td>
+          <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+        </tr>
+        <?php foreach(($matrizOrdenada[$catNameSR] ?? []) as $sub => $mesValores): ?>
+          <?php if($sub): ?>
+           <tr class="dre-sub">
+              <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catNameSR][$sub] ?? 0,2,',','.') ?></td>
+              <td class="p-2 text-center">
+                <?= $media3Rec > 0 ? number_format((($media3Sub[$catNameSR][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
+              </td>
+              <td class="p-2 text-right">
+                <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                       value="<?= number_format($media3Sub[$catNameSR][$sub] ?? 0, 2, ',', '.') ?>">
+              </td>
+              <td class="p-2 text-center">
+                <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                       style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Sub[$catNameSR][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
+              </td>
+              <td class="p-2 text-right">-</td> <!-- Diferença -->
+              <td class="p-2 text-right"><?= isset($metasArray[$catNameSR][$sub]) ? 'R$ ' . number_format($metasArray[$catNameSR][$sub], 2, ',', '.') : '' ?></td>
+              <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][$sub])) ? number_format(($metasArray[$catNameSR][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+              <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catNameSR][$sub] ?? 0, 2, ',', '.') ?></td>
+              <td class="p-2 text-center"><?= ($atualRec > 0) ? number_format((($atualSub[$catNameSR][$sub] ?? 0) / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+              <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+            </tr>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
+
+      <!-- FLUXO DE CAIXA (CALCULADO) -->
+      <tr id="rowFluxoCaixa" class="dre-cat" style="background:#082f49; color: #e0f2fe; font-weight: bold;">
+        <td class="p-2 text-left">FLUXO DE CAIXA</td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($mediaFluxoCaixa,2,',','.') ?></td>
+        <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaFluxoCaixa / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-right">
+          <input type="text" class="simul-valor font-bold bg-gray-700 text-yellow-300 text-right w-24 rounded px-1" readonly>
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" class="simul-perc font-bold bg-gray-700 text-yellow-300 text-center rounded px-1" style="width:60px;" readonly>
+        </td>
+        <td class="p-2 text-right">-</td> <!-- Diferença -->
+        <td class="p-2 text-right"></td> <!-- Meta -->
+        <td class="p-2 text-center"></td> <!-- % Meta -->
+        <td class="p-2 text-right"><?= 'R$ '.number_format($atualFluxoCaixa,2,',','.') ?></td>
+        <td class="p-2 text-right"><?= $atualRec > 0 ? number_format(($atualFluxoCaixa / $atualRec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
+      </tr>
     </tbody>
   </table>
   
@@ -773,6 +969,30 @@ function recalcSinteticas() {
     if (inputLLValor) inputLLValor.value = formatSimValue(simLucroLiquido);
     if (inputLLPerc) inputLLPerc.value = formatSimPerc(simLucroLiquido, receitaBrutaSimulada);
   }
+
+  // 4. FLUXO DE CAIXA
+  // (LUCRO LIQUIDO + RECEITAS NAO OPERACIONAIS ) - (INVESTIMENTO INTERNO + INVESTIMENTO EXTERNO + Z - SAIDA DE REPASSE)
+  let simReceitasNaoOp = 0;
+  document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(input => {
+    simReceitasNaoOp += parseBRL(input.value);
+  });
+
+  const simInvestInterno = getSimulatedValueFromInput(findCategoryRow('INVESTIMENTO INTERNO'));
+  const simInvestExterno = getSimulatedValueFromInput(findCategoryRow('INVESTIMENTO EXTERNO'));
+  const simSaidaRepasse  = getSimulatedValueFromInput(findCategoryRow('Z - SAIDA DE REPASSE'));
+  const simAmortizacao   = getSimulatedValueFromInput(findCategoryRow('AMORTIZAÇÃO')); // Será 0 se a linha não existir
+
+  const simFluxoCaixa = (simLucroLiquido + simReceitasNaoOp) - (simInvestInterno + simInvestExterno + simSaidaRepasse + simAmortizacao);
+
+  const rowFC = document.getElementById('rowFluxoCaixa');
+  if (rowFC) {
+    const inputFCValor = rowFC.querySelector('input.simul-valor');
+    const inputFCPerc = rowFC.querySelector('input.simul-perc');
+    if (inputFCValor) inputFCValor.value = formatSimValue(simFluxoCaixa);
+    if (inputFCPerc) inputFCPerc.value = formatSimPerc(simFluxoCaixa, receitaBrutaSimulada);
+  }
+
+
 }
 
 document.addEventListener('DOMContentLoaded', function() {
