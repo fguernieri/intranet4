@@ -1,8 +1,7 @@
 <?php
 // === modules/compras/exportar_pedido.php ===
 // ATENÇÃO: não deve haver nenhum output (nem espaço em branco) antes desta tag
-
-session_start();
+// session_start(); // Removido - auth.php deve lidar com o início da sessão após carregar a config.
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 if (empty($_SESSION['usuario_id'])) {
     header('Location: /login.php');
@@ -32,30 +31,56 @@ if ($dataInicio && $dataFim) {
     }
 }
 
-// Consulta SQL (usada tanto no CSV quanto no preview)
-$sql = "
-  SELECT
-    t.INSUMO,
-    t.CATEGORIA,
-    t.UNIDADE,
-    SUM(t.QUANTIDADE) AS QUANTIDADE,
-    GROUP_CONCAT(NULLIF(t.OBSERVACAO, '') SEPARATOR ' - ') AS OBSERVACAO
-  FROM (
-    SELECT INSUMO, CATEGORIA, UNIDADE, QUANTIDADE, OBSERVACAO, DATA_HORA
-      FROM pedidos
-     WHERE FILIAL = ? AND DATA_HORA BETWEEN ? AND ?
-    UNION ALL
-    SELECT INSUMO, CATEGORIA, UNIDADE, QUANTIDADE, OBSERVACAO, DATA_HORA
-      FROM novos_insumos
-     WHERE FILIAL = ? AND DATA_HORA BETWEEN ? AND ?
-  ) AS t
-  GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE
-  ORDER BY t.INSUMO
-";
+// Mapeamento de filial para tabela de estoque
+$estoqueTableMap = [
+    'BAR DA FABRICA' => 'EstoqueBDF',
+    'CROSS'          => 'EstoqueCROSS',
+    '7 TRAGOS'       => 'Estoque7TRAGOS',
+    'WE ARE BASTARDS'=> 'EstoqueWAB',
+    // Adicione outras filiais e suas respectivas tabelas de estoque aqui
+];
+$estoqueTableName = null;
+if ($selFilial && isset($estoqueTableMap[$selFilial])) {
+    $estoqueTableName = $estoqueTableMap[$selFilial];
+}
 
 // 2) Exportação CSV — roda antes de qualquer include/HTML
-if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
-    $stmt = $conn->prepare($sql);
+if ($action === 'csv' && $selFilial && $dataInicio && $dataFim && $estoqueTableName) {
+    $sqlTemplate = "
+      SELECT
+        main.INSUMO,
+        main.CATEGORIA,
+        main.UNIDADE,
+        COALESCE(est.Estoquetotal, 0) AS ESTOQUE_ATUAL,
+        main.QUANTIDADE_TOTAL,
+        main.OBSERVACAO_AGRUPADA
+      FROM (
+        SELECT
+            t.INSUMO,
+            t.CATEGORIA,
+            t.UNIDADE,
+            t.CODIGO,
+            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
+            GROUP_CONCAT(NULLIF(t.OBSERVACAO, '') SEPARATOR ' - ') AS OBSERVACAO_AGRUPADA
+        FROM (
+            SELECT p.INSUMO, p.CODIGO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
+            FROM pedidos p
+            WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
+            UNION ALL
+            SELECT ni.INSUMO, i.CODIGO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.OBSERVACAO, ni.FILIAL, ni.DATA_HORA
+            FROM novos_insumos ni
+            LEFT JOIN insumos i ON ni.INSUMO = i.INSUMO AND ni.FILIAL = i.FILIAL
+            WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
+        ) AS t
+        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO
+      ) AS main
+      LEFT JOIN %s est ON main.CODIGO = est.CODIGO
+      ORDER BY main.INSUMO
+    ";
+    // Usar real_escape_string para o nome da tabela, embora venha de um mapa seguro.
+    $sqlCsv = sprintf($sqlTemplate, $conn->real_escape_string($estoqueTableName));
+
+    $stmt = $conn->prepare($sqlCsv);
     if (!$stmt) {
         error_log("Erro ao preparar consulta: " . $conn->error);
         die("Erro ao preparar consulta.");
@@ -80,16 +105,18 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
 
     $out = fopen('php://output', 'w');
     // Cabeçalho
-    fputcsv($out, ['Insumo', 'Categoria', 'Unidade', 'Quantidade', 'Observação'], ';');
+    fputcsv($out, ['Insumo', 'Categoria', 'Unidade', 'Estoque Atual', 'Quantidade Pedida', 'Observação'], ';');
 
     // Linhas
     while ($row = $res2->fetch_assoc()) {
-        $q = number_format((float)$row['QUANTIDADE'], 2, ',', '.');
+        $estoque = number_format((float)$row['ESTOQUE_ATUAL'], 2, ',', '.');
+        $qPedido = number_format((float)$row['QUANTIDADE_TOTAL'], 2, ',', '.');
         fputcsv($out, [
             $row['INSUMO'],
             $row['CATEGORIA'],
             $row['UNIDADE'],
-            $q,
+            $estoque,
+            $qPedido,
             $row['OBSERVACAO'] ?? '',
         ], ';');
     }
@@ -109,8 +136,40 @@ $filiais = $resFiliais ? $resFiliais->fetch_all(MYSQLI_ASSOC) : [];
 
 // 4) Se forem fornecidos filtros, faz o preview em HTML
 $dataRows = [];
-if ($selFilial && $dataInicio && $dataFim) {
-    $stmt = $conn->prepare($sql);
+if ($selFilial && $dataInicio && $dataFim && $estoqueTableName) {
+    $sqlTemplateHtml = "
+      SELECT
+        main.INSUMO,
+        main.CATEGORIA,
+        main.UNIDADE,
+        COALESCE(est.Estoquetotal, 0) AS ESTOQUE_ATUAL,
+        main.QUANTIDADE_TOTAL,
+        main.OBSERVACAO_AGRUPADA
+      FROM (
+        SELECT
+            t.INSUMO,
+            t.CATEGORIA,
+            t.UNIDADE,
+            t.CODIGO,
+            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
+            GROUP_CONCAT(NULLIF(t.OBSERVACAO, '') SEPARATOR ' - ') AS OBSERVACAO_AGRUPADA
+        FROM (
+            SELECT p.INSUMO, p.CODIGO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
+            FROM pedidos p
+            WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
+            UNION ALL
+            SELECT ni.INSUMO, i.CODIGO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.OBSERVACAO, ni.FILIAL, ni.DATA_HORA
+            FROM novos_insumos ni
+            LEFT JOIN insumos i ON ni.INSUMO = i.INSUMO AND ni.FILIAL = i.FILIAL
+            WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
+        ) AS t
+        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO
+      ) AS main
+      LEFT JOIN %s est ON main.CODIGO = est.CODIGO
+      ORDER BY main.INSUMO
+    ";
+    $sqlHtml = sprintf($sqlTemplateHtml, $conn->real_escape_string($estoqueTableName));
+    $stmt = $conn->prepare($sqlHtml);
     if (!$stmt) {
         error_log("Erro ao preparar consulta: " . $conn->error);
         die("Erro ao preparar consulta.");
@@ -122,6 +181,9 @@ if ($selFilial && $dataInicio && $dataFim) {
     );
     $stmt->execute();
     $dataRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+} elseif ($selFilial && $dataInicio && $dataFim && !$estoqueTableName) {
+    // Adiciona uma mensagem se a filial não tiver mapeamento de estoque
+    echo "<p class='text-red-500 text-center mt-4'>Mapeamento da tabela de estoque não encontrado para a filial selecionada. A coluna 'Estoque Atual' não será exibida.</p>";
 }
 
 $conn->close();
@@ -205,20 +267,23 @@ require_once __DIR__ . '/../../sidebar.php';
               <th class="p-2 text-left">Insumo</th>
               <th class="p-2 text-left">Categoria</th>
               <th class="p-2 text-left">Unidade</th>
-              <th class="p-2 text-center">Qtde</th>
+              <th class="p-2 text-center">Estoque Atual</th>
+              <th class="p-2 text-center">Qtde Pedida</th>
               <th class="p-2 text-left">Observação</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($dataRows as $row):
-              $q = number_format((float)$row['QUANTIDADE'], 2, ',', '.');
+              $estoqueAtualHtml = number_format((float)($row['ESTOQUE_ATUAL'] ?? 0), 2, ',', '.');
+              $qtdePedidaHtml   = number_format((float)($row['QUANTIDADE_TOTAL'] ?? 0), 2, ',', '.');
             ?>
             <tr class="border-b border-gray-700">
               <td class="p-2"><?= htmlspecialchars($row['INSUMO'], ENT_QUOTES) ?></td>
               <td class="p-2"><?= htmlspecialchars($row['CATEGORIA'], ENT_QUOTES) ?></td>
               <td class="p-2"><?= htmlspecialchars($row['UNIDADE'], ENT_QUOTES) ?></td>
-              <td class="p-2 text-center"><?= $q ?></td>
-              <td class="p-2"><?= htmlspecialchars($row['OBSERVACAO'], ENT_QUOTES) ?></td>
+              <td class="p-2 text-center"><?= $estoqueAtualHtml ?></td>
+              <td class="p-2 text-center"><?= $qtdePedidaHtml ?></td>
+              <td class="p-2"><?= htmlspecialchars($row['OBSERVACAO_AGRUPADA'] ?? '', ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>
