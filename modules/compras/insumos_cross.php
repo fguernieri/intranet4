@@ -33,20 +33,42 @@ $stmt = $conn->prepare("
         i.CATEGORIA,
         i.UNIDADE,
         i.CODIGO,
-        COALESCE(e_agg.ESTOQUE_AGREGADO, 0) AS ESTOQUE_ATUAL
+        COALESCE(e_agg.ESTOQUE_AGREGADO, 0) AS ESTOQUE_ATUAL,
+        COALESCE(vw.total_insumo_usado_9dias, 0) AS CONSUMO_9DIAS,
+        COALESCE(vw.sugestao_compra, 0) AS SUGESTAO_COMPRA
     FROM insumos i
     LEFT JOIN (
         SELECT CODIGO, SUM(Estoquetotal) AS ESTOQUE_AGREGADO
         FROM EstoqueCROSS
         GROUP BY CODIGO
     ) e_agg ON i.CODIGO = e_agg.CODIGO
+    LEFT JOIN (
+        -- ATENÇÃO: Verifique se 'vw_consumo_insumos_cross_3m' é o nome correto da view de consumo para CROSS.
+        -- Se for diferente, ajuste o nome da view abaixo.
+        SELECT cod_insumo,
+               SUM(total_insumo_usado_9dias) AS total_insumo_usado_9dias,
+               SUM(sugestao_compra) AS sugestao_compra
+        FROM vw_consumo_insumoscross_3m
+        GROUP BY cod_insumo
+    ) vw ON i.CODIGO = vw.cod_insumo
     WHERE i.FILIAL = ?
+    GROUP BY i.INSUMO, i.CATEGORIA, i.UNIDADE, i.CODIGO, e_agg.ESTOQUE_AGREGADO, vw.total_insumo_usado_9dias, vw.sugestao_compra
     ORDER BY i.CATEGORIA, i.INSUMO
-    -- Estoque agregado (SUM) da tabela EstoqueCROSS para evitar duplicação.
 ");
 $stmt->bind_param('s', $filial);
 $stmt->execute();
-$insumos = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$result = $stmt->get_result();
+$insumosFromDb = $result->fetch_all(MYSQLI_ASSOC);
+
+// Recalcula a SUGESTAO_COMPRA e garante que não seja negativa.
+$insumos = [];
+foreach ($insumosFromDb as $row) {
+    $consumo9dias = (float)($row['CONSUMO_9DIAS'] ?? 0);
+    $estoqueAtual = (float)($row['ESTOQUE_ATUAL'] ?? 0);
+    $row['SUGESTAO_COMPRA'] = max(0, ($consumo9dias - $estoqueAtual));
+    $insumos[] = $row;
+}
+
 $stmt->close();
 $conn->close();
 
@@ -161,7 +183,9 @@ if (
             <tr>
               <th class="p-2 text-left">Insumo</th>
               <th class="p-2 text-center" style="width:8rem">QTDE</th>
-              <th class="p-2 text-center" style="width:7rem;">Estoque Atual</th>
+              <th class="p-2 text-center" style="width:7rem;">Estoque Atual</th> <!-- Coluna de índice 2 na linha (r.children[2]) -->
+              <th class="p-2 text-center" style="width:7rem;">Consumo 9 dias</th> <!-- Coluna de índice 3 -->
+              <th class="p-2 text-center" style="width:7rem;">Sugestão Compra</th> <!-- Coluna de índice 4 -->
               <th class="p-2 text-left">Unidade</th>
               <th class="p-2 text-left">Categoria</th>
               <th class="p-2 text-left">Observação</th>
@@ -190,12 +214,21 @@ if (
                   <input type="hidden"   name="insumo[]"    value="<?=$ins?>">
                   <input type="hidden"   name="categoria[]" value="<?=$cat?>">
                   <input type="hidden"   name="unidade[]"   value="<?=$uni?>">
-                  <input type="number"   name="quantidade[]" min="0" step="0.01" value="0"
+                  <input type="number"   name="quantidade[]" min="0" step="0.01"
+                         value="<?= number_format((float)($row['SUGESTAO_COMPRA'] ?? 0), 2, '.', '') ?>"
                          class="qtd-input bg-gray-600 text-white text-xs p-1 rounded">
                   <div class="qty-btn increment">+</div>
                 </div>
               </td>
               <td class="p-2 text-center font-semibold <?=$estoqueColorClass?>"><?=$estoqueAtualDisplay?></td>
+              <!-- Adicionadas colunas de Consumo e Sugestão -->
+              <td class="p-2 text-center font-semibold">
+                <?= number_format($row['CONSUMO_9DIAS'], 2, ',', '.') ?>
+              </td>
+              <td class="p-2 text-center font-semibold">
+                <?= number_format($row['SUGESTAO_COMPRA'], 2, ',', '.') ?>
+              </td>
+              <!-- Ordem corrigida: Unidade agora é a quinta coluna de dados visíveis (índice 5) -->
               <td class="p-2"><?=$uni?></td>
               <td class="p-2"><?=$cat?></td>
               <td class="p-2">
@@ -409,8 +442,8 @@ if (
         if(q>0) lines.push({
           insumo:     r.children[0].textContent.trim(), // Insumo
           quantidade: q.toFixed(2),                     // Quantidade
-          unidade:    r.children[3].textContent.trim(), // Unidade
-          categoria:  r.children[4].textContent.trim(), // Categoria
+          unidade:    r.children[5].textContent.trim(), // Unidade (índice corrigido para 5)
+          categoria:  r.children[6].textContent.trim(), // Categoria (índice corrigido para 6)
           obs:        r.querySelector('input[name="observacao[]"]').value.trim()
         });
       });
