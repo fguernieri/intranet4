@@ -234,6 +234,12 @@ $totalMetaDespesas  = $metaCustoFixo + $metaDespesaFixa + $metaDespesaVenda;
 // Lucro Líquido da meta: Lucro Bruto - (Custo Fixo + Despesa Fixa + Despesa Venda)
 $metaLucroLiquido = $metaLucro - $totalMetaDespesas;
 
+// Chaves para buscar metas de linhas calculadas
+$keyReceitaLiquida = "RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)";
+$keyLucroBruto = "LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)";
+$keyLucroLiquidoPHP = "LUCRO LÍQUIDO"; // Como o JS salva
+$keyFluxoCaixa = "FLUXO DE CAIXA";
+
 // Calcule médias e totais para FAT LIQUIDO e CUSTO VARIÁVEL
 $mediaFATLiquido = ($media3Rec - ($media3Cat['TRIBUTOS'] ?? 0));
 $atualFATLiquido = ($atualRec - ($atualCat['TRIBUTOS'] ?? 0));
@@ -555,8 +561,17 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" readonly>
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
-  <td class="p-2 text-right"></td> <!-- Meta -->
-  <td class="p-2 text-center"></td> <!-- % Meta -->
+  <td class="p-2 text-right">
+    <?= isset($metasArray[$keyReceitaLiquida]['']) ? 'R$ '.number_format($metasArray[$keyReceitaLiquida][''],2,',','.') : '' ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php
+      $baseMetaPercRL = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+      if ($baseMetaPercRL > 0 && isset($metasArray[$keyReceitaLiquida][''])) {
+        echo number_format(($metasArray[$keyReceitaLiquida][''] / $baseMetaPercRL) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualReceitaLiquida,2,',','.') ?></td>
   <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
   <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
@@ -660,8 +675,17 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" readonly>
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
-  <td class="p-2 text-right"></td> <!-- Meta -->
-  <td class="p-2 text-center"></td> <!-- % Meta -->
+  <td class="p-2 text-right">
+    <?= isset($metasArray[$keyLucroBruto]['']) ? 'R$ '.number_format($metasArray[$keyLucroBruto][''],2,',','.') : '' ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php
+      $baseMetaPercLB = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+      if ($baseMetaPercLB > 0 && isset($metasArray[$keyLucroBruto][''])) {
+        echo number_format(($metasArray[$keyLucroBruto][''] / $baseMetaPercLB) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroBruto,2,',','.') ?></td>
   <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
   <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
@@ -772,13 +796,26 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1" style="width:60px;" readonly>
   </td>
   <td class="p-2 text-right">-</td>
-  <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metaLucroLiquido ?? 0,2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format((($metaLucroLiquido ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+  <td class="p-2 text-right">
+    <?php 
+        // Prioriza meta salva diretamente para "LUCRO LÍQUIDO", senão usa a calculada em PHP
+        $metaLucroLiquidoDisplay = $metasArray[$keyLucroLiquidoPHP][''] ?? $metaLucroLiquido;
+        echo isset($metasArray['RECEITA BRUTA']['']) || isset($metasArray[$keyLucroLiquidoPHP]['']) ? 'R$ '.number_format($metaLucroLiquidoDisplay ?? 0,2,',','.') : '';
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php
+      $baseMetaPercLL = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+      if ($baseMetaPercLL > 0 && (isset($metasArray[$keyLucroLiquidoPHP]['']) || isset($metasArray['RECEITA BRUTA']['']))) {
+        echo number_format(($metaLucroLiquidoDisplay / $baseMetaPercLL) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroLiquido,2,',','.') ?></td>
   <td class="p-2 text-center">
     <?php
-      $meta_ll_val = $metaLucroLiquido ?? null; // Meta para Lucro Líquido já calculada
-      if (isset($meta_ll_val) && $meta_ll_val != 0 && isset($metasArray['RECEITA BRUTA'][''])) { // Só mostra se houver meta de receita base
+      $meta_ll_val = $metaLucroLiquidoDisplay ?? null;
+      if (isset($meta_ll_val) && $meta_ll_val != 0 && (isset($metasArray[$keyLucroLiquidoPHP]['']) || isset($metasArray['RECEITA BRUTA']['']))) {
         echo number_format(($atualLucroLiquido / $meta_ll_val) * 100, 2, ',', '.') . '%';
       } else { echo '-'; }
     ?>
@@ -787,7 +824,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <?php 
       $meta_val = $metaLucroLiquido ?? null; // Meta para Lucro Líquido já calculada
       $realizado_val = $atualLucroLiquido;
-      if (isset($meta_val) && isset($metasArray['RECEITA BRUTA'][''])) { // Só mostra se houver meta de receita base
+      if (isset($meta_val) && (isset($metasArray[$keyLucroLiquidoPHP]['']) || isset($metasArray['RECEITA BRUTA']['']))) {
         $comparacao = $meta_val - $realizado_val;
         $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
         echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
@@ -807,10 +844,26 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
             <?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
         </td> <!-- % Total Simulado s/ FAT. (será atualizado por JS) -->
         <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-        <td class="p-2 text-right"></td> <!-- Meta -->
-        <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+        <td class="p-2 text-right">
+            <?= isset($metasArray['RECEITAS NAO OPERACIONAIS']['']) ? 'R$ '.number_format($metasArray['RECEITAS NAO OPERACIONAIS'][''],2,',','.') : '' ?>
+        </td>
+        <td class="p-2 text-center">
+            <?php
+              $baseMetaPercRNO_Principal = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+              if ($baseMetaPercRNO_Principal > 0 && isset($metasArray['RECEITAS NAO OPERACIONAIS'][''])) {
+                echo number_format(($metasArray['RECEITAS NAO OPERACIONAIS'][''] / $baseMetaPercRNO_Principal) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+        </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualOutrasRecGlobal,2,',','.') ?></td>
-        <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha principal de Outras Receitas -->
+        <td class="p-2 text-center">
+            <?php
+              // % Realizado s/ Meta para a linha principal de RNO
+              if(isset($metasArray['RECEITAS NAO OPERACIONAIS']['']) && $metasArray['RECEITAS NAO OPERACIONAIS'][''] != 0) {
+                  echo number_format(($totalAtualOutrasRecGlobal / $metasArray['RECEITAS NAO OPERACIONAIS']['']) * 100, 2, ',', '.') . '%';
+              } else { echo '-';}
+            ?>
+        </td>
         <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
       </tr>
 
@@ -840,11 +893,34 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
             <td class="p-2 text-right" data-simul-valor-rno-cat="<?= $dataCatKeyRNO ?>"></td> <!-- JS Preenche Simulação Valor -->
             <td class="p-2 text-center" data-simul-perc-rno-cat="<?= $dataCatKeyRNO ?>"></td> <!-- JS Preenche Simulação % -->
             <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-            <td class="p-2 text-right"></td> <!-- Meta -->
-            <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+            <td class="p-2 text-right">
+                <?= isset($metasArray[$catNomeOR]['']) ? 'R$ '.number_format($metasArray[$catNomeOR][''],2,',','.') : '' ?>
+            </td>
+            <td class="p-2 text-center">
+                <?php
+                  $baseMetaPercRNO_L1 = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+                  if ($baseMetaPercRNO_L1 > 0 && isset($metasArray[$catNomeOR][''])) {
+                    echo number_format(($metasArray[$catNomeOR][''] / $baseMetaPercRNO_L1) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+            </td>
             <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualCatRNO,2,',','.') ?></td>
-            <td class="p-2 text-center">-</td>
-            <td class="p-2 text-center">-</td>
+            <td class="p-2 text-center">
+                 <?php
+                  if(isset($metasArray[$catNomeOR]['']) && $metasArray[$catNomeOR][''] != 0) {
+                      echo number_format(($totalAtualCatRNO / $metasArray[$catNomeOR]['']) * 100, 2, ',', '.') . '%';
+                  } else { echo '-';}
+                 ?>
+            </td>
+            <td class="p-2 text-center">
+                <?php
+                  if(isset($metasArray[$catNomeOR][''])) {
+                      $comparacaoRNO_L1 = ($metasArray[$catNomeOR][''] ?? 0) - $totalAtualCatRNO;
+                      $corCompRNO_L1 = ($comparacaoRNO_L1 >=0) ? 'text-green-400' : 'text-red-400';
+                      echo '<span class="'.$corCompRNO_L1.'">R$ '.number_format($comparacaoRNO_L1, 2, ',', '.').'</span>';
+                  } else { echo '-';}
+                ?>
+            </td>
           </tr>
 
           <?php foreach ($subcategoriasOR as $subNomeOR => $valoresMensaisOR): ?>
@@ -870,8 +946,19 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
                        value="<?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
               </td>
               <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-              <td class="p-2 text-right"></td> <!-- Meta -->
-              <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+              <td class="p-2 text-right">
+                <?= isset($metasArray[$catNomeOR][$subNomeOR]) ? 'R$ '.number_format($metasArray[$catNomeOR][$subNomeOR],2,',','.') : '' ?>
+              </td>
+              <td class="p-2 text-center">
+                <?php
+                  // $catNomeOR é a categoria pai (ex: "OUTRAS RECEITAS")
+                  // $subNomeOR é a subcategoria L2 (ex: "JUROS APLICACAO")
+                  $baseMetaPercRNO_L2 = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+                  if ($baseMetaPercRNO_L2 > 0 && isset($metasArray[$catNomeOR][$subNomeOR])) {
+                    echo number_format(($metasArray[$catNomeOR][$subNomeOR] / $baseMetaPercRNO_L2) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+              </td>
               <td class="p-2 text-right"><?= 'R$ '.number_format($atualSubOR,2,',','.') ?></td>
               <td class="p-2 text-center">
                 <?php
@@ -882,7 +969,15 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
                   } else { echo '-'; }
                 ?>
               </td>
-              <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+              <td class="p-2 text-center">
+                <?php
+                  if(isset($metasArray[$catNomeOR][$subNomeOR])) {
+                      $comparacaoRNO_L2 = ($metasArray[$catNomeOR][$subNomeOR] ?? 0) - $atualSubOR;
+                      $corCompRNO_L2 = ($comparacaoRNO_L2 >=0) ? 'text-green-400' : 'text-red-400';
+                      echo '<span class="'.$corCompRNO_L2.'">R$ '.number_format($comparacaoRNO_L2, 2, ',', '.').'</span>';
+                  } else { echo '-';}
+                ?>
+              </td>
             </tr>
           <?php endforeach; // Fim do loop de subcategorias de Outras Receitas ?>
         <?php endforeach; // Fim do loop de categorias de Outras Receitas ?>
@@ -1072,10 +1167,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           <input type="text" class="simul-perc font-bold bg-gray-700 text-yellow-300 text-center rounded px-1" style="width:60px;" readonly>
         </td>
         <td class="p-2 text-right">-</td> <!-- Diferença -->
-        <td class="p-2 text-right"></td> <!-- Meta -->
-        <td class="p-2 text-center"></td> <!-- % Meta -->
+        <td class="p-2 text-right">
+            <?= isset($metasArray[$keyFluxoCaixa]['']) ? 'R$ '.number_format($metasArray[$keyFluxoCaixa][''],2,',','.') : '' ?>
+        </td>
+        <td class="p-2 text-center">
+            <?php
+              $baseMetaPercFC = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
+              if ($baseMetaPercFC > 0 && isset($metasArray[$keyFluxoCaixa][''])) {
+                echo number_format(($metasArray[$keyFluxoCaixa][''] / $baseMetaPercFC) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+        </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualFluxoCaixa,2,',','.') ?></td>
-        <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
+        <td class="p-2 text-center">
+            <?php
+                if(isset($metasArray[$keyFluxoCaixa]['']) && $metasArray[$keyFluxoCaixa][''] != 0) {
+                    echo number_format(($atualFluxoCaixa / $metasArray[$keyFluxoCaixa]['']) * 100, 2, ',', '.') . '%';
+                } else { echo '-';}
+            ?>
+        </td> 
         <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
       </tr>
     </tbody>
@@ -1451,7 +1561,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let ruleMakesPercReadOnly = false;
 
         if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName.toUpperCase())) { // Comparar com toUpperCase para robustez
-            const restrictionType = restrictions[effectiveCategoryName];
+            const restrictionType = restrictions[effectiveCategoryName.toUpperCase()]; // Correção: Usar a chave em maiúsculas
             if (restrictionType === 'editPercent') {
                 ruleMakesValorReadOnly = true;
             } else { // editValue
@@ -1516,13 +1626,16 @@ document.addEventListener('DOMContentLoaded', function() {
              categoriaAtualContexto = primeiroTd.textContent.trim();
         }
 
-        // Pular linhas que não têm input de valor.
-        // Ou pular se o input de valor for readonly E NÃO foi tornado readonly pela nossa lógica de restrição
-        // (ou seja, é um campo HTML readonly como "LUCRO LÍQUIDO" que não deve ter meta).
         if (!inputValorSimul) {
             return;
         }
-        if (inputValorSimul.readOnly && !inputValorSimul.hasAttribute('data-dynamic-readonly')) {
+
+        // Define se esta é uma linha calculada especial cuja meta deve ser salva
+        const specialCalculatedRowIds = ['rowFatLiquido', 'rowLucroBruto', 'rowFluxoCaixa'];
+        const isSpecialCalculatedRowToSave = specialCalculatedRowIds.includes(row.id);
+
+        // Pular se o input de valor for readonly (definido no HTML) E NÃO for uma das linhas calculadas especiais que queremos salvar
+        if (inputValorSimul.readOnly && !inputValorSimul.hasAttribute('data-dynamic-readonly') && !isSpecialCalculatedRowToSave) {
             return;
         }
 
@@ -1549,6 +1662,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 subcategoriaMeta = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
                 metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
             }
+        }
+    });
+
+    // Adicionar metas para linhas totalizadoras de RNO que não têm inputs diretos
+    // 1. Linha principal "RECEITAS NAO OPERACIONAIS"
+    const rnoPrincipalRow = document.querySelector('tr.dre-cat-principal');
+    if (rnoPrincipalRow) {
+        const tdTotalSimulRNO = rnoPrincipalRow.querySelector('td.simul-total-cat[data-cat-total-simul="RECEITAS NAO OPERACIONAIS"]');
+        if (tdTotalSimulRNO) {
+            const valorMetaRNOPrincipal = parseBRL(tdTotalSimulRNO.textContent);
+            metasParaSalvar.push({
+                categoria: "RECEITAS NAO OPERACIONAIS",
+                subcategoria: "",
+                valor: valorMetaRNOPrincipal
+            });
+        }
+    }
+
+    // 2. Categorias L1 dentro de RNO (linhas dre-subcat-l1)
+    document.querySelectorAll('tr.dre-subcat-l1').forEach(rowCatL1RNO => {
+        const nomeCategoriaL1RNO = rowCatL1RNO.cells[0].textContent.trim();
+        const tdValorCatL1RNO = rowCatL1RNO.querySelector('td[data-simul-valor-rno-cat]');
+        if (nomeCategoriaL1RNO && tdValorCatL1RNO) {
+            const valorMetaCatL1RNO = parseBRL(tdValorCatL1RNO.textContent);
+            metasParaSalvar.push({
+                categoria: nomeCategoriaL1RNO,
+                subcategoria: "",
+                valor: valorMetaCatL1RNO
+            });
         }
     });
 
