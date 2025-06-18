@@ -480,7 +480,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center">
       <?php
-        $meta_t_val = $metasArray['TRIBUTOS'][''] ?? null;
+        $meta_t_val = $metasArray['TRIBUTOS'][''] ?? null; // Meta da categoria principal TRIBUTOS
         $realizado_t_val = $atualCat['TRIBUTOS'] ?? 0;
         if (isset($meta_t_val) && $meta_t_val != 0) {
           echo number_format(($realizado_t_val / $meta_t_val) * 100, 2, ',', '.') . '%';
@@ -489,10 +489,10 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </td>
     <td class="p-2 text-center">
       <?php 
-        $meta_val = $metasArray['TRIBUTOS'][''] ?? null;
+        // $meta_val já é $meta_t_val para esta linha
         $realizado_val = $atualCat['TRIBUTOS'] ?? 0;
-        if (isset($meta_val)) {
-          $comparacao = $meta_val - $realizado_val;
+        if (isset($meta_t_val)) {
+          $comparacao = $meta_t_val - $realizado_val;
           $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
           echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
         } else { echo '-'; } ?>
@@ -573,8 +573,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     ?>
   </td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualReceitaLiquida,2,',','.') ?></td>
-  <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
-  <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
+  <td class="p-2 text-center">
+    <?php
+      $meta_rl_val = $metasArray[$keyReceitaLiquida][''] ?? null;
+      if (isset($meta_rl_val) && $meta_rl_val != 0) {
+        echo number_format(($atualReceitaLiquida / $meta_rl_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php
+      if (isset($meta_rl_val)) {
+        $comparacaoRL = $meta_rl_val - $atualReceitaLiquida;
+        $corComparacaoRL = ($comparacaoRL >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacaoRL . '">R$ ' . number_format($comparacaoRL, 2, ',', '.') . '</span>';
+      } else {
+        echo '-';
+      }
+    ?>
+  </td>
 </tr>
 
 <!-- CUSTO VARIÁVEL (categoria e subcategorias) -->
@@ -597,7 +614,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center">
       <?php
-        $meta_cv_val = $metasArray['CUSTO VARIÁVEL'][''] ?? null;
+        $meta_cv_val = $metasArray['CUSTO VARIÁVEL'][''] ?? null; // Meta da categoria principal CUSTO VARIÁVEL
         $realizado_cv_val = $atualCat['CUSTO VARIÁVEL'] ?? 0;
         if (isset($meta_cv_val) && $meta_cv_val != 0) {
           echo number_format(($realizado_cv_val / $meta_cv_val) * 100, 2, ',', '.') . '%';
@@ -606,10 +623,10 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </td>
     <td class="p-2 text-center">
       <?php 
-        $meta_val = $metasArray['CUSTO VARIÁVEL'][''] ?? null;
+        // $meta_val já é $meta_cv_val para esta linha
         $realizado_val = $atualCat['CUSTO VARIÁVEL'] ?? 0;
-        if (isset($meta_val)) {
-          $comparacao = $meta_val - $realizado_val;
+        if (isset($meta_cv_val)) {
+          $comparacao = $meta_cv_val - $realizado_val;
           $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
           echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
         } else { echo '-'; } ?>
@@ -687,8 +704,25 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     ?>
   </td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualLucroBruto,2,',','.') ?></td>
-  <td class="p-2 text-center">-</td> <!-- % Realizado s/ Meta para linha calculada -->
-  <td class="p-2 text-center">-</td> <!-- Comp. Meta -->
+  <td class="p-2 text-center">
+    <?php
+      $meta_lb_val = $metasArray[$keyLucroBruto][''] ?? null;
+      if (isset($meta_lb_val) && $meta_lb_val != 0) {
+        echo number_format(($atualLucroBruto / $meta_lb_val) * 100, 2, ',', '.') . '%';
+      } else { echo '-'; }
+    ?>
+  </td>
+  <td class="p-2 text-center">
+    <?php
+      if (isset($meta_lb_val)) {
+        $comparacaoLB = $meta_lb_val - $atualLucroBruto;
+        $corComparacaoLB = ($comparacaoLB >= 0) ? 'text-green-400' : 'text-red-400';
+        echo '<span class="' . $corComparacaoLB . '">R$ ' . number_format($comparacaoLB, 2, ',', '.') . '</span>';
+      } else {
+        echo '-';
+      }
+    ?>
+  </td>
 </tr>
 
 
@@ -864,7 +898,16 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               } else { echo '-';}
             ?>
         </td>
-        <td class="p-2 text-center">-</td> <!-- Comparação Meta -->
+        <td class="p-2 text-center">
+            <?php
+              $meta_rno_principal_val = $metasArray['RECEITAS NAO OPERACIONAIS'][''] ?? null;
+              if(isset($meta_rno_principal_val)) {
+                  $comparacaoRNO_Principal = $meta_rno_principal_val - $totalAtualOutrasRecGlobal;
+                  $corCompRNO_Principal = ($comparacaoRNO_Principal >=0) ? 'text-green-400' : 'text-red-400';
+                  echo '<span class="'.$corCompRNO_Principal.'">R$ '.number_format($comparacaoRNO_Principal, 2, ',', '.').'</span>';
+              } else { echo '-';}
+            ?>
+        </td>
       </tr>
 
       <?php if (!empty($outrasReceitasPorCatSubMes)): ?>
@@ -914,8 +957,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
             </td>
             <td class="p-2 text-center">
                 <?php
-                  if(isset($metasArray[$catNomeOR][''])) {
-                      $comparacaoRNO_L1 = ($metasArray[$catNomeOR][''] ?? 0) - $totalAtualCatRNO;
+                  $meta_rno_l1_val = $metasArray[$catNomeOR][''] ?? null;
+                  if(isset($meta_rno_l1_val)) {
+                      $comparacaoRNO_L1 = $meta_rno_l1_val - $totalAtualCatRNO;
                       $corCompRNO_L1 = ($comparacaoRNO_L1 >=0) ? 'text-green-400' : 'text-red-400';
                       echo '<span class="'.$corCompRNO_L1.'">R$ '.number_format($comparacaoRNO_L1, 2, ',', '.').'</span>';
                   } else { echo '-';}
@@ -1418,6 +1462,36 @@ function recalcSinteticas() {
   }
 }
 
+function atualizarDiferencas() {
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const cells = row.cells;
+        // Garante que a linha tem colunas suficientes e a coluna de diferença existe.
+        // A coluna de "Diferença (R$)" é a sexta (índice 5).
+        if (cells.length < 6 || !cells[5]) return;
+
+        const tdMedia3m = cells[1];
+        const tdSimulacaoValorContainer = cells[3]; // Onde o valor da simulação está (pode ser input ou td)
+        const tdDiferenca = cells[5];
+
+        const media3mValor = parseBRL(tdMedia3m.textContent);
+        let simulacaoValor = 0;
+
+        const inputSimulValor = tdSimulacaoValorContainer.querySelector('input.simul-valor');
+        if (inputSimulValor) {
+            simulacaoValor = parseBRL(inputSimulValor.value);
+        } else if (tdSimulacaoValorContainer.classList.contains('simul-total-cat') || tdSimulacaoValorContainer.hasAttribute('data-simul-valor-rno-cat')) {
+            // Para linhas de total RNO (principal e L1) que têm o valor em um <td>
+            simulacaoValor = parseBRL(tdSimulacaoValorContainer.textContent);
+        } else {
+            // Se não for um input editável ou um TD de total RNO, não calcula/atualiza a diferença.
+            // Mantém o valor existente (ex: '-') se a linha não for aplicável.
+            return;
+        }
+
+        const diferenca = media3mValor - simulacaoValor;
+        tdDiferenca.textContent = 'R$ ' + formatSimValue(diferenca);
+    });
+}
 
 
 function initializeDREToggle() {
@@ -1493,6 +1567,7 @@ document.addEventListener('DOMContentLoaded', function() {
     atualizarTotaisCategorias(); // Soma subcategorias para totais de categoria (se aplicável)
     atualizarPercentuaisSimulacao(); // Atualiza % de linhas editáveis
     recalcSinteticas(); // Calcula linhas sintéticas (Receita Líquida, Lucro Bruto, Lucro Líquido)
+    atualizarDiferencas(); // Adicionado para calcular e atualizar a coluna "Diferença (R$)"
   }
 
   // Adiciona listener para todos os inputs de simulação de valor
@@ -1547,17 +1622,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (row.classList.contains('dre-cat')) {
             categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
-            effectiveCategoryName = categoriaAtualContextoParaRestricao;
-            // Para linhas de CATEGORIA (.dre-cat), ambos os campos (valor e percentual) devem ser sempre readOnly.
-            inputValorSimul.readOnly = true;
-            inputPercSimul.readOnly = true;
-            // Adicionar dynamicReadonly para que o valor ainda possa ser salvo se for uma linha calculada especial
-            // No entanto, para categorias que são somas de subcategorias, o valor é atualizado por JS,
-            // e a meta é salva com base nesse valor atualizado.
-            // Não precisa de dynamicReadonly aqui se a intenção é que o valor seja SEMPRE derivado.
-            // A lógica de salvamento já pega o valor do input, que será o valor calculado.
-            // Vamos remover o dynamicReadonly para estas, pois não são editáveis por regra de percentual.
-            delete inputValorSimul.dataset.dynamicReadonly;
+
+            // RECEITA BRUTA: seu input de valor deve permanecer editável.
+            // Outras categorias principais (dre-cat) têm seus valores derivados/calculados,
+            // então seus inputs de simulação devem ser somente leitura.
+            if (inputValorSimul && inputValorSimul.hasAttribute('data-receita')) {
+                // Não tornar o input de valor da RECEITA BRUTA readonly aqui.
+                // O input de percentual da RECEITA BRUTA também é especial.
+            } else {
+                // Para outras linhas .dre-cat (TRIBUTOS, CUSTO FIXO, etc.),
+                // os inputs de simulação são apenas para exibição dos totais calculados.
+                if (inputValorSimul) inputValorSimul.readOnly = true;
+                if (inputPercSimul) inputPercSimul.readOnly = true;
+            }
+            // Garante que não haja 'data-dynamic-readonly' para inputs de categoria manipulados aqui.
+            if (inputValorSimul) delete inputValorSimul.dataset.dynamicReadonly;
             return; // Restrições para .dre-cat já aplicadas, pular para a próxima linha.
         } else if (row.classList.contains('dre-sub')) {
             effectiveCategoryName = categoriaAtualContextoParaRestricao;
@@ -1645,7 +1724,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const isSpecialCalculatedRowToSave = specialCalculatedRowIds.includes(row.id);
 
         // Pular se o input de valor for readonly (definido no HTML) E NÃO for uma das linhas calculadas especiais que queremos salvar
-        if (inputValorSimul.readOnly && !inputValorSimul.hasAttribute('data-dynamic-readonly') && !isSpecialCalculatedRowToSave) {
+        // E NÃO for uma linha de categoria (dre-cat), pois queremos salvar o valor da categoria mesmo que seu input seja readonly (calculado).
+        // E NÃO for um input com 'data-dynamic-readonly' (cujo valor é derivado de outra edição, mas ainda precisa ser salvo).
+        if (inputValorSimul.readOnly &&
+            !row.classList.contains('dre-cat') &&
+            !inputValorSimul.hasAttribute('data-dynamic-readonly') &&
+            !isSpecialCalculatedRowToSave) {
             return;
         }
 
