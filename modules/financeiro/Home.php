@@ -417,7 +417,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </thead>
     <tbody>
       <!-- 1. RECEITA OPERACIONAL (continua editável) -->
-      <tr class="dre-cat">
+      <tr class="dre-cat" style="background:#1a4c2b;">
         <td class="p-2 text-left">RECEITA BRUTA</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($media3Rec,2,',','.') ?></td>
         <td class="p-2 text-center">100,00%</td>
@@ -681,7 +681,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   $mediaLucroBruto = $mediaReceitaLiquida - ($media3Cat['CUSTO VARIÁVEL'] ?? 0);
   $atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
 ?>
-<tr id="rowLucroBruto" class="dre-cat" style="background:#102c14;">
+<tr id="rowLucroBruto" class="dre-cat" style="background:#1a4c2b;">
   <td class="p-2 text-left">LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroBruto,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroBruto / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
@@ -819,7 +819,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <!-- 9. LUCRO LIQUIDO = LUCRO BRUTO - (CUSTO FIXO + DESPESA FIXA + DESPESA VENDA) (DINÂMICO, não editável) -->
       <?php 
 ?>
-<tr class="dre-cat" style="background:#102c14;">
+<tr class="dre-cat" style="background:#1a4c2b;">
   <td class="p-2 text-left">LUCRO LÍQUIDO</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroLiquido,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroLiquido / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
@@ -867,7 +867,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 </tr>
 
       <!-- ==================== [NOVA SEÇÃO: RECEITAS NAO OPERACIONAIS] ==================== -->
-      <tr class="dre-cat-principal bg-gray-700 text-white font-bold">
+      <tr class="dre-cat-principal text-white font-bold" style="background:#1a4c2b;">
         <td class="p-2 text-left" colspan="1">RECEITAS NAO OPERACIONAIS</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3OutrasRecGlobal,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
