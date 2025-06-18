@@ -1265,9 +1265,8 @@ function getSimulatedValueFromInput(row) {
 function atualizarTotaisCategorias() {
   document.querySelectorAll('tr.dre-cat').forEach(catRow => {
     const catSimulValorInput = catRow.querySelector('input.simul-valor');
-    // Só atualiza se o input da categoria existir e NÃO for readonly (ex: Receita Bruta é editável, Lucro Líquido não)
-    // E se tiver subcategorias.
-    if (!catSimulValorInput || catSimulValorInput.readOnly) {
+    // Se não houver input de valor para a categoria, não há o que atualizar.
+    if (!catSimulValorInput) { 
         return;
     }
 
@@ -1549,6 +1548,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (row.classList.contains('dre-cat')) {
             categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
             effectiveCategoryName = categoriaAtualContextoParaRestricao;
+            // Para linhas de CATEGORIA (.dre-cat), ambos os campos (valor e percentual) devem ser sempre readOnly.
+            inputValorSimul.readOnly = true;
+            inputPercSimul.readOnly = true;
+            // Adicionar dynamicReadonly para que o valor ainda possa ser salvo se for uma linha calculada especial
+            // No entanto, para categorias que são somas de subcategorias, o valor é atualizado por JS,
+            // e a meta é salva com base nesse valor atualizado.
+            // Não precisa de dynamicReadonly aqui se a intenção é que o valor seja SEMPRE derivado.
+            // A lógica de salvamento já pega o valor do input, que será o valor calculado.
+            // Vamos remover o dynamicReadonly para estas, pois não são editáveis por regra de percentual.
+            delete inputValorSimul.dataset.dynamicReadonly;
+            return; // Restrições para .dre-cat já aplicadas, pular para a próxima linha.
         } else if (row.classList.contains('dre-sub')) {
             effectiveCategoryName = categoriaAtualContextoParaRestricao;
         } else if (row.classList.contains('dre-subcat-l2')) { // RNO sub-items
