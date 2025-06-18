@@ -1113,11 +1113,22 @@ function getReceitaBrutaSimulada() {
 }
 
 function findCategoryRow(categoryName) {
-  const catRows = document.querySelectorAll('tr.dre-cat');
+  const catRows = document.querySelectorAll('#tabelaSimulacao tbody tr.dre-cat'); // Seletor mais específico
   for (const row of catRows) {
     const firstCell = row.cells[0];
-    if (firstCell && firstCell.textContent.trim().toUpperCase().startsWith(categoryName.toUpperCase())) {
-      return row;
+    if (firstCell) {
+      // Clona o conteúdo da célula para não modificar o DOM original ao remover o ícone
+      const cellContentClone = firstCell.cloneNode(true);
+      const iconSpan = cellContentClone.querySelector('.toggler-icon');
+      if (iconSpan) {
+        iconSpan.remove(); // Remove o nó do span do clone para limpar o texto
+      }
+      const cleanedText = cellContentClone.textContent.trim().toUpperCase();
+      
+      // Usar startsWith porque algumas categorias têm descrições longas (ex: LUCRO BRUTO (...))
+      if (cleanedText.startsWith(categoryName.toUpperCase())) {
+        return row;
+      }
     }
   }
   return null;
