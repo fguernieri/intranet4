@@ -1061,9 +1061,27 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
              value="<?= $anoAtual ?>-<?= str_pad($mesAtual, 2, '0', STR_PAD_LEFT) ?>-01">
     </div>
     <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
-    <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS</button>
+    <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS OFICIAIS</button>
   </div>
   
+  <!-- Controles para Simulações Salvas Localmente -->
+  <div class="mt-4 pt-4 border-t border-gray-700 flex items-end gap-4">
+    <div>
+      <label for="simulationNameInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação (para salvar local):</label>
+      <input type="text" id="simulationNameInput"
+             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+             placeholder="Ex: Cenário Otimista <?= date('Y-m-d') ?>">
+    </div>
+    <button id="saveSimulationBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded font-bold">SALVAR SIMULAÇÃO ATUAL (LOCAL)</button>
+    <div class="flex-grow">
+      <label for="loadSimulationSelect" class="block text-sm font-medium text-gray-300 mb-1">Carregar Simulação Salva (Local):</label>
+      <select id="loadSimulationSelect" class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+        <option value="">-- Selecione uma Simulação --</option>
+      </select>
+    </div>
+     <button id="loadSelectedSimulationBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded font-bold">CARREGAR</button>
+     <button id="deleteSimulationBtn" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2.5 rounded font-bold">EXCLUIR</button>
+  </div>
 </main>
 
 <!-- Scripts de Atualização, Toggle etc. (mantidos) -->
@@ -1073,6 +1091,8 @@ function parseBRL(str) {
   const stringValue = String(str || '');
   return parseFloat(stringValue.replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
 }
+
+const SIMULATION_STORAGE_PREFIX = 'dreUserSimulation_';
 
 function formatSimValue(value) { // Formata para campos de input de simulação (sem R$)
   return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1257,6 +1277,117 @@ document.addEventListener('DOMContentLoaded', function() {
   // Cálculo inicial ao carregar a página
   recalcularTudo();
 
+  // --- INÍCIO: Funcionalidade de Salvar/Carregar Simulação Local ---
+  function populateSimulationList() {
+    const select = document.getElementById('loadSimulationSelect');
+    const currentSelectedValue = select.value;
+    select.innerHTML = '<option value="">-- Selecione uma Simulação --</option>'; // Clear existing options
+
+    const simulations = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(SIMULATION_STORAGE_PREFIX)) {
+            const simulationName = key.substring(SIMULATION_STORAGE_PREFIX.length);
+            simulations.push(simulationName);
+        }
+    }
+    simulations.sort(); // Sort alphabetically
+
+    simulations.forEach(simulationName => {
+        const option = document.createElement('option');
+        option.value = simulationName;
+        option.textContent = simulationName;
+        select.appendChild(option);
+    });
+    if (simulations.includes(currentSelectedValue)) {
+        select.value = currentSelectedValue;
+    }
+  }
+
+  document.getElementById('saveSimulationBtn').addEventListener('click', function() {
+    const nameInput = document.getElementById('simulationNameInput');
+    let simulationName = nameInput.value.trim();
+
+    if (!simulationName) {
+        simulationName = prompt('Digite um nome para esta simulação:', 'Simulação ' + new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'));
+        if (!simulationName) return; // User cancelled
+    }
+
+    const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
+
+    if (localStorage.getItem(storageKey)) {
+        if (!confirm(`Já existe uma simulação com o nome "${simulationName}". Deseja sobrescrevê-la?`)) {
+            return;
+        }
+    }
+
+    const simulationData = [];
+    let categoriaAtualContexto = '';
+
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+
+        if (row.classList.contains('dre-cat')) {
+             categoriaAtualContexto = primeiroTd.textContent.trim();
+        }
+
+        if (!inputValorSimul || inputValorSimul.readOnly) {
+            return; 
+        }
+
+        const valorSimulCurrent = parseBRL(inputValorSimul.value);
+        let itemKey = '';
+
+        if (row.classList.contains('dre-cat')) {
+            const cat = primeiroTd.textContent.trim();
+            itemKey = `${cat}|`; 
+            simulationData.push({ key: itemKey, valor: valorSimulCurrent });
+        } else if (row.classList.contains('dre-sub')) {
+            if (categoriaAtualContexto) {
+                const sub = primeiroTd.textContent.trim();
+                itemKey = `${categoriaAtualContexto}|${sub}`;
+                simulationData.push({ key: itemKey, valor: valorSimulCurrent });
+            }
+        } else if (row.classList.contains('dre-subcat-l2')) {
+            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                const rnoCat = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
+                const rnoSubCat = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
+                itemKey = `RECEITAS NAO OPERACIONAIS|${rnoCat}|${rnoSubCat}`;
+                simulationData.push({ key: itemKey, valor: valorSimulCurrent });
+            }
+        }
+    });
+
+    if (simulationData.length > 0) {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(simulationData));
+            alert(`Simulação "${simulationName}" salva localmente com sucesso!`);
+            nameInput.value = ''; 
+            populateSimulationList();
+        } catch (e) {
+            alert('Erro ao salvar simulação: ' + e.message + '. O localStorage pode estar cheio.');
+        }
+    } else {
+        alert('Nenhum dado de simulação editável encontrado para salvar.');
+    }
+  });
+
+  document.getElementById('loadSelectedSimulationBtn').addEventListener('click', function() {
+    const select = document.getElementById('loadSimulationSelect');
+    const simulationName = select.value;
+
+    if (!simulationName) {
+        alert('Por favor, selecione uma simulação para carregar.');
+        return;
+    }
+
+    const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
+    const storedData = localStorage.getItem(storageKey);
+
   // Salvar Metas
   document.getElementById('salvarMetasBtn').addEventListener('click', function() {
     const botaoSalvar = this;
@@ -1271,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!dataMeta) {
         alert('Por favor, selecione uma data para salvar as metas.');
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS';
+        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
         return;
     }
 
@@ -1321,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (metasParaSalvar.length === 0) {
         alert('Nenhuma meta editável encontrada para salvar.');
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS';
+        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
         return;
     }
 
@@ -1356,9 +1487,66 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .finally(() => {
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS';
+        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
     });
   });
+
+    if (!storedData) {
+        alert(`Simulação "${simulationName}" não encontrada no armazenamento local.`);
+        return;
+    }
+
+    const simulationEntries = JSON.parse(storedData);
+    const dataMap = new Map(simulationEntries.map(item => [item.key, item.valor]));
+
+    let categoriaAtualContexto = '';
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+
+        if (row.classList.contains('dre-cat')) {
+             categoriaAtualContexto = primeiroTd.textContent.trim();
+        }
+
+        if (!inputValorSimul || inputValorSimul.readOnly) {
+            return;
+        }
+
+        let itemKey = '';
+        if (row.classList.contains('dre-cat')) {
+            const cat = primeiroTd.textContent.trim();
+            itemKey = `${cat}|`;
+        } else if (row.classList.contains('dre-sub')) {
+            if (categoriaAtualContexto) {
+                const sub = primeiroTd.textContent.trim();
+                itemKey = `${categoriaAtualContexto}|${sub}`;
+            }
+        } else if (row.classList.contains('dre-subcat-l2')) {
+             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                const rnoCat = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
+                const rnoSubCat = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
+                itemKey = `RECEITAS NAO OPERACIONAIS|${rnoCat}|${rnoSubCat}`;
+            }
+        }
+
+        if (itemKey && dataMap.has(itemKey)) {
+            inputValorSimul.value = formatSimValue(dataMap.get(itemKey));
+        } else if (itemKey) { 
+            // Opcional: Limpar campos que não estão na simulação salva, ou deixar como estão.
+            // Por ora, vamos deixar como estão para não apagar dados que o usuário possa ter inserido manualmente
+            // e que não faziam parte da simulação carregada.
+        }
+    });
+
+    recalcularTudo();
+    alert(`Simulação "${simulationName}" carregada.`);
+  });
+
+
+  // --- FIM: Funcionalidade de Salvar/Carregar Simulação Local ---
 
   // Botão Ponto de Equilíbrio
   document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
@@ -1383,5 +1571,24 @@ document.addEventListener('DOMContentLoaded', function() {
       recalcularTudo(); // Recalcula toda a DRE com a nova receita
     }
   });
+
+  document.getElementById('deleteSimulationBtn').addEventListener('click', function() {
+    const select = document.getElementById('loadSimulationSelect');
+    const simulationName = select.value;
+
+    if (!simulationName) {
+        alert('Por favor, selecione uma simulação para excluir.');
+        return;
+    }
+
+    if (confirm(`Tem certeza que deseja excluir a simulação local "${simulationName}"? Esta ação não pode ser desfeita.`)) {
+        const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
+        localStorage.removeItem(storageKey);
+        populateSimulationList();
+        alert(`Simulação "${simulationName}" excluída do armazenamento local.`);
+    }
+  });
+
+  populateSimulationList(); // Popular a lista ao carregar a página
 });
 </script>
