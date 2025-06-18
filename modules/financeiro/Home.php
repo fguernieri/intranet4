@@ -1126,7 +1126,7 @@ function formatSimValue(value) { // Formata para campos de input de simulação 
 
 function formatSimPerc(value, base) { // Formata percentual para campos de input de simulação
   if (base === 0 || isNaN(base) || isNaN(value)) return '0,00%';
-  return ((value / base) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+  return ((value / base) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); // Removido o '%'
 }
 
 function getReceitaBrutaSimulada() {
@@ -1174,7 +1174,9 @@ function atualizarTotaisCategorias() {
       currentRow = currentRow.nextElementSibling;
     }
 
-    if (hasSubCategories) {
+    // Só atualiza o valor se o input não for o que está ativo (focado)
+    // Isso evita que a digitação do usuário no campo de total da categoria seja interrompida.
+    if (hasSubCategories && catSimulValorInput !== document.activeElement) {
       catSimulValorInput.value = formatSimValue(subtotal);
       // O percentual será atualizado por atualizarPercentuaisSimulacao
     }
@@ -1188,7 +1190,11 @@ function atualizarPercentuaisSimulacao() {
     const simulValorInput = row.querySelector('input.simul-valor');
     const simulPercInput = row.querySelector('input.simul-perc');
 
-    if (simulValorInput && simulPercInput && !simulPercInput.readOnly) { // Apenas atualiza % de inputs editáveis de %
+    if (simulValorInput && simulPercInput) { // Atualiza o percentual baseado no valor
+        // Se o input de percentual for o ativo, não o reformate aqui para não atrapalhar a digitação.
+        // A reformatação completa (se necessária) pode acontecer no blur ou quando outro campo for alterado.
+        if (simulPercInput === document.activeElement) return;
+
         const valor = parseBRL(simulValorInput.value);
         // Não atualiza o % da Receita Bruta aqui, pois ele é sempre 100% ou editável manualmente
         if (!simulValorInput.hasAttribute('data-receita')) {
@@ -1394,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputValor = row.querySelector('input.simul-valor');
         const receitaBrutaSimulada = getReceitaBrutaSimulada();
 
-        if (inputValor && !inputValor.readOnly && receitaBrutaSimulada > 0) {
+        if (inputValor && !inputPerc.readOnly && receitaBrutaSimulada > 0) { // Condição alterada para verificar se o CAMPO PERCENTUAL é editável
             const percentual = parseBRL(inputPerc.value); // parseBRL pode lidar com '%'
             const novoValor = (percentual / 100) * receitaBrutaSimulada;
             inputValor.value = formatSimValue(novoValor);
@@ -1403,9 +1409,56 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  function applyInputRestrictions() {
+    const restrictions = {
+        'TRIBUTOS': 'editPercent',
+        'CUSTO VARIÁVEL': 'editPercent',
+        'CUSTO FIXO': 'editValue',
+        'DESPESA FIXA': 'editValue',
+        'DESPESA VENDA': 'editPercent',
+        'INVESTIMENTO INTERNO': 'editValue',
+        'INVESTIMENTO EXTERNO': 'editValue',
+        'AMORTIZAÇÃO': 'editValue',
+        'Z - SAIDA DE REPASSE': 'editValue',
+        'RECEITAS NAO OPERACIONAIS': 'editValue' // Para sub-itens de RNO
+    };
+
+    let categoriaAtualContextoParaRestricao = '';
+
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+        const inputPercSimul = row.querySelector('input.simul-perc');
+
+        if (!inputValorSimul || !inputPercSimul) return;
+
+        let effectiveCategoryName = '';
+
+        if (row.classList.contains('dre-cat')) {
+            categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
+            effectiveCategoryName = categoriaAtualContextoParaRestricao;
+        } else if (row.classList.contains('dre-sub')) {
+            effectiveCategoryName = categoriaAtualContextoParaRestricao;
+        } else if (row.classList.contains('dre-subcat-l2')) { // RNO sub-items
+            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS") {
+                 effectiveCategoryName = "RECEITAS NAO OPERACIONAIS";
+            }
+        }
+
+        if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName)) {
+            const restrictionType = restrictions[effectiveCategoryName];
+            inputValorSimul.readOnly = (restrictionType === 'editPercent');
+            inputPercSimul.readOnly = (restrictionType === 'editValue');
+        }
+    });
+}
+
   // Cálculo inicial ao carregar a página
   recalcularTudo();
   initializeDREToggle(); // Inicializa a funcionalidade de expandir/recolher
+  applyInputRestrictions(); // Aplica as restrições de edição
 
   // Salvar Metas
   document.getElementById('salvarMetasBtn').addEventListener('click', function() {
