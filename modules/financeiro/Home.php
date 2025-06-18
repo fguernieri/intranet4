@@ -1087,7 +1087,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <label for="dataMetaInput" class="block text-sm font-medium text-gray-300 mb-1">Data para Salvar Metas:</label>
       <input type="date" id="dataMetaInput" name="dataMetaInput"
              class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-             value="<?= $anoAtual ?>-<?= str_pad($mesAtual, 2, '0', STR_PAD_LEFT) ?>-01">
+             value="<?= date('Y-m-d') ?>">
     </div>
     <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
     <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS OFICIAIS</button>
@@ -1410,12 +1410,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function applyInputRestrictions() {
-    const restrictions = {
+    const restrictions = { // Nomes exatos das categorias como aparecem no HTML
         'TRIBUTOS': 'editPercent',
         'CUSTO VARIÁVEL': 'editPercent',
         'CUSTO FIXO': 'editValue',
         'DESPESA FIXA': 'editValue',
-        'DESPESA VENDA': 'editPercent',
+        'DESPESA VENDA': 'editPercent', // Corrigido para 'DESPESA VENDA' se for o nome exato
         'INVESTIMENTO INTERNO': 'editValue',
         'INVESTIMENTO EXTERNO': 'editValue',
         'AMORTIZAÇÃO': 'editValue',
@@ -1447,10 +1447,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName)) {
+        let ruleMakesValorReadOnly = false;
+        let ruleMakesPercReadOnly = false;
+
+        if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName.toUpperCase())) { // Comparar com toUpperCase para robustez
             const restrictionType = restrictions[effectiveCategoryName];
-            inputValorSimul.readOnly = (restrictionType === 'editPercent');
-            inputPercSimul.readOnly = (restrictionType === 'editValue');
+            if (restrictionType === 'editPercent') {
+                ruleMakesValorReadOnly = true;
+            } else { // editValue
+                ruleMakesPercReadOnly = true;
+            }
+        }
+
+        // Aplicar a inputValorSimul
+        if (ruleMakesValorReadOnly) {
+            inputValorSimul.readOnly = true;
+            inputValorSimul.dataset.dynamicReadonly = 'true';
+        } else {
+            if (!inputValorSimul.hasAttribute('readonly')) { // Só tornar editável se não for HTML readonly
+                inputValorSimul.readOnly = false;
+            }
+            delete inputValorSimul.dataset.dynamicReadonly;
+        }
+
+        // Aplicar a inputPercSimul
+        if (ruleMakesPercReadOnly) {
+            inputPercSimul.readOnly = true;
+        } else {
+            if (!inputPercSimul.hasAttribute('readonly')) { // Só tornar editável se não for HTML readonly
+                inputPercSimul.readOnly = false;
+            }
         }
     });
 }
@@ -1490,8 +1516,13 @@ document.addEventListener('DOMContentLoaded', function() {
              categoriaAtualContexto = primeiroTd.textContent.trim();
         }
 
-        // Pular linhas que não têm input de valor ou cujo input é readonly
-        if (!inputValorSimul || inputValorSimul.readOnly) {
+        // Pular linhas que não têm input de valor.
+        // Ou pular se o input de valor for readonly E NÃO foi tornado readonly pela nossa lógica de restrição
+        // (ou seja, é um campo HTML readonly como "LUCRO LÍQUIDO" que não deve ter meta).
+        if (!inputValorSimul) {
+            return;
+        }
+        if (inputValorSimul.readOnly && !inputValorSimul.hasAttribute('data-dynamic-readonly')) {
             return;
         }
 
