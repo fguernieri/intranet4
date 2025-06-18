@@ -816,9 +816,35 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <?php if (!empty($outrasReceitasPorCatSubMes)): ?>
         <?php foreach ($outrasReceitasPorCatSubMes as $catNomeOR => $subcategoriasOR): ?>
+          <?php
+            // Calcular totais de Média e Atual para esta Categoria de RNO ($catNomeOR)
+            $totalMedia3CatRNO = 0;
+            $totalAtualCatRNO = 0;
+            if (isset($media3OutrasRecSub[$catNomeOR])) {
+                foreach ($media3OutrasRecSub[$catNomeOR] as $mediaSubValor) {
+                    $totalMedia3CatRNO += $mediaSubValor;
+                }
+            }
+            if (isset($atualOutrasRecSub[$catNomeOR])) {
+                foreach ($atualOutrasRecSub[$catNomeOR] as $atualSubValor) {
+                    $totalAtualCatRNO += $atualSubValor;
+                }
+            }
+            $dataCatKeyRNO = htmlspecialchars(str_replace(' ', '_', $catNomeOR));
+          ?>
           <!-- Linha da Categoria de Outras Receitas -->
           <tr class="dre-subcat-l1">
-            <td class="p-2 pl-6 text-left font-semibold" colspan="11"><?= htmlspecialchars($catNomeOR) ?></td>
+            <td class="p-2 pl-6 text-left font-semibold"><?= htmlspecialchars($catNomeOR) ?></td>
+            <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3CatRNO,2,',','.') ?></td>
+            <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3CatRNO / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+            <td class="p-2 text-right" data-simul-valor-rno-cat="<?= $dataCatKeyRNO ?>"></td> <!-- JS Preenche Simulação Valor -->
+            <td class="p-2 text-center" data-simul-perc-rno-cat="<?= $dataCatKeyRNO ?>"></td> <!-- JS Preenche Simulação % -->
+            <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
+            <td class="p-2 text-right"></td> <!-- Meta -->
+            <td class="p-2 text-center"></td> <!-- % Meta s/ FAT. -->
+            <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualCatRNO,2,',','.') ?></td>
+            <td class="p-2 text-center">-</td>
+            <td class="p-2 text-center">-</td>
           </tr>
 
           <?php foreach ($subcategoriasOR as $subNomeOR => $valoresMensaisOR): ?>
@@ -826,8 +852,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               $mediaSubOR = $media3OutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
               $atualSubOR = $atualOutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
               // Usar nomes de categoria e subcategoria para data attributes, normalizando-os para JS
-              $dataCatKey = htmlspecialchars(str_replace(' ', '_', $catNomeOR));
-              $dataSubKey = htmlspecialchars(str_replace(' ', '_', $subNomeOR));
+              // $dataCatKeyRNO já definido acima
+              $dataSubCatKeyRNO = htmlspecialchars(str_replace(' ', '_', $subNomeOR));
             ?>
             <tr class="dre-subcat-l2">
               <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeOR) ?></td>
@@ -835,12 +861,12 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
               <td class="p-2 text-right">
                 <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
-                       data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKey ?>" data-sub-sub-cat="<?= $dataSubKey ?>"
+                       data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKeyRNO ?>" data-sub-sub-cat="<?= $dataSubCatKeyRNO ?>"
                        value="<?= number_format($mediaSubOR,2,',','.') ?>">
               </td>
               <td class="p-2 text-center">
                 <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
-                       style="width:60px;" data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKey ?>" data-sub-sub-cat="<?= $dataSubKey ?>"
+                       style="width:60px;" data-cat="RECEITAS NAO OPERACIONAIS" data-sub-cat="<?= $dataCatKeyRNO ?>" data-sub-sub-cat="<?= $dataSubCatKeyRNO ?>"
                        value="<?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
               </td>
               <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
@@ -1240,23 +1266,43 @@ function recalcSinteticas() {
     if (inputFCPerc) inputFCPerc.value = formatSimPerc(simFluxoCaixa, receitaBrutaSimulada);
   }
 
-  // 5. ATUALIZAR TOTAIS DE CATEGORIAS ESPECIAIS (COMO RECEITAS NAO OPERACIONAIS)
-  // Que não são inputs diretos, mas sim TDs que exibem totais.
-  let totalSimulRNO = 0;
-  document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(inputRNO => {
-    totalSimulRNO += parseBRL(inputRNO.value);
+  // --- ATUALIZAÇÃO RECEITAS NÃO OPERACIONAIS (RNO) ---
+  let totalGeralSimulRNO = 0;
+
+  // Passo 1: Calcular e atualizar totais para cada CATEGORIA de RNO (linhas dre-subcat-l1)
+  document.querySelectorAll('tr.dre-subcat-l1').forEach(rowCatRNO => {
+    const dataCatKey = rowCatRNO.querySelector('[data-simul-valor-rno-cat]')?.dataset.simulValorRnoCat;
+    if (!dataCatKey) return;
+
+    let subTotalCategoriaRNO = 0;
+    // Seleciona os inputs da subcategoria L2 que pertencem a esta categoria L1
+    document.querySelectorAll(`input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"][data-sub-cat="${dataCatKey}"]`).forEach(inputSubCatL2RNO => {
+        subTotalCategoriaRNO += parseBRL(inputSubCatL2RNO.value);
+    });
+
+    const tdValorCatRNO = rowCatRNO.querySelector(`td[data-simul-valor-rno-cat="${dataCatKey}"]`);
+    if (tdValorCatRNO) {
+        tdValorCatRNO.textContent = 'R$ ' + formatSimValue(subTotalCategoriaRNO);
+    }
+    const tdPercCatRNO = rowCatRNO.querySelector(`td[data-simul-perc-rno-cat="${dataCatKey}"]`);
+    if (tdPercCatRNO) {
+        tdPercCatRNO.textContent = formatSimPerc(subTotalCategoriaRNO, receitaBrutaSimulada);
+    }
+    totalGeralSimulRNO += subTotalCategoriaRNO; // Acumula para o total geral de RNO
   });
 
-  const tdTotalSimulRNO = document.querySelector('td.simul-total-cat[data-cat-total-simul="RECEITAS NAO OPERACIONAIS"]');
-  if (tdTotalSimulRNO) {
-    tdTotalSimulRNO.textContent = 'R$ ' + formatSimValue(totalSimulRNO);
+  // Passo 2: Atualizar o total geral da linha principal "RECEITAS NAO OPERACIONAIS" (dre-cat-principal)
+  const tdTotalGeralSimulRNO = document.querySelector('td.simul-total-cat[data-cat-total-simul="RECEITAS NAO OPERACIONAIS"]');
+  if (tdTotalGeralSimulRNO) {
+    tdTotalGeralSimulRNO.textContent = 'R$ ' + formatSimValue(totalGeralSimulRNO);
   }
 
-  const tdPercSimulRNO = document.querySelector('td.simul-perc-cat[data-cat-perc-simul="RECEITAS NAO OPERACIONAIS"]');
-  if (tdPercSimulRNO) {
-    tdPercSimulRNO.textContent = formatSimPerc(totalSimulRNO, receitaBrutaSimulada);
+  const tdPercGeralSimulRNO = document.querySelector('td.simul-perc-cat[data-cat-perc-simul="RECEITAS NAO OPERACIONAIS"]');
+  if (tdPercGeralSimulRNO) {
+    tdPercGeralSimulRNO.textContent = formatSimPerc(totalGeralSimulRNO, receitaBrutaSimulada);
   }
 }
+
 
 
 function initializeDREToggle() {
@@ -1479,10 +1525,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const fluxoCaixaSimulado = parseBRL(inputFCValorSimul.value);
 
-    if (fluxoCaixaSimulado < 0) {
+    // Se o fluxo de caixa não for zero, ajusta a receita bruta para tentar zerá-lo.
+    if (fluxoCaixaSimulado !== 0) {
       const inputReceitaBrutaSimul = document.querySelector('.simul-valor[data-receita="1"]');
+      if (!inputReceitaBrutaSimul) {
+          alert('Campo de simulação da Receita Bruta não encontrado.');
+          return;
+      }
       const receitaBrutaAtual = parseBRL(inputReceitaBrutaSimul.value);
-      const novaReceitaBruta = receitaBrutaAtual + Math.abs(fluxoCaixaSimulado);
+      
+      // Se fluxoCaixaSimulado > 0, receita diminui.
+      // Se fluxoCaixaSimulado < 0, receita aumenta (receitaAtual - (-valor) = receitaAtual + valor).
+      let novaReceitaBruta = receitaBrutaAtual - fluxoCaixaSimulado;
+      
+      // Garante que a receita não seja negativa.
+      novaReceitaBruta = Math.max(0, novaReceitaBruta);
+      
       inputReceitaBrutaSimul.value = formatSimValue(novaReceitaBruta);
       recalcularTudo(); // Recalcula toda a DRE com a nova receita
     }
