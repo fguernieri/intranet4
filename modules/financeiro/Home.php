@@ -1107,6 +1107,16 @@ function formatSimPerc(value, base) { // Formata percentual para campos de input
   return ((value / base) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 }
 
+function getCleanedCellText(cell) {
+  if (!cell) return '';
+  const cellContentClone = cell.cloneNode(true);
+  const iconSpan = cellContentClone.querySelector('.toggler-icon');
+  if (iconSpan) {
+    iconSpan.remove();
+  }
+  return cellContentClone.textContent.trim();
+}
+
 function getReceitaBrutaSimulada() {
   const inputReceita = document.querySelector('.simul-valor[data-receita="1"]');
   return inputReceita ? parseBRL(inputReceita.value) : 0;
@@ -1117,13 +1127,7 @@ function findCategoryRow(categoryName) {
   for (const row of catRows) {
     const firstCell = row.cells[0];
     if (firstCell) {
-      // Clona o conteúdo da célula para não modificar o DOM original ao remover o ícone
-      const cellContentClone = firstCell.cloneNode(true);
-      const iconSpan = cellContentClone.querySelector('.toggler-icon');
-      if (iconSpan) {
-        iconSpan.remove(); // Remove o nó do span do clone para limpar o texto
-      }
-      const cleanedText = cellContentClone.textContent.trim().toUpperCase();
+      const cleanedText = getCleanedCellText(firstCell).toUpperCase();
       
       // Usar startsWith porque algumas categorias têm descrições longas (ex: LUCRO BRUTO (...))
       if (cleanedText.startsWith(categoryName.toUpperCase())) {
@@ -1379,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputValorSimul = row.querySelector('input.simul-valor');
 
         if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = primeiroTd.textContent.trim();
+             categoriaAtualContexto = getCleanedCellText(primeiroTd);
         }
 
         if (!inputValorSimul || inputValorSimul.readOnly) {
@@ -1390,12 +1394,12 @@ document.addEventListener('DOMContentLoaded', function() {
         let itemKey = '';
 
         if (row.classList.contains('dre-cat')) {
-            const cat = primeiroTd.textContent.trim();
+            const cat = getCleanedCellText(primeiroTd);
             itemKey = `${cat}|`; 
             simulationData.push({ key: itemKey, valor: valorSimulCurrent });
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) {
-                const sub = primeiroTd.textContent.trim();
+                const sub = getCleanedCellText(primeiroTd);
                 itemKey = `${categoriaAtualContexto}|${sub}`;
                 simulationData.push({ key: itemKey, valor: valorSimulCurrent });
             }
@@ -1463,7 +1467,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Atualizar contexto de categoria mesmo se a linha de categoria não for uma meta em si (ex: se for readonly)
         if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = primeiroTd.textContent.trim();
+             categoriaAtualContexto = getCleanedCellText(primeiroTd);
         }
 
         // Pular linhas que não têm input de valor ou cujo input é readonly
@@ -1476,14 +1480,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let subcategoriaMeta = '';
 
         if (row.classList.contains('dre-cat')) {
-            categoriaMeta = primeiroTd.textContent.trim(); // Já é o categoriaAtualContexto
+            categoriaMeta = getCleanedCellText(primeiroTd); 
             subcategoriaMeta = ''; // Meta para a categoria principal
             metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
 
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) { // Garante que temos um contexto de categoria
                 categoriaMeta = categoriaAtualContexto;
-                subcategoriaMeta = primeiroTd.textContent.trim();
+                subcategoriaMeta = getCleanedCellText(primeiroTd);
                 metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
             }
         } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
@@ -1555,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputValorSimul = row.querySelector('input.simul-valor');
 
         if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = primeiroTd.textContent.trim();
+             categoriaAtualContexto = getCleanedCellText(primeiroTd);
         }
 
         if (!inputValorSimul || inputValorSimul.readOnly) {
@@ -1564,11 +1568,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let itemKey = '';
         if (row.classList.contains('dre-cat')) {
-            const cat = primeiroTd.textContent.trim();
+            const cat = getCleanedCellText(primeiroTd);
             itemKey = `${cat}|`;
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) {
-                const sub = primeiroTd.textContent.trim();
+                const sub = getCleanedCellText(primeiroTd);
                 itemKey = `${categoriaAtualContexto}|${sub}`;
             }
         } else if (row.classList.contains('dre-subcat-l2')) {
