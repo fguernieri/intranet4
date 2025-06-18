@@ -332,7 +332,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="/assets/css/style.css" rel="stylesheet">
   <style>
-    .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; }
+    .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; user-select: none;}
     .dre-sub    { background: #383858; font-weight: 500; cursor:pointer; }
     .dre-detalhe{ background: #232946; }
     .dre-hide   { display: none; }
@@ -351,6 +351,11 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       color: #ffb703 !important;
       border-left: 2px solid #ffb703;
       border-right: 2px solid #ffb703;
+    }
+    .toggler-icon {
+        display: inline-block;
+        margin-right: 5px;
+        transition: transform 0.2s ease-in-out;
     }
   </style>
 </head>
@@ -387,11 +392,11 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <table id="tabelaSimulacao" class="min-w-full text-xs mx-auto border border-gray-700 rounded">
     <thead>
       <tr>
-        <th rowspan="2" class="p-2 text-center bg-gray-800">Categoria &gt; SubCategoria</th>
-        <th colspan="2" class="p-2 text-center bg-blue-900">Média -3m / % Média-3m S/ FAT.</th>
-        <th colspan="3" class="p-2 text-center bg-green-900">Simulação / % Simulação S/ FAT. / Diferença (R$)</th>
-        <th colspan="2" class="p-2 text-center bg-red-900">Meta / % Meta s/ FAT.</th>
-        <th colspan="3" class="p-2 text-center bg-purple-900">Realizado / % Realizado s/ FAT. / Comparação Meta</th>
+        <th rowspan="2" class="p-2 text-center bg-gray-800">CATEGORIA &gt; SUBCATEGORIA</th>
+        <th colspan="2" class="p-2 text-center bg-blue-900">MÉDIA -3M</th>
+        <th colspan="3" class="p-2 text-center bg-green-900">SIMULAÇÃO</th>
+        <th colspan="2" class="p-2 text-center bg-red-900">META</th>
+        <th colspan="3" class="p-2 text-center bg-purple-900">REALIZADO X META</th>
       </tr>
       <tr>
         <th class="p-2 text-center bg-blue-700">Média -3m</th>
@@ -409,7 +414,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <tbody>
       <!-- 1. RECEITA OPERACIONAL (continua editável) -->
       <tr class="dre-cat">
-        <td class="p-2 text-left">RECEITA BRUTA</td>
+        <td class="p-2 text-left"><span class="toggler-icon"></span>RECEITA BRUTA</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($media3Rec,2,',','.') ?></td>
         <td class="p-2 text-center">100,00%</td>
         <td class="p-2 text-right">
@@ -454,7 +459,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 <!-- TRIBUTOS (ajustado para seguir o padrão das demais linhas principais) -->
 <?php if(isset($matrizOrdenada['TRIBUTOS'])): ?>
   <tr class="dre-cat cat_trib">
-    <td class="p-2 text-left">TRIBUTOS</td>
+    <td class="p-2 text-left"><span class="toggler-icon">►</span>TRIBUTOS</td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center"><?= $media3Rec>0 ? number_format((($media3Cat['TRIBUTOS'] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-right">
@@ -491,7 +496,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </tr>
   <?php foreach($matrizOrdenada['TRIBUTOS'] as $sub => $mesValores): ?>
     <?php if($sub): ?>
-      <tr class="dre-sub">
+      <tr class="dre-sub dre-hide">
         <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub['TRIBUTOS'][$sub] ?? 0,2,',','.') ?></td>
         <td class="p-2 text-center">
@@ -542,7 +547,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   // são calculadas e preenchidas pelo JavaScript.
 ?>
 <tr id="rowFatLiquido" class="dre-cat" style="background:#1a4c2b;">
-  <td class="p-2 text-left">RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)</td>
+  <td class="p-2 text-left"><span class="toggler-icon"></span>RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaReceitaLiquida,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaReceitaLiquida / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -562,7 +567,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 <!-- CUSTO VARIÁVEL (categoria e subcategorias) -->
 <?php if(isset($matrizOrdenada['CUSTO VARIÁVEL'])): ?>
   <tr class="dre-cat cat_cvar">
-    <td class="p-2 text-left">CUSTO VARIÁVEL</td>
+    <td class="p-2 text-left"><span class="toggler-icon">►</span>CUSTO VARIÁVEL</td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center"><?= $media3Rec>0 ? number_format((($media3Cat['CUSTO VARIÁVEL'] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-right">
@@ -600,8 +605,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
 <?php endif; ?>
   <?php foreach($matrizOrdenada['CUSTO VARIÁVEL'] as $sub => $mesValores): ?>
-    <?php if($sub): ?>
-      <tr class="dre-sub">
+    <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
+      <tr class="dre-sub dre-hide">
   <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub['CUSTO VARIÁVEL'][$sub] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Sub['CUSTO VARIÁVEL'][$sub] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
@@ -647,7 +652,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   $atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
 ?>
 <tr id="rowLucroBruto" class="dre-cat" style="background:#102c14;">
-  <td class="p-2 text-left">LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)</td>
+  <td class="p-2 text-left"><span class="toggler-icon"></span>LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroBruto,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroBruto / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -671,7 +676,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
-  <td class="p-2 text-left"><?= $catName ?></td>
+  <td class="p-2 text-left"><span class="toggler-icon">►</span><?= $catName ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -709,7 +714,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
         <?php foreach($matrizOrdenada[$catName] as $sub => $mesValores): ?>
           <?php if($sub): ?>
-           <tr class="dre-sub">
+           <tr class="dre-sub dre-hide">
   <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center">
@@ -759,7 +764,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <?php 
 ?>
 <tr class="dre-cat" style="background:#102c14;">
-  <td class="p-2 text-left">LUCRO LÍQUIDO</td>
+  <td class="p-2 text-left"><span class="toggler-icon"></span>LUCRO LÍQUIDO</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroLiquido,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroLiquido / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -794,7 +799,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- ==================== [NOVA SEÇÃO: RECEITAS NAO OPERACIONAIS] ==================== -->
       <tr class="dre-cat-principal bg-gray-700 text-white font-bold">
-        <td class="p-2 text-left" colspan="1">RECEITAS NAO OPERACIONAIS</td>
+        <td class="p-2 text-left" colspan="1"><span class="toggler-icon">►</span>RECEITAS NAO OPERACIONAIS</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3OutrasRecGlobal,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
         <td class="p-2 text-right simul-total-cat" data-cat-total-simul="RECEITAS NAO OPERACIONAIS">
@@ -813,11 +818,10 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <?php if (!empty($outrasReceitasPorCatSubMes)): ?>
         <?php foreach ($outrasReceitasPorCatSubMes as $catNomeOR => $subcategoriasOR): ?>
-          <!-- Linha da Categoria de Outras Receitas -->
-          <tr class="dre-subcat-l1">
+          <!-- Linha da Categoria de Outras Receitas (agora .dre-sub para ser toggleable) -->
+          <tr class="dre-sub dre-hide"> <!-- Alterado de dre-subcat-l1 para dre-sub e adicionado dre-hide -->
             <td class="p-2 pl-6 text-left font-semibold" colspan="11"><?= htmlspecialchars($catNomeOR) ?></td>
           </tr>
-
           <?php foreach ($subcategoriasOR as $subNomeOR => $valoresMensaisOR): ?>
             <?php
               $mediaSubOR = $media3OutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
@@ -826,7 +830,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               $dataCatKey = htmlspecialchars(str_replace(' ', '_', $catNomeOR));
               $dataSubKey = htmlspecialchars(str_replace(' ', '_', $subNomeOR));
             ?>
-            <tr class="dre-subcat-l2">
+            <tr class="dre-sub dre-hide"> <!-- Alterado de dre-subcat-l2 para dre-sub e adicionado dre-hide -->
               <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeOR) ?></td>
               <td class="p-2 text-right"><?= 'R$ '.number_format($mediaSubOR,2,',','.') ?></td>
               <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
@@ -866,7 +870,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
-  <td class="p-2 text-left"><?= $catName ?></td>
+  <td class="p-2 text-left"><span class="toggler-icon">►</span><?= $catName ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -902,8 +906,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
 </tr>
     <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $mesValores): ?>
-      <?php if($sub): ?>
-        <tr class="dre-sub">
+      <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
+        <tr class="dre-sub dre-hide">
           <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center">
@@ -952,7 +956,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         if(isset($matrizOrdenada[$catNameSR])):
       ?>
         <tr class="dre-cat">
-          <td class="p-2 text-left"><?= htmlspecialchars($catNameSR) ?></td>
+          <td class="p-2 text-left"><span class="toggler-icon">►</span><?= htmlspecialchars($catNameSR) ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catNameSR] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catNameSR] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
           <td class="p-2 text-right">
@@ -988,8 +992,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           </td>
         </tr>
         <?php foreach(($matrizOrdenada[$catNameSR] ?? []) as $sub => $mesValores): ?>
-          <?php if($sub): ?>
-           <tr class="dre-sub">
+          <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
+           <tr class="dre-sub dre-hide">
               <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
               <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catNameSR][$sub] ?? 0,2,',','.') ?></td>
               <td class="p-2 text-center">
@@ -1033,7 +1037,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- FLUXO DE CAIXA (CALCULADO) -->
       <tr id="rowFluxoCaixa" class="dre-cat" style="background:#082f49; color: #e0f2fe; font-weight: bold;">
-        <td class="p-2 text-left">FLUXO DE CAIXA</td>
+        <td class="p-2 text-left"><span class="toggler-icon"></span>FLUXO DE CAIXA</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($mediaFluxoCaixa,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaFluxoCaixa / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
         <td class="p-2 text-right">
@@ -1276,6 +1280,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Cálculo inicial ao carregar a página
   recalcularTudo();
+
+  // --- INÍCIO: Funcionalidade de Expandir/Recolher Subcategorias ---
+  document.querySelectorAll('tr.dre-cat').forEach(catRow => {
+    const togglerIcon = catRow.querySelector('.toggler-icon');
+    
+    // Verifica se há subcategorias para esta categoria
+    let hasSubcategories = false;
+    let nextRow = catRow.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('dre-sub')) {
+        hasSubcategories = true;
+    }
+
+    if (!hasSubcategories && togglerIcon) { // Se não tem subcategorias, remove o ícone
+        togglerIcon.style.display = 'none'; 
+        return; // Não adiciona listener se não há o que expandir/recolher
+    }
+
+    catRow.addEventListener('click', function(event) {
+      // Impede que o clique no input de simulação dispare o toggle
+      if (event.target.tagName === 'INPUT') return;
+
+      let currentRow = this.nextElementSibling;
+      while (currentRow && currentRow.classList.contains('dre-sub')) {
+        currentRow.classList.toggle('dre-hide');
+        currentRow = currentRow.nextElementSibling;
+      }
+      // Atualiza o ícone
+      if (togglerIcon) {
+        togglerIcon.textContent = (this.nextElementSibling && !this.nextElementSibling.classList.contains('dre-hide')) ? '▼' : '►';
+      }
+    });
+  });
+  // --- FIM: Funcionalidade de Expandir/Recolher Subcategorias ---
 
   // --- INÍCIO: Funcionalidade de Salvar/Carregar Simulação Local ---
   function populateSimulationList() {
