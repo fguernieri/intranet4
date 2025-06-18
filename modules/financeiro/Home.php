@@ -332,11 +332,14 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="/assets/css/style.css" rel="stylesheet">
   <style>
-    .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; user-select: none;}
+    .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; }
     .dre-sub    { background: #383858; font-weight: 500; cursor:pointer; }
+    .dre-subcat-l1 { background: #2c2c4a; font-weight: bold; cursor:pointer; } /* Estilo para subcategorias L1 de RNO */
+    .dre-subcat-l2 { background: #383858; font-weight: 500; } /* Estilo para subcategorias L2 de RNO */
     .dre-detalhe{ background: #232946; }
     .dre-hide   { display: none; }
     table, th, td {
+      /* vertical-align: middle; */ /* Descomente se quiser alinhar verticalmente ao centro */
       font-family: 'Segoe UI', Arial, sans-serif;
       font-size: 11px;
       border: 0.5px solid #fff;
@@ -351,11 +354,6 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       color: #ffb703 !important;
       border-left: 2px solid #ffb703;
       border-right: 2px solid #ffb703;
-    }
-    .toggler-icon {
-        display: inline-block;
-        margin-right: 5px;
-        transition: transform 0.2s ease-in-out;
     }
   </style>
 </head>
@@ -392,11 +390,11 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   <table id="tabelaSimulacao" class="min-w-full text-xs mx-auto border border-gray-700 rounded">
     <thead>
       <tr>
-        <th rowspan="2" class="p-2 text-center bg-gray-800">CATEGORIA &gt; SUBCATEGORIA</th>
-        <th colspan="2" class="p-2 text-center bg-blue-900">MÉDIA -3M</th>
-        <th colspan="3" class="p-2 text-center bg-green-900">SIMULAÇÃO</th>
-        <th colspan="2" class="p-2 text-center bg-red-900">META</th>
-        <th colspan="3" class="p-2 text-center bg-purple-900">REALIZADO X META</th>
+        <th rowspan="2" class="p-2 text-center bg-gray-800">Categoria &gt; SubCategoria</th>
+        <th colspan="2" class="p-2 text-center bg-blue-900">Média -3m / % Média-3m S/ FAT.</th>
+        <th colspan="3" class="p-2 text-center bg-green-900">Simulação / % Simulação S/ FAT. / Diferença (R$)</th>
+        <th colspan="2" class="p-2 text-center bg-red-900">Meta / % Meta s/ FAT.</th>
+        <th colspan="3" class="p-2 text-center bg-purple-900">Realizado / % Realizado s/ FAT. / Comparação Meta</th>
       </tr>
       <tr>
         <th class="p-2 text-center bg-blue-700">Média -3m</th>
@@ -414,7 +412,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <tbody>
       <!-- 1. RECEITA OPERACIONAL (continua editável) -->
       <tr class="dre-cat">
-        <td class="p-2 text-left"><span class="toggler-icon"></span>RECEITA BRUTA</td>
+        <td class="p-2 text-left">RECEITA BRUTA</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($media3Rec,2,',','.') ?></td>
         <td class="p-2 text-center">100,00%</td>
         <td class="p-2 text-right">
@@ -459,7 +457,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 <!-- TRIBUTOS (ajustado para seguir o padrão das demais linhas principais) -->
 <?php if(isset($matrizOrdenada['TRIBUTOS'])): ?>
   <tr class="dre-cat cat_trib">
-    <td class="p-2 text-left"><span class="toggler-icon">►</span>TRIBUTOS</td>
+    <td class="p-2 text-left">TRIBUTOS</td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center"><?= $media3Rec>0 ? number_format((($media3Cat['TRIBUTOS'] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-right">
@@ -496,7 +494,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </tr>
   <?php foreach($matrizOrdenada['TRIBUTOS'] as $sub => $mesValores): ?>
     <?php if($sub): ?>
-      <tr class="dre-sub dre-hide">
+      <tr class="dre-sub">
         <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub['TRIBUTOS'][$sub] ?? 0,2,',','.') ?></td>
         <td class="p-2 text-center">
@@ -547,7 +545,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   // são calculadas e preenchidas pelo JavaScript.
 ?>
 <tr id="rowFatLiquido" class="dre-cat" style="background:#1a4c2b;">
-  <td class="p-2 text-left"><span class="toggler-icon"></span>RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)</td>
+  <td class="p-2 text-left">RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaReceitaLiquida,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaReceitaLiquida / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -567,7 +565,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 <!-- CUSTO VARIÁVEL (categoria e subcategorias) -->
 <?php if(isset($matrizOrdenada['CUSTO VARIÁVEL'])): ?>
   <tr class="dre-cat cat_cvar">
-    <td class="p-2 text-left"><span class="toggler-icon">►</span>CUSTO VARIÁVEL</td>
+    <td class="p-2 text-left">CUSTO VARIÁVEL</td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center"><?= $media3Rec>0 ? number_format((($media3Cat['CUSTO VARIÁVEL'] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
     <td class="p-2 text-right">
@@ -605,8 +603,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
 <?php endif; ?>
   <?php foreach($matrizOrdenada['CUSTO VARIÁVEL'] as $sub => $mesValores): ?>
-    <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
-      <tr class="dre-sub dre-hide">
+    <?php if($sub): ?>
+      <tr class="dre-sub">
   <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub['CUSTO VARIÁVEL'][$sub] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Sub['CUSTO VARIÁVEL'][$sub] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
@@ -652,7 +650,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   $atualLucroBruto = $atualReceitaLiquida - ($atualCat['CUSTO VARIÁVEL'] ?? 0);
 ?>
 <tr id="rowLucroBruto" class="dre-cat" style="background:#102c14;">
-  <td class="p-2 text-left"><span class="toggler-icon"></span>LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)</td>
+  <td class="p-2 text-left">LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroBruto,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroBruto / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -676,7 +674,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
-  <td class="p-2 text-left"><span class="toggler-icon">►</span><?= $catName ?></td>
+  <td class="p-2 text-left"><?= $catName ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -714,7 +712,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
         <?php foreach($matrizOrdenada[$catName] as $sub => $mesValores): ?>
           <?php if($sub): ?>
-           <tr class="dre-sub dre-hide">
+           <tr class="dre-sub">
   <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center">
@@ -764,7 +762,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       <?php 
 ?>
 <tr class="dre-cat" style="background:#102c14;">
-  <td class="p-2 text-left"><span class="toggler-icon"></span>LUCRO LÍQUIDO</td>
+  <td class="p-2 text-left">LUCRO LÍQUIDO</td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($mediaLucroLiquido,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaLucroLiquido / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -799,7 +797,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- ==================== [NOVA SEÇÃO: RECEITAS NAO OPERACIONAIS] ==================== -->
       <tr class="dre-cat-principal bg-gray-700 text-white font-bold">
-        <td class="p-2 text-left" colspan="1"><span class="toggler-icon">►</span>RECEITAS NAO OPERACIONAIS</td>
+        <td class="p-2 text-left" colspan="1">RECEITAS NAO OPERACIONAIS</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3OutrasRecGlobal,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3OutrasRecGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
         <td class="p-2 text-right simul-total-cat" data-cat-total-simul="RECEITAS NAO OPERACIONAIS">
@@ -818,10 +816,11 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <?php if (!empty($outrasReceitasPorCatSubMes)): ?>
         <?php foreach ($outrasReceitasPorCatSubMes as $catNomeOR => $subcategoriasOR): ?>
-          <!-- Linha da Categoria de Outras Receitas (agora .dre-sub para ser toggleable) -->
-          <tr class="dre-sub dre-hide"> <!-- Alterado de dre-subcat-l1 para dre-sub e adicionado dre-hide -->
+          <!-- Linha da Categoria de Outras Receitas -->
+          <tr class="dre-subcat-l1">
             <td class="p-2 pl-6 text-left font-semibold" colspan="11"><?= htmlspecialchars($catNomeOR) ?></td>
           </tr>
+
           <?php foreach ($subcategoriasOR as $subNomeOR => $valoresMensaisOR): ?>
             <?php
               $mediaSubOR = $media3OutrasRecSub[$catNomeOR][$subNomeOR] ?? 0;
@@ -830,7 +829,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               $dataCatKey = htmlspecialchars(str_replace(' ', '_', $catNomeOR));
               $dataSubKey = htmlspecialchars(str_replace(' ', '_', $subNomeOR));
             ?>
-            <tr class="dre-sub dre-hide"> <!-- Alterado de dre-subcat-l2 para dre-sub e adicionado dre-hide -->
+            <tr class="dre-subcat-l2">
               <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeOR) ?></td>
               <td class="p-2 text-right"><?= 'R$ '.number_format($mediaSubOR,2,',','.') ?></td>
               <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaSubOR / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
@@ -870,7 +869,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           if(isset($matrizOrdenada[$catName])):
       ?>
         <tr class="dre-cat">
-  <td class="p-2 text-left"><span class="toggler-icon">►</span><?= $catName ?></td>
+  <td class="p-2 text-left"><?= $catName ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catName] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
   <td class="p-2 text-right">
@@ -906,8 +905,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
 </tr>
     <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $mesValores): ?>
-      <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
-        <tr class="dre-sub dre-hide">
+      <?php if($sub): ?>
+        <tr class="dre-sub">
           <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center">
@@ -956,7 +955,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         if(isset($matrizOrdenada[$catNameSR])):
       ?>
         <tr class="dre-cat">
-          <td class="p-2 text-left"><span class="toggler-icon">►</span><?= htmlspecialchars($catNameSR) ?></td>
+          <td class="p-2 text-left"><?= htmlspecialchars($catNameSR) ?></td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catNameSR] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catNameSR] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
           <td class="p-2 text-right">
@@ -992,8 +991,8 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           </td>
         </tr>
         <?php foreach(($matrizOrdenada[$catNameSR] ?? []) as $sub => $mesValores): ?>
-          <?php if($sub): // Garante que não tentamos exibir uma subcategoria vazia ?>
-           <tr class="dre-sub dre-hide">
+          <?php if($sub): ?>
+           <tr class="dre-sub">
               <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
               <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catNameSR][$sub] ?? 0,2,',','.') ?></td>
               <td class="p-2 text-center">
@@ -1037,7 +1036,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
       <!-- FLUXO DE CAIXA (CALCULADO) -->
       <tr id="rowFluxoCaixa" class="dre-cat" style="background:#082f49; color: #e0f2fe; font-weight: bold;">
-        <td class="p-2 text-left"><span class="toggler-icon"></span>FLUXO DE CAIXA</td>
+        <td class="p-2 text-left">FLUXO DE CAIXA</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($mediaFluxoCaixa,2,',','.') ?></td>
         <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaFluxoCaixa / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
         <td class="p-2 text-right">
@@ -1067,25 +1066,24 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
     <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS OFICIAIS</button>
   </div>
-  
-  <!-- Controles para Simulações Salvas Localmente -->
-  <div class="mt-4 pt-4 border-t border-gray-700 flex items-end gap-4">
+
+  <div class="mt-4 flex items-end gap-4">
     <div>
-      <label for="simulationNameInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação (para salvar local):</label>
-      <input type="text" id="simulationNameInput"
-             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-             placeholder="Ex: Cenário Otimista <?= date('Y-m-d') ?>">
+      <label for="nomeSimulacaoLocalInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação Local:</label>
+      <input type="text" id="nomeSimulacaoLocalInput" placeholder="Ex: Cenário Otimista"
+             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
     </div>
-    <button id="saveSimulationBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded font-bold">SALVAR SIMULAÇÃO ATUAL (LOCAL)</button>
-    <div class="flex-grow">
-      <label for="loadSimulationSelect" class="block text-sm font-medium text-gray-300 mb-1">Carregar Simulação Salva (Local):</label>
-      <select id="loadSimulationSelect" class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-        <option value="">-- Selecione uma Simulação --</option>
+    <button id="salvarSimulacaoLocalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded font-bold self-end">SALVAR SIMULAÇÃO</button>
+    <div>
+      <label for="listaSimulacoesSalvas" class="block text-sm font-medium text-gray-300 mb-1">Carregar Simulação Salva:</label>
+      <select id="listaSimulacoesSalvas" class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+        <option value="">-- Selecione --</option>
       </select>
     </div>
-     <button id="loadSelectedSimulationBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded font-bold">CARREGAR</button>
-     <button id="deleteSimulationBtn" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2.5 rounded font-bold">EXCLUIR</button>
+    <button id="carregarSimulacaoLocalBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded font-bold self-end">CARREGAR</button>
+    <button id="excluirSimulacaoLocalBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded font-bold self-end">EXCLUIR</button>
   </div>
+  
 </main>
 
 <!-- Scripts de Atualização, Toggle etc. (mantidos) -->
@@ -1096,8 +1094,6 @@ function parseBRL(str) {
   return parseFloat(stringValue.replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
 }
 
-const SIMULATION_STORAGE_PREFIX = 'dreUserSimulation_';
-
 function formatSimValue(value) { // Formata para campos de input de simulação (sem R$)
   return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -1107,32 +1103,17 @@ function formatSimPerc(value, base) { // Formata percentual para campos de input
   return ((value / base) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
 }
 
-function getCleanedCellText(cell) {
-  if (!cell) return '';
-  const cellContentClone = cell.cloneNode(true);
-  const iconSpan = cellContentClone.querySelector('.toggler-icon');
-  if (iconSpan) {
-    iconSpan.remove();
-  }
-  return cellContentClone.textContent.trim();
-}
-
 function getReceitaBrutaSimulada() {
   const inputReceita = document.querySelector('.simul-valor[data-receita="1"]');
   return inputReceita ? parseBRL(inputReceita.value) : 0;
 }
 
 function findCategoryRow(categoryName) {
-  const catRows = document.querySelectorAll('#tabelaSimulacao tbody tr.dre-cat'); // Seletor mais específico
+  const catRows = document.querySelectorAll('tr.dre-cat');
   for (const row of catRows) {
     const firstCell = row.cells[0];
-    if (firstCell) {
-      const cleanedText = getCleanedCellText(firstCell).toUpperCase();
-      
-      // Usar startsWith porque algumas categorias têm descrições longas (ex: LUCRO BRUTO (...))
-      if (cleanedText.startsWith(categoryName.toUpperCase())) {
-        return row;
-      }
+    if (firstCell && firstCell.textContent.trim().toUpperCase().startsWith(categoryName.toUpperCase())) {
+      return row;
     }
   }
   return null;
@@ -1259,7 +1240,90 @@ function recalcSinteticas() {
     if (inputFCPerc) inputFCPerc.value = formatSimPerc(simFluxoCaixa, receitaBrutaSimulada);
   }
 
+  // 5. ATUALIZAR TOTAIS DE CATEGORIAS ESPECIAIS (COMO RECEITAS NAO OPERACIONAIS)
+  // Que não são inputs diretos, mas sim TDs que exibem totais.
+  let totalSimulRNO = 0;
+  document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(inputRNO => {
+    totalSimulRNO += parseBRL(inputRNO.value);
+  });
 
+  const tdTotalSimulRNO = document.querySelector('td.simul-total-cat[data-cat-total-simul="RECEITAS NAO OPERACIONAIS"]');
+  if (tdTotalSimulRNO) {
+    tdTotalSimulRNO.textContent = 'R$ ' + formatSimValue(totalSimulRNO);
+  }
+
+  const tdPercSimulRNO = document.querySelector('td.simul-perc-cat[data-cat-perc-simul="RECEITAS NAO OPERACIONAIS"]');
+  if (tdPercSimulRNO) {
+    tdPercSimulRNO.textContent = formatSimPerc(totalSimulRNO, receitaBrutaSimulada);
+  }
+}
+
+
+function initializeDREToggle() {
+    // Adiciona listeners de clique para linhas expansíveis
+    document.querySelectorAll('tr.dre-cat, tr.dre-cat-principal, tr.dre-subcat-l1').forEach(headerRow => {
+        headerRow.addEventListener('click', function(event) {
+            // Não faz nada se o clique foi em um input, select, button ou link dentro da linha de cabeçalho
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.tagName === 'BUTTON' || event.target.closest('a')) {
+                return;
+            }
+
+            let currentRow = this.nextElementSibling;
+            const isCat = this.classList.contains('dre-cat');
+            const isCatPrincipalRNO = this.classList.contains('dre-cat-principal');
+            const isSubCatL1 = this.classList.contains('dre-subcat-l1');
+
+            while (currentRow) {
+                let stopIterating = false;
+                if (isCat) {
+                    // Alterna a visibilidade das linhas .dre-sub que são filhas desta .dre-cat
+                    if (currentRow.classList.contains('dre-sub')) {
+                        currentRow.classList.toggle('dre-hide');
+                    } else if (currentRow.classList.contains('dre-cat') || 
+                               currentRow.classList.contains('dre-cat-principal') ||
+                               currentRow.classList.contains('dre-subcat-l1')) {
+                        // Para quando encontrar a próxima categoria principal ou um bloco RNO
+                        stopIterating = true;
+                    }
+                } else if (isCatPrincipalRNO) { // Se clicou no cabeçalho principal de RNO
+                    // Alterna a visibilidade das linhas .dre-subcat-l1
+                    if (currentRow.classList.contains('dre-subcat-l1')) {
+                        currentRow.classList.toggle('dre-hide');
+                        // Se estiver recolhendo L1, garante que seus filhos L2 também sejam recolhidos
+                        if (currentRow.classList.contains('dre-hide')) {
+                            let subL2 = currentRow.nextElementSibling;
+                            while(subL2 && subL2.classList.contains('dre-subcat-l2')) {
+                                subL2.classList.add('dre-hide');
+                                subL2 = subL2.nextElementSibling;
+                            }
+                        }
+                    } else if (currentRow.classList.contains('dre-cat') || currentRow.classList.contains('dre-cat-principal')) {
+                        stopIterating = true; // Para ao encontrar outra categoria principal DRE ou outro bloco RNO
+                    }
+                } else if (isSubCatL1) {
+                    // Alterna a visibilidade das linhas .dre-subcat-l2 que são filhas desta .dre-subcat-l1
+                    if (currentRow.classList.contains('dre-subcat-l2')) {
+                        currentRow.classList.toggle('dre-hide');
+                    } else if (currentRow.classList.contains('dre-subcat-l1') || 
+                               currentRow.classList.contains('dre-cat-principal') ||
+                               currentRow.classList.contains('dre-cat')) {
+                        // Para quando encontrar a próxima subcategoria L1 de RNO, o cabeçalho principal de RNO ou uma categoria DRE principal
+                        stopIterating = true;
+                    }
+                }
+
+                if (stopIterating) {
+                    break;
+                }
+                currentRow = currentRow.nextElementSibling;
+            }
+        });
+    });
+
+    // Define o estado inicial: todos os subitens ocultos
+    document.querySelectorAll('tr.dre-sub, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
+       subRow.classList.add('dre-hide');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1295,150 +1359,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Cálculo inicial ao carregar a página
   recalcularTudo();
-
-  // --- INÍCIO: Funcionalidade de Expandir/Recolher Subcategorias ---
-  document.querySelectorAll('tr.dre-cat').forEach(catRow => {
-    const togglerIcon = catRow.querySelector('.toggler-icon');
-    
-    // Verifica se há subcategorias para esta categoria
-    let hasSubcategories = false;
-    let nextRow = catRow.nextElementSibling;
-    if (nextRow && nextRow.classList.contains('dre-sub')) {
-        hasSubcategories = true;
-    }
-
-    if (!hasSubcategories && togglerIcon) { // Se não tem subcategorias, remove o ícone
-        togglerIcon.style.display = 'none'; 
-        return; // Não adiciona listener se não há o que expandir/recolher
-    }
-
-    catRow.addEventListener('click', function(event) {
-      // Impede que o clique no input de simulação dispare o toggle
-      if (event.target.tagName === 'INPUT') return;
-
-      let currentRow = this.nextElementSibling;
-      while (currentRow && currentRow.classList.contains('dre-sub')) {
-        currentRow.classList.toggle('dre-hide');
-        currentRow = currentRow.nextElementSibling;
-      }
-      // Atualiza o ícone
-      if (togglerIcon) {
-        togglerIcon.textContent = (this.nextElementSibling && !this.nextElementSibling.classList.contains('dre-hide')) ? '▼' : '►';
-      }
-    });
-  });
-  // --- FIM: Funcionalidade de Expandir/Recolher Subcategorias ---
-
-  // --- INÍCIO: Funcionalidade de Salvar/Carregar Simulação Local ---
-  function populateSimulationList() {
-    const select = document.getElementById('loadSimulationSelect');
-    const currentSelectedValue = select.value;
-    select.innerHTML = '<option value="">-- Selecione uma Simulação --</option>'; // Clear existing options
-
-    const simulations = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith(SIMULATION_STORAGE_PREFIX)) {
-            const simulationName = key.substring(SIMULATION_STORAGE_PREFIX.length);
-            simulations.push(simulationName);
-        }
-    }
-    simulations.sort(); // Sort alphabetically
-
-    simulations.forEach(simulationName => {
-        const option = document.createElement('option');
-        option.value = simulationName;
-        option.textContent = simulationName;
-        select.appendChild(option);
-    });
-    if (simulations.includes(currentSelectedValue)) {
-        select.value = currentSelectedValue;
-    }
-  }
-
-  document.getElementById('saveSimulationBtn').addEventListener('click', function() {
-    const nameInput = document.getElementById('simulationNameInput');
-    let simulationName = nameInput.value.trim();
-
-    if (!simulationName) {
-        simulationName = prompt('Digite um nome para esta simulação:', 'Simulação ' + new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'));
-        if (!simulationName) return; // User cancelled
-    }
-
-    const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
-
-    if (localStorage.getItem(storageKey)) {
-        if (!confirm(`Já existe uma simulação com o nome "${simulationName}". Deseja sobrescrevê-la?`)) {
-            return;
-        }
-    }
-
-    const simulationData = [];
-    let categoriaAtualContexto = '';
-
-    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
-        const primeiroTd = row.cells[0];
-        if (!primeiroTd) return;
-
-        const inputValorSimul = row.querySelector('input.simul-valor');
-
-        if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = getCleanedCellText(primeiroTd);
-        }
-
-        if (!inputValorSimul || inputValorSimul.readOnly) {
-            return; 
-        }
-
-        const valorSimulCurrent = parseBRL(inputValorSimul.value);
-        let itemKey = '';
-
-        if (row.classList.contains('dre-cat')) {
-            const cat = getCleanedCellText(primeiroTd);
-            itemKey = `${cat}|`; 
-            simulationData.push({ key: itemKey, valor: valorSimulCurrent });
-        } else if (row.classList.contains('dre-sub')) {
-            if (categoriaAtualContexto) {
-                const sub = getCleanedCellText(primeiroTd);
-                itemKey = `${categoriaAtualContexto}|${sub}`;
-                simulationData.push({ key: itemKey, valor: valorSimulCurrent });
-            }
-        } else if (row.classList.contains('dre-subcat-l2')) {
-            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
-                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
-                const rnoCat = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
-                const rnoSubCat = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
-                itemKey = `RECEITAS NAO OPERACIONAIS|${rnoCat}|${rnoSubCat}`;
-                simulationData.push({ key: itemKey, valor: valorSimulCurrent });
-            }
-        }
-    });
-
-    if (simulationData.length > 0) {
-        try {
-            localStorage.setItem(storageKey, JSON.stringify(simulationData));
-            alert(`Simulação "${simulationName}" salva localmente com sucesso!`);
-            nameInput.value = ''; 
-            populateSimulationList();
-        } catch (e) {
-            alert('Erro ao salvar simulação: ' + e.message + '. O localStorage pode estar cheio.');
-        }
-    } else {
-        alert('Nenhum dado de simulação editável encontrado para salvar.');
-    }
-  });
-
-  document.getElementById('loadSelectedSimulationBtn').addEventListener('click', function() {
-    const select = document.getElementById('loadSimulationSelect');
-    const simulationName = select.value;
-
-    if (!simulationName) {
-        alert('Por favor, selecione uma simulação para carregar.');
-        return;
-    }
-
-    const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
-    const storedData = localStorage.getItem(storageKey);
+  initializeDREToggle(); // Inicializa a funcionalidade de expandir/recolher
 
   // Salvar Metas
   document.getElementById('salvarMetasBtn').addEventListener('click', function() {
@@ -1454,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!dataMeta) {
         alert('Por favor, selecione uma data para salvar as metas.');
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
+        botaoSalvar.textContent = 'SALVAR METAS';
         return;
     }
 
@@ -1467,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Atualizar contexto de categoria mesmo se a linha de categoria não for uma meta em si (ex: se for readonly)
         if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = getCleanedCellText(primeiroTd);
+             categoriaAtualContexto = primeiroTd.textContent.trim();
         }
 
         // Pular linhas que não têm input de valor ou cujo input é readonly
@@ -1480,14 +1401,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let subcategoriaMeta = '';
 
         if (row.classList.contains('dre-cat')) {
-            categoriaMeta = getCleanedCellText(primeiroTd); 
+            categoriaMeta = primeiroTd.textContent.trim(); // Já é o categoriaAtualContexto
             subcategoriaMeta = ''; // Meta para a categoria principal
             metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
 
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) { // Garante que temos um contexto de categoria
                 categoriaMeta = categoriaAtualContexto;
-                subcategoriaMeta = getCleanedCellText(primeiroTd);
+                subcategoriaMeta = primeiroTd.textContent.trim();
                 metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
             }
         } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
@@ -1504,7 +1425,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (metasParaSalvar.length === 0) {
         alert('Nenhuma meta editável encontrada para salvar.');
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
+        botaoSalvar.textContent = 'SALVAR METAS';
         return;
     }
 
@@ -1539,66 +1460,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .finally(() => {
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
+        botaoSalvar.textContent = 'SALVAR METAS';
     });
   });
-
-    if (!storedData) {
-        alert(`Simulação "${simulationName}" não encontrada no armazenamento local.`);
-        return;
-    }
-
-    const simulationEntries = JSON.parse(storedData);
-    const dataMap = new Map(simulationEntries.map(item => [item.key, item.valor]));
-
-    let categoriaAtualContexto = '';
-    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
-        const primeiroTd = row.cells[0];
-        if (!primeiroTd) return;
-
-        const inputValorSimul = row.querySelector('input.simul-valor');
-
-        if (row.classList.contains('dre-cat')) {
-             categoriaAtualContexto = getCleanedCellText(primeiroTd);
-        }
-
-        if (!inputValorSimul || inputValorSimul.readOnly) {
-            return;
-        }
-
-        let itemKey = '';
-        if (row.classList.contains('dre-cat')) {
-            const cat = getCleanedCellText(primeiroTd);
-            itemKey = `${cat}|`;
-        } else if (row.classList.contains('dre-sub')) {
-            if (categoriaAtualContexto) {
-                const sub = getCleanedCellText(primeiroTd);
-                itemKey = `${categoriaAtualContexto}|${sub}`;
-            }
-        } else if (row.classList.contains('dre-subcat-l2')) {
-             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
-                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
-                const rnoCat = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
-                const rnoSubCat = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
-                itemKey = `RECEITAS NAO OPERACIONAIS|${rnoCat}|${rnoSubCat}`;
-            }
-        }
-
-        if (itemKey && dataMap.has(itemKey)) {
-            inputValorSimul.value = formatSimValue(dataMap.get(itemKey));
-        } else if (itemKey) { 
-            // Opcional: Limpar campos que não estão na simulação salva, ou deixar como estão.
-            // Por ora, vamos deixar como estão para não apagar dados que o usuário possa ter inserido manualmente
-            // e que não faziam parte da simulação carregada.
-        }
-    });
-
-    recalcularTudo();
-    alert(`Simulação "${simulationName}" carregada.`);
-  });
-
-
-  // --- FIM: Funcionalidade de Salvar/Carregar Simulação Local ---
 
   // Botão Ponto de Equilíbrio
   document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
@@ -1624,23 +1488,166 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  document.getElementById('deleteSimulationBtn').addEventListener('click', function() {
-    const select = document.getElementById('loadSimulationSelect');
-    const simulationName = select.value;
+  // --- Funcionalidade de Salvar/Carregar Simulação Local (Aprimorada) ---
+  const localStorageKeyCollection = 'simulacaoDRECollection';
+  const nomeSimulacaoInput = document.getElementById('nomeSimulacaoLocalInput');
+  const listaSimulacoesSelect = document.getElementById('listaSimulacoesSalvas');
 
-    if (!simulationName) {
-        alert('Por favor, selecione uma simulação para excluir.');
+  function populateSimulationsList() {
+    listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa e adiciona opção padrão
+    const collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
+    const sortedNames = Object.keys(collection).sort();
+
+    if (sortedNames.length === 0) {
+        const option = document.createElement('option');
+        option.value = "";
+        option.textContent = "Nenhuma simulação salva";
+        option.disabled = true;
+        listaSimulacoesSelect.appendChild(option);
+    } else {
+        sortedNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            listaSimulacoesSelect.appendChild(option);
+        });
+    }
+  }
+
+  document.getElementById('salvarSimulacaoLocalBtn').addEventListener('click', function() {
+    const nomeSimulacao = nomeSimulacaoInput.value.trim();
+    if (!nomeSimulacao) {
+        alert('Por favor, insira um nome para a simulação.');
+        nomeSimulacaoInput.focus();
         return;
     }
 
-    if (confirm(`Tem certeza que deseja excluir a simulação local "${simulationName}"? Esta ação não pode ser desfeita.`)) {
-        const storageKey = SIMULATION_STORAGE_PREFIX + simulationName;
-        localStorage.removeItem(storageKey);
-        populateSimulationList();
-        alert(`Simulação "${simulationName}" excluída do armazenamento local.`);
+    const simulacaoData = {};
+    let categoriaAtualContexto = '';
+
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+
+        if (row.classList.contains('dre-cat')) {
+             categoriaAtualContexto = primeiroTd.textContent.trim();
+        }
+
+        if (!inputValorSimul || inputValorSimul.readOnly) {
+            return;
+        }
+
+        let key = '';
+        if (row.classList.contains('dre-cat')) {
+            key = primeiroTd.textContent.trim();
+        } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
+            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
+            }
+        } else if (row.classList.contains('dre-sub')) {
+            if (categoriaAtualContexto) {
+                key = `${categoriaAtualContexto}___${primeiroTd.textContent.trim()}`;
+            }
+        }
+
+        if (key) {
+            simulacaoData[key] = inputValorSimul.value;
+        }
+    });
+
+    if (Object.keys(simulacaoData).length > 0) {
+        let collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
+        collection[nomeSimulacao] = simulacaoData;
+        localStorage.setItem(localStorageKeyCollection, JSON.stringify(collection));
+        populateSimulationsList(); // Atualiza a lista dropdown
+        alert(`Simulação "${nomeSimulacao}" salva localmente com sucesso!`);
+        nomeSimulacaoInput.value = ''; // Limpa o campo do nome
+    } else {
+        alert('Nenhum dado de simulação editável encontrado para salvar.');
     }
   });
 
-  populateSimulationList(); // Popular a lista ao carregar a página
+  document.getElementById('carregarSimulacaoLocalBtn').addEventListener('click', function() {
+    const nomeSimulacaoSelecionada = listaSimulacoesSelect.value;
+    if (!nomeSimulacaoSelecionada) {
+        alert('Por favor, selecione uma simulação da lista para carregar.');
+        return;
+    }
+
+    const collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
+    if (!collection[nomeSimulacaoSelecionada]) {
+        alert(`Simulação "${nomeSimulacaoSelecionada}" não encontrada no armazenamento local.`);
+        return;
+    }
+
+    const simulacaoData = collection[nomeSimulacaoSelecionada];
+    let categoriaAtualContexto = '';
+    let itemsLoaded = 0;
+
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+
+        const inputValorSimul = row.querySelector('input.simul-valor');
+
+        if (row.classList.contains('dre-cat')) {
+             categoriaAtualContexto = primeiroTd.textContent.trim();
+        }
+
+        if (!inputValorSimul || inputValorSimul.readOnly) {
+            return;
+        }
+
+        let key = '';
+        if (row.classList.contains('dre-cat')) {
+            key = primeiroTd.textContent.trim();
+        } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
+            if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
+            }
+        } else if (row.classList.contains('dre-sub')) {
+            if (categoriaAtualContexto) {
+                key = `${categoriaAtualContexto}___${primeiroTd.textContent.trim()}`;
+            }
+        }
+
+        if (key && simulacaoData.hasOwnProperty(key)) {
+            inputValorSimul.value = simulacaoData[key];
+            itemsLoaded++;
+        }
+    });
+
+    recalcularTudo(); // Recalcula toda a DRE com os valores carregados
+    alert(itemsLoaded > 0 ? `Simulação "${nomeSimulacaoSelecionada}" carregada com sucesso!` : 'Nenhum dado correspondente encontrado na simulação salva para os campos atuais.');
+    nomeSimulacaoInput.value = nomeSimulacaoSelecionada; // Preenche o nome no input para facilitar salvar novamente com o mesmo nome
+  });
+
+  document.getElementById('excluirSimulacaoLocalBtn').addEventListener('click', function() {
+    const nomeSimulacaoSelecionada = listaSimulacoesSelect.value;
+    if (!nomeSimulacaoSelecionada) {
+        alert('Por favor, selecione uma simulação da lista para excluir.');
+        return;
+    }
+
+    if (confirm(`Tem certeza que deseja excluir a simulação "${nomeSimulacaoSelecionada}"? Esta ação não pode ser desfeita.`)) {
+        let collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
+        if (collection[nomeSimulacaoSelecionada]) {
+            delete collection[nomeSimulacaoSelecionada];
+            localStorage.setItem(localStorageKeyCollection, JSON.stringify(collection));
+            populateSimulationsList(); // Atualiza a lista dropdown
+            nomeSimulacaoInput.value = ''; // Limpa o campo de nome
+            alert(`Simulação "${nomeSimulacaoSelecionada}" excluída com sucesso!`);
+        } else {
+            alert(`Simulação "${nomeSimulacaoSelecionada}" não encontrada para exclusão.`);
+        }
+    }
+  });
+
+  populateSimulationsList(); // Popula a lista ao carregar a página
+
 });
 </script>
