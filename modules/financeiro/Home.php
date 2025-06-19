@@ -432,7 +432,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <td class="p-2 text-right"><?= 'R$ '.number_format(0,2,',','.') ?></td>
         <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metasArray['RECEITA BRUTA'][''],2,',','.') : '' ?></td>
         <td class="p-2 text-center">
-          <?= ($media3Rec > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format(($metasArray['RECEITA BRUTA']['']/$media3Rec)*100,2,',','.') .'%' : '' ?>
+          <?= ($metaReceita> 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format(($metasArray['RECEITA BRUTA']['']/$metaReceita)*100,2,',','.') .'%' : '' ?>
         </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualRec,2,',','.') ?></td>
         <td class="p-2 text-center">
@@ -476,7 +476,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </td>
     <td class="p-2 text-right">-</td> <!-- Diferença -->
     <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS']['']) ? 'R$ '.number_format($metasArray['TRIBUTOS'][''],2,',','.') : '' ?></td>
-    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'][''])) ? number_format(($metasArray['TRIBUTOS']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+    <td class="p-2 text-center"><?= ($metaReceita>0 && isset($metasArray['TRIBUTOS'][''])) ? number_format(($metasArray['TRIBUTOS']['']/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center">
       <?php
@@ -516,7 +516,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         </td>
         <td class="p-2 text-right">-</td>
         <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS'][$sub]) ? 'R$ '.number_format($metasArray['TRIBUTOS'][$sub],2,',','.') : '' ?></td>
-        <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['TRIBUTOS'][$sub])) ? number_format(($metasArray['TRIBUTOS'][$sub]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+        <td class="p-2 text-center"><?= ($metaReceita>0 && isset($metasArray['TRIBUTOS'][$sub])) ? number_format(($metasArray['TRIBUTOS'][$sub]/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['TRIBUTOS'][$sub] ?? 0,2,',','.') ?></td>
         <td class="p-2 text-center">
           <?php
@@ -562,13 +562,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
   <td class="p-2 text-right">
-    <?= isset($metasArray[$keyReceitaLiquida]['']) ? 'R$ '.number_format($metasArray[$keyReceitaLiquida][''],2,',','.') : '' ?>
+    <?= isset($metasArray[$keyReceitaLiquida]['']) ? 'R$ '.number_format($metasArray[$keyReceitaLiquida][''],2,',','.') : '-' ?>
   </td>
   <td class="p-2 text-center">
     <?php
-      $baseMetaPercRL = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-      if ($baseMetaPercRL > 0 && isset($metasArray[$keyReceitaLiquida][''])) {
-        echo number_format(($metasArray[$keyReceitaLiquida][''] / $baseMetaPercRL) * 100, 2, ',', '.') . '%';
+      // % Meta s/ FAT. para RECEITA LÍQUIDA
+      if ($metaReceita > 0 && isset($metasArray[$keyReceitaLiquida][''])) {
+        echo number_format(($metasArray[$keyReceitaLiquida][''] / $metaReceita) * 100, 2, ',', '.') . '%';
       } else { echo '-'; }
     ?>
   </td>
@@ -610,7 +610,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </td>
     <td class="p-2 text-right">-</td> <!-- Diferença -->
     <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL']['']) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][''],2,',','.') : '' ?></td>
-    <td class="p-2 text-center"><?= ($media3Rec>0 && isset($metasArray['CUSTO VARIÁVEL'][''])) ? number_format(($metasArray['CUSTO VARIÁVEL']['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+    <td class="p-2 text-center"><?= ($metaReceita>0 && isset($metasArray['CUSTO VARIÁVEL'][''])) ? number_format(($metasArray['CUSTO VARIÁVEL']['']/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
     <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
     <td class="p-2 text-center">
       <?php
@@ -650,7 +650,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td>
   <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL'][$sub]) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][$sub],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray['CUSTO VARIÁVEL'][$sub])) ? number_format(($metasArray['CUSTO VARIÁVEL'][$sub]/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray['CUSTO VARIÁVEL'][$sub])) ? number_format(($metasArray['CUSTO VARIÁVEL'][$sub]/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['CUSTO VARIÁVEL'][$sub] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center">
     <?php
@@ -693,13 +693,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
   <td class="p-2 text-right">
-    <?= isset($metasArray[$keyLucroBruto]['']) ? 'R$ '.number_format($metasArray[$keyLucroBruto][''],2,',','.') : '' ?>
+    <?= isset($metasArray[$keyLucroBruto]['']) ? 'R$ '.number_format($metasArray[$keyLucroBruto][''],2,',','.') : '-' ?>
   </td>
   <td class="p-2 text-center">
     <?php
-      $baseMetaPercLB = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-      if ($baseMetaPercLB > 0 && isset($metasArray[$keyLucroBruto][''])) {
-        echo number_format(($metasArray[$keyLucroBruto][''] / $baseMetaPercLB) * 100, 2, ',', '.') . '%';
+      // % Meta s/ FAT. para LUCRO BRUTO
+      if ($metaReceita > 0 && isset($metasArray[$keyLucroBruto][''])) {
+        echo number_format(($metasArray[$keyLucroBruto][''] / $metaReceita) * 100, 2, ',', '.') . '%';
       } else { echo '-'; }
     ?>
   </td>
@@ -745,7 +745,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
   <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center">
     <?php
@@ -786,7 +786,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td>
   <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
   <td class="p-2 text-center">
     <?php
@@ -838,10 +838,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     ?>
   </td>
   <td class="p-2 text-center">
-    <?php
-      $baseMetaPercLL = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-      if ($baseMetaPercLL > 0 && (isset($metasArray[$keyLucroLiquidoPHP]['']) || isset($metasArray['RECEITA BRUTA']['']))) {
-        echo number_format(($metaLucroLiquidoDisplay / $baseMetaPercLL) * 100, 2, ',', '.') . '%';
+    <?php // % Meta s/ FAT. para LUCRO LÍQUIDO
+      if ($metaReceita > 0 && (isset($metasArray[$keyLucroLiquidoPHP]['']) || isset($metasArray['RECEITA BRUTA']['']))) { // Considera se a meta de LL foi salva ou se a de RB existe para calcular
+        echo number_format(($metaLucroLiquidoDisplay / $metaReceita) * 100, 2, ',', '.') . '%';
       } else { echo '-'; }
     ?>
   </td>
@@ -880,12 +879,11 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
         <td class="p-2 text-right">
             <?= isset($metasArray['RECEITAS NAO OPERACIONAIS']['']) ? 'R$ '.number_format($metasArray['RECEITAS NAO OPERACIONAIS'][''],2,',','.') : '' ?>
-        </td>
+         </td> <!-- Meta para a linha principal RNO -->
         <td class="p-2 text-center">
-            <?php
-              $baseMetaPercRNO_Principal = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-              if ($baseMetaPercRNO_Principal > 0 && isset($metasArray['RECEITAS NAO OPERACIONAIS'][''])) {
-                echo number_format(($metasArray['RECEITAS NAO OPERACIONAIS'][''] / $baseMetaPercRNO_Principal) * 100, 2, ',', '.') . '%';
+            <?php // % Meta s/ FAT. para linha principal RNO
+              if ($metaReceita > 0 && isset($metasArray['RECEITAS NAO OPERACIONAIS'][''])) {
+                echo number_format(($metasArray['RECEITAS NAO OPERACIONAIS'][''] / $metaReceita) * 100, 2, ',', '.') . '%';
               } else { echo '-'; }
             ?>
         </td>
@@ -937,13 +935,12 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
             <td class="p-2 text-center" data-simul-perc-rno-cat="<?= $dataCatKeyRNO ?>"></td> <!-- JS Preenche Simulação % -->
             <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
             <td class="p-2 text-right">
-                <?= isset($metasArray[$catNomeOR]['']) ? 'R$ '.number_format($metasArray[$catNomeOR][''],2,',','.') : '' ?>
+                               <?= isset($metasArray[$catNomeOR]['']) ? 'R$ '.number_format($metasArray[$catNomeOR][''],2,',','.') : '-' ?>
             </td>
             <td class="p-2 text-center">
-                <?php
-                  $baseMetaPercRNO_L1 = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-                  if ($baseMetaPercRNO_L1 > 0 && isset($metasArray[$catNomeOR][''])) {
-                    echo number_format(($metasArray[$catNomeOR][''] / $baseMetaPercRNO_L1) * 100, 2, ',', '.') . '%';
+                <?php // % Meta s/ FAT. para Categoria L1 de RNO
+                  if ($metaReceita > 0 && isset($metasArray[$catNomeOR][''])) {
+                    echo number_format(($metasArray[$catNomeOR][''] / $metaReceita) * 100, 2, ',', '.') . '%';
                   } else { echo '-'; }
                 ?>
             </td>
@@ -991,15 +988,12 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               </td>
               <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
               <td class="p-2 text-right">
-                <?= isset($metasArray[$catNomeOR][$subNomeOR]) ? 'R$ '.number_format($metasArray[$catNomeOR][$subNomeOR],2,',','.') : '' ?>
+                                <?= isset($metasArray[$catNomeOR][$subNomeOR]) ? 'R$ '.number_format($metasArray[$catNomeOR][$subNomeOR],2,',','.') : '-' ?>
               </td>
               <td class="p-2 text-center">
-                <?php
-                  // $catNomeOR é a categoria pai (ex: "OUTRAS RECEITAS")
-                  // $subNomeOR é a subcategoria L2 (ex: "JUROS APLICACAO")
-                  $baseMetaPercRNO_L2 = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-                  if ($baseMetaPercRNO_L2 > 0 && isset($metasArray[$catNomeOR][$subNomeOR])) {
-                    echo number_format(($metasArray[$catNomeOR][$subNomeOR] / $baseMetaPercRNO_L2) * 100, 2, ',', '.') . '%';
+                <?php // % Meta s/ FAT. para Subcategoria L2 de RNO
+                  if ($metaReceita > 0 && isset($metasArray[$catNomeOR][$subNomeOR])) {
+                    echo number_format(($metasArray[$catNomeOR][$subNomeOR] / $metaReceita) * 100, 2, ',', '.') . '%';
                   } else { echo '-'; }
                 ?>
               </td>
@@ -1047,7 +1041,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
   </td>
   <td class="p-2 text-right">-</td> <!-- Diferença -->
   <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
   <td class="p-2 text-center">
     <?php
@@ -1087,7 +1081,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           </td>
           <td class="p-2 text-right">-</td>
           <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '' ?></td>
-          <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+          <td class="p-2 text-center">
+            <?php
+              if ($metaReceita > 0 && isset($metasArray[$catName][$sub])) {
+                echo number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+          </td>
           <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
           <td class="p-2 text-center">
             <?php
@@ -1133,7 +1133,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
           </td>
           <td class="p-2 text-right">-</td> <!-- Diferença -->
           <td class="p-2 text-right"><?= isset($metasArray[$catNameSR]['']) ? 'R$ '.number_format($metasArray[$catNameSR][''],2,',','.') : '' ?></td>
-          <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][''])) ? number_format(($metasArray[$catNameSR]['']/$media3Rec)*100,2,',','.') .'%' : '' ?></td>
+          <td class="p-2 text-center">
+            <?php
+              if ($metaReceita > 0 && isset($metasArray[$catNameSR][''])) {
+                echo number_format(($metasArray[$catNameSR][''] / $metaReceita) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
+            ?>
+          </td>
           <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catNameSR] ?? 0,2,',','.') ?></td>
           <td class="p-2 text-center">
             <?php
@@ -1173,7 +1179,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
               </td>
               <td class="p-2 text-right">-</td> <!-- Diferença -->
               <td class="p-2 text-right"><?= isset($metasArray[$catNameSR][$sub]) ? 'R$ ' . number_format($metasArray[$catNameSR][$sub], 2, ',', '.') : '' ?></td>
-              <td class="p-2 text-center"><?= ($media3Rec > 0 && isset($metasArray[$catNameSR][$sub])) ? number_format(($metasArray[$catNameSR][$sub] / $media3Rec) * 100, 2, ',', '.') . '%' : '' ?></td>
+              <td class="p-2 text-center">
+                <?php
+                  if ($metaReceita > 0 && isset($metasArray[$catNameSR][$sub])) {
+                    echo number_format(($metasArray[$catNameSR][$sub] / $metaReceita) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+              </td>
               <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catNameSR][$sub] ?? 0, 2, ',', '.') ?></td>
               <td class="p-2 text-center">
                 <?php
@@ -1212,13 +1224,13 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         </td>
         <td class="p-2 text-right">-</td> <!-- Diferença -->
         <td class="p-2 text-right">
-            <?= isset($metasArray[$keyFluxoCaixa]['']) ? 'R$ '.number_format($metasArray[$keyFluxoCaixa][''],2,',','.') : '' ?>
+            <?= isset($metasArray[$keyFluxoCaixa]['']) ? 'R$ '.number_format($metasArray[$keyFluxoCaixa][''],2,',','.') : '-' ?>
         </td>
         <td class="p-2 text-center">
             <?php
-              $baseMetaPercFC = $metaReceita > 0 ? $metaReceita : ($media3Rec > 0 ? $media3Rec : 0);
-              if ($baseMetaPercFC > 0 && isset($metasArray[$keyFluxoCaixa][''])) {
-                echo number_format(($metasArray[$keyFluxoCaixa][''] / $baseMetaPercFC) * 100, 2, ',', '.') . '%';
+              // % Meta s/ FAT. para FLUXO DE CAIXA
+              if ($metaReceita > 0 && isset($metasArray[$keyFluxoCaixa][''])) {
+                echo number_format(($metasArray[$keyFluxoCaixa][''] / $metaReceita) * 100, 2, ',', '.') . '%';
               } else { echo '-'; }
             ?>
         </td>
