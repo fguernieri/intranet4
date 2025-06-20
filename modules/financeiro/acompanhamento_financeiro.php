@@ -474,13 +474,12 @@ $jsonChartData = json_encode($chartData);
     table, th, td {
       font-family: 'Segoe UI', Arial, sans-serif;
       font-size: 11px;
-      border: 0.5px solid #fff;
+      border: 0.5px solid #111827; /* Cor da borda ajustada para a mesma do fundo */
       border-collapse: collapse;
     }
     .dre-cat, .dre-sub, .dre-subcat-l1 {
       font-size: 12px;
     }
-    th, td { border: 0.5px solid #fff; }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 flex min-h-screen">
