@@ -23,6 +23,12 @@ if (empty($metas)) {
     exit;
 }
 
+// Limpa completamente a tabela de metas antes de inserir as novas
+if (!$conn->query("TRUNCATE TABLE fMetasFabrica")) {
+    echo json_encode(['sucesso' => false, 'erro' => "Erro ao truncar tabela fMetasFabrica: " . $conn->error]);
+    exit;
+}
+
 // Insere na tabela fMetasFabrica (colunas: Categoria, Subcategoria, Meta, Data)
 $stmt = $conn->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Data) VALUES (?, ?, ?, ?)");
 if (!$stmt) {
