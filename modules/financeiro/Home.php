@@ -59,6 +59,11 @@ if (empty($_SESSION['usuario_id'])) {
     exit;
 }
 
+if (!isset($_SESSION['usuario_perfil']) || !in_array($_SESSION['usuario_perfil'], ['admin', 'supervisor'])) {
+    echo "Acesso restrito.";
+    exit;
+}
+
 // Conexão com o banco
 require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
