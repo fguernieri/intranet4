@@ -37,12 +37,12 @@ SQL;
     $totInserido = 0;
     $erros       = [];
 
-    // loop: linha 4 até o final
-    for ($r = 4; $r <= $sheet->getHighestRow(); $r++) {
+    // loop: linha 5 até o final
+    for ($r = 5; $r <= $sheet->getHighestRow(); $r++) {
         $rawCodigo   = trim((string)$sheet->getCell("A{$r}")->getValue());
         $rawNome     = trim((string)$sheet->getCell("C{$r}")->getValue());
-        $rawVendedor= trim((string)$sheet->getCell("S{$r}")->getValue());
-        $cellDate    = $sheet->getCell("U{$r}");
+        $rawVendedor= trim((string)$sheet->getCell("T{$r}")->getValue());
+        $cellDate    = $sheet->getCell("X{$r}");
         $rawData     = $cellDate->getValue();
 
         // pula vazios
@@ -65,7 +65,7 @@ SQL;
 
         // executa upsert
         $stmt->execute([
-            ':data'      => $dt->format('Y-m-d H:i:s'),
+            ':data'      => $dt->format('Y-m-d'),
             ':nome'      => $rawNome,
             ':codigo'    => $rawCodigo,
             ':vendedor'  => $rawVendedor,
@@ -77,7 +77,7 @@ SQL;
     }
 
     if ($totLido === 0) {
-        throw new RuntimeException('Nenhuma linha válida: verifique colunas A,C,S,U.');
+        throw new RuntimeException('Nenhuma linha válida');
     }
 
     // redireciona com feedback
