@@ -105,6 +105,22 @@ $pedidosPorDia    = [];
 $pedidosPorEstado = [];
 $clientesPorV     = [];
 
+// --- 11.1) Novo: total de cadastros por vendedor entre $startDate e $endDate ---
+$stmtCadastro = $pdo->prepare("
+  SELECT 
+    vendedor_nome, 
+    COUNT(*) AS total_cadastros
+  FROM cadastro_clientes
+  WHERE DATE(data_cadastro) BETWEEN ? AND ?
+  GROUP BY vendedor_nome
+  ORDER BY total_cadastros DESC
+");
+$stmtCadastro->execute([$startDate, $endDate]);
+$cadRows    = $stmtCadastro->fetchAll(PDO::FETCH_ASSOC);
+$cadLabels  = array_column($cadRows, 'vendedor_nome');
+$cadValues  = array_map('intval', array_column($cadRows, 'total_cadastros'));
+
+
 // Buscar metas de faturamento
 require_once __DIR__ . '/../../config/db.php'; // conexão de metas
 $pdoMetas = $pdo;
@@ -241,8 +257,12 @@ $UltimaAtualizacao = $stmt->fetchColumn();
             'chartClientes' => 'Clientes Únicos por Vendedor',
             'chartEstado' => 'Pedidos por Estado'
           ];
+          $charts['chartCadastros'] = 'Abertura de Clientes';
+
 
           $sortableCharts = ['chartVendedor', 'chartClientes', 'chartEstado', 'chartPedidosDia', 'chartData'];
+          $sortableCharts[] = 'chartCadastros';
+
 
           foreach ($charts as $id => $label): ?>
             <div class="rounded-xl bg-white/5 p-4 shadow-md">
@@ -345,6 +365,12 @@ $UltimaAtualizacao = $stmt->fetchColumn();
             labels: <?= json_encode(array_keys($porData)) ?>,
             values: arredondar(<?= json_encode(array_values($porData)) ?>),
             type: 'line'
+          },
+            
+          chartCadastros: {
+            labels: <?= json_encode($cadLabels, JSON_THROW_ON_ERROR) ?>,
+            values: <?= json_encode($cadValues, JSON_THROW_ON_ERROR) ?>,
+            type: 'bar'
           }
         };
 
@@ -354,7 +380,9 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           chartClientes: 'value_desc',
           chartEstado: 'value_desc',
           chartPedidosDia: 'asc',
-          chartData: 'asc'
+          chartData: 'asc',
+          chartCadastros:   'value_desc'
+
         };
 
         // 🍩 Donut chart (forma de pagamento) - sem ordenação
