@@ -251,17 +251,15 @@ $UltimaAtualizacao = $stmt->fetchColumn();
         <?php 
           $charts = [
             'chartVendedor' => 'Total por Vendedor',
-            'chartPagamento' => 'Total por Forma de Pagamento',
+            'chartCadastros' => 'Abertura de Clientes',
             'chartData' => 'Faturamento por Data',
             'chartPedidosDia' => 'Pedidos por Dia',
             'chartClientes' => 'Clientes Únicos por Vendedor',
-            'chartEstado' => 'Pedidos por Estado'
+            'chartEstado' => 'Pedidos por Estado',
+            'chartPagamento' => 'Total por Forma de Pagamento',
           ];
-          $charts['chartCadastros'] = 'Abertura de Clientes';
 
-
-          $sortableCharts = ['chartVendedor', 'chartClientes', 'chartEstado', 'chartPedidosDia', 'chartData'];
-          $sortableCharts[] = 'chartCadastros';
+          $sortableCharts = ['chartVendedor', 'chartCadastros', 'chartClientes', 'chartEstado', 'chartPedidosDia', 'chartData'];
 
 
           foreach ($charts as $id => $label): ?>
