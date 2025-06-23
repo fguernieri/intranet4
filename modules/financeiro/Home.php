@@ -1866,7 +1866,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (inputValorSimul && !inputValorSimul.readOnly) {
             const metaValue = parseBRL(metaValueCell.textContent);
             inputValorSimul.value = formatSimValue(metaValue);
-            itemsLoaded++;
+           itemsLoaded++;
         }
     });
 
