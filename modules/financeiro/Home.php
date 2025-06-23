@@ -85,11 +85,11 @@ $sql = "
         c.DESCRICAO_CONTA,
         d.PARCELA,
         d.VALOR,
-        d.DATA_VENCIMENTO,
+        d.DATA_PAGAMENTO,
         c.STATUS
     FROM fContasAPagar AS c
     INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE YEAR(d.DATA_VENCIMENTO) = $anoAtual
+    WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual
 ";
 $res = $conn->query($sql);
 $linhas = [];
@@ -101,7 +101,7 @@ while ($f = $res->fetch_assoc()) {
         'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
         'PARCELA'         => $f['PARCELA'],
         'VALOR_EXIBIDO'   => $f['VALOR'],
-        'DATA_VENCIMENTO' => $f['DATA_VENCIMENTO'],
+        'DATA_PAGAMENTO' => $f['DATA_PAGAMENTO'],
         'STATUS'          => $f['STATUS'],
     ];
 }
@@ -115,7 +115,7 @@ $matriz = [];
 foreach ($linhas as $linha) {
     $cat = $linha['CATEGORIA'] ?? 'SEM CATEGORIA';
     $sub = $linha['SUBCATEGORIA'] ?? 'SEM SUBCATEGORIA';
-    $mes = (int) date('n', strtotime($linha['DATA_VENCIMENTO']));
+    $mes = (int) date('n', strtotime($linha['DATA_PAGAMENTO']));
     $id  = $linha['ID_CONTA'];
     $matriz[$cat][$sub][$mes][$id][] = floatval($linha['VALOR_EXIBIDO']);
 }
