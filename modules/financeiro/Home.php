@@ -1261,6 +1261,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </div>
     <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
     <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS OFICIAIS</button>
+    <button id="carregarMetasOficiaisBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded font-bold">CARREGAR METAS OFICIAIS</button>
   </div>
 
   <div class="mt-4 flex items-end gap-4">
@@ -1846,6 +1847,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Carregar Metas Oficiais
+  document.getElementById('carregarMetasOficiaisBtn').addEventListener('click', function() {
+    const botaoCarregar = this;
+    botaoCarregar.disabled = true;
+    botaoCarregar.textContent = 'CARREGANDO...';
+
+    let itemsLoaded = 0;
+    // Não precisamos de categoriaAtualContexto aqui, pois estamos lendo diretamente da célula da meta.
+
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const inputValorSimul = row.querySelector('input.simul-valor');
+        // A coluna "Meta" é a 7ª coluna (índice 6) na tabela.
+        const metaValueCell = row.cells[6]; 
+
+        // Apenas atualiza se o campo de simulação existe e NÃO é somente leitura (ou seja, é um campo editável).
+        // Campos somente leitura são calculados e seriam sobrescritos por recalcularTudo() de qualquer forma.
+        if (inputValorSimul && !inputValorSimul.readOnly) {
+            const metaValue = parseBRL(metaValueCell.textContent);
+            inputValorSimul.value = formatSimValue(metaValue);
+            itemsLoaded++;
+        }
+    });
+
+    recalcularTudo(); // Recalcula toda a DRE com os valores carregados nos campos editáveis
+    alert(itemsLoaded > 0 ? 'Metas oficiais carregadas com sucesso na simulação!' : 'Nenhuma meta editável encontrada para carregar.');
+    botaoCarregar.disabled = false;
+    botaoCarregar.textContent = 'CARREGAR METAS OFICIAIS';
+  });
+
   // Botão Ponto de Equilíbrio
   document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
     const rowFC = document.getElementById('rowFluxoCaixa');
@@ -2041,7 +2071,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  populateSimulationsList(); // Popula a lista ao carregar a página
+  populateSimulationsList();
 
 });
 </script>
