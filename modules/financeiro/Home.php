@@ -1362,14 +1362,24 @@ function atualizarPercentuaisSimulacao() {
     const simulPercInput = row.querySelector('input.simul-perc');
 
     if (simulValorInput && simulPercInput) { // Atualiza o percentual baseado no valor
-        // Se o input de percentual for o ativo, não o reformate aqui para não atrapalhar a digitação.
-        // A reformatação completa (se necessária) pode acontecer no blur ou quando outro campo for alterado.
-        if (simulPercInput === document.activeElement) return;
-
-        const valor = parseBRL(simulValorInput.value);
-        // Não atualiza o % da Receita Bruta aqui, pois ele é sempre 100% ou editável manualmente
-        if (!simulValorInput.hasAttribute('data-receita')) {
-             simulPercInput.value = formatSimPerc(valor, receitaBrutaSimulada);
+        // Caso 1: O input de percentual é somente leitura (o valor absoluto é o primário, o percentual é derivado).
+        if (simulPercInput.readOnly) {
+            const valor = parseBRL(simulValorInput.value);
+            // Não atualiza o % da Receita Bruta aqui, pois ele é sempre 100% e seu input é readOnly.
+            if (!simulValorInput.hasAttribute('data-receita')) {
+                simulPercInput.value = formatSimPerc(valor, receitaBrutaSimulada);
+            }
+        } 
+        // Caso 2: O input de percentual é editável (o percentual é o primário, o valor absoluto é derivado).
+        else {
+            // Só atualiza o valor absoluto se o input de percentual não estiver sendo ativamente editado.
+            // Isso evita sobrescrever a digitação do usuário no campo de percentual.
+            if (simulPercInput !== document.activeElement) {
+                const percentual = parseBRL(simulPercInput.value); // Pega o percentual definido pelo usuário
+                const novoValor = (percentual / 100) * receitaBrutaSimulada; // Calcula o novo valor absoluto
+                simulValorInput.value = formatSimValue(novoValor); // Atualiza o campo de valor absoluto
+                // NÃO atualiza simulPercInput.value aqui, pois ele é a entrada fixa do usuário.
+            }
         }
     }
   });
@@ -1611,97 +1621,92 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // function applyInputRestrictions() {
-  //   const restrictions = { // Nomes exatos das categorias como aparecem no HTML
-  //       'TRIBUTOS': 'editPercent',
-  //       'CUSTO VARIÁVEL': 'editPercent',
-  //       'CUSTO FIXO': 'editValue',
-  //       'DESPESA FIXA': 'editValue',
-  //       'DESPESA VENDA': 'editPercent', // Corrigido para 'DESPESA VENDA' se for o nome exato
-  //       'INVESTIMENTO INTERNO': 'editValue',
-  //       'INVESTIMENTO EXTERNO': 'editValue',
-  //       'AMORTIZAÇÃO': 'editValue',
-  //       'Z - SAIDA DE REPASSE': 'editValue',
-  //       'RECEITAS NAO OPERACIONAIS': 'editValue' // Para sub-itens de RNO
-  //   };
+  function applyInputRestrictions() {
+    const restrictions = { // Define o tipo de edição para cada categoria principal
+        'TRIBUTOS': 'editPercent',
+        'CUSTO VARIÁVEL': 'editPercent',
+        'CUSTO FIXO': 'editValue',
+        'DESPESA FIXA': 'editValue',
+        'DESPESA VENDA': 'editPercent',
+        'INVESTIMENTO INTERNO': 'editValue',
+        'INVESTIMENTO EXTERNO': 'editValue',
+        'AMORTIZAÇÃO': 'editValue',
+        'Z - SAIDA DE REPASSE': 'editValue',
+        'RECEITAS NAO OPERACIONAIS': 'editValue'
+    };
 
-  //   let categoriaAtualContextoParaRestricao = '';
+    // Categorias que são sempre totais calculados e devem ser somente leitura
+    const calculatedTotalCategories = [
+        'RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)',
+        'LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)',
+        'LUCRO LÍQUIDO',
+        'FLUXO DE CAIXA',
+        'RECEITAS NAO OPERACIONAIS' // A linha principal de RNO é um total calculado
+    ];
 
-  //   document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
-  //       const primeiroTd = row.cells[0];
-  //       if (!primeiroTd) return;
+    let categoriaAtualContextoParaRestricao = '';
 
-  //       const inputValorSimul = row.querySelector('input.simul-valor');
-  //       const inputPercSimul = row.querySelector('input.simul-perc');
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const primeiroTd = row.cells[0];
+        if (!primeiroTd) return;
+        const inputValorSimul = row.querySelector('input.simul-valor');
+        const inputPercSimul = row.querySelector('input.simul-perc');
 
-  //       if (!inputValorSimul || !inputPercSimul) return;
+        if (!inputValorSimul || !inputPercSimul) {
+            return;
+        }
 
-  //       let effectiveCategoryName = '';
+        let effectiveCategoryName = '';
+        let isCalculatedTotalRow = false;
 
-  //       if (row.classList.contains('dre-cat')) {
-  //           categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
+        if (row.classList.contains('dre-cat')) {
+            categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
+            effectiveCategoryName = categoriaAtualContextoParaRestricao;
 
-  //           // RECEITA BRUTA: seu input de valor deve permanecer editável.
-  //           // Outras categorias principais (dre-cat) têm seus valores derivados/calculados,
-  //           // então seus inputs de simulação devem ser somente leitura.
-  //           if (inputValorSimul && inputValorSimul.hasAttribute('data-receita')) {
-  //               // Não tornar o input de valor da RECEITA BRUTA readonly aqui.
-  //               // O input de percentual da RECEITA BRUTA também é especial.
-  //           } else {
-  //               // Para outras linhas .dre-cat (TRIBUTOS, CUSTO FIXO, etc.),
-  //               // os inputs de simulação são apenas para exibição dos totais calculados.
-  //               if (inputValorSimul) inputValorSimul.readOnly = true;
-  //               if (inputPercSimul) inputPercSimul.readOnly = true;
-  //           }
-  //           // Garante que não haja 'data-dynamic-readonly' para inputs de categoria manipulados aqui.
-  //           if (inputValorSimul) delete inputValorSimul.dataset.dynamicReadonly;
-  //           return; // Restrições para .dre-cat já aplicadas, pular para a próxima linha.
-  //       } else if (row.classList.contains('dre-sub')) {
-  //           effectiveCategoryName = categoriaAtualContextoParaRestricao;
-  //       } else if (row.classList.contains('dre-subcat-l2')) { // RNO sub-items
-  //           if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS") {
-  //                effectiveCategoryName = "RECEITAS NAO OPERACIONAIS";
-  //           }
-  //       }
+            if (inputValorSimul.hasAttribute('data-receita')) {
+                inputValorSimul.readOnly = false;
+                inputPercSimul.readOnly = true;
+                delete inputValorSimul.dataset.dynamicReadonly;
+                return;
+            }
 
-  //       let ruleMakesValorReadOnly = false;
-  //       let ruleMakesPercReadOnly = false;
-
-  //       if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName.toUpperCase())) { // Comparar com toUpperCase para robustez
-  //           const restrictionType = restrictions[effectiveCategoryName.toUpperCase()]; // Correção: Usar a chave em maiúsculas
-  //           if (restrictionType === 'editPercent') {
-  //               ruleMakesValorReadOnly = true;
-  //           } else { // editValue
-  //               ruleMakesPercReadOnly = true;
-  //           }
-  //       }
-
-  //       // Aplicar a inputValorSimul
-  //       if (ruleMakesValorReadOnly) {
-  //           inputValorSimul.readOnly = true;
-  //           inputValorSimul.dataset.dynamicReadonly = 'true';
-  //       } else {
-  //           if (!inputValorSimul.hasAttribute('readonly')) { // Só tornar editável se não for HTML readonly
-  //               inputValorSimul.readOnly = false;
-  //           }
-  //           delete inputValorSimul.dataset.dynamicReadonly;
-  //       }
-
-  //       // Aplicar a inputPercSimul
-  //       if (ruleMakesPercReadOnly) {
-  //           inputPercSimul.readOnly = true;
-  //       } else {
-  //           if (!inputPercSimul.hasAttribute('readonly')) { // Só tornar editável se não for HTML readonly
-  //               inputPercSimul.readOnly = false;
-  //           }
-  //       }
-  //   });
-  // }
+            if (calculatedTotalCategories.includes(effectiveCategoryName)) {
+                isCalculatedTotalRow = true;
+            }
+        } else if (row.classList.contains('dre-sub')) {
+            effectiveCategoryName = categoriaAtualContextoParaRestricao;
+        } else if (row.classList.contains('dre-subcat-l2')) {
+            effectiveCategoryName = "RECEITAS NAO OPERACIONAIS";
+        }
+        
+        if (isCalculatedTotalRow) {
+            inputValorSimul.readOnly = true;
+            inputPercSimul.readOnly = true;
+            delete inputValorSimul.dataset.dynamicReadonly;
+        } else if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName.toUpperCase())) {
+            const restrictionType = restrictions[effectiveCategoryName.toUpperCase()];
+            if (restrictionType === 'editPercent') {
+                inputValorSimul.readOnly = true;
+                inputValorSimul.dataset.dynamicReadonly = 'true';
+                inputPercSimul.readOnly = false;
+            } else { // editValue
+                inputValorSimul.readOnly = false;
+                delete inputValorSimul.dataset.dynamicReadonly;
+                inputPercSimul.readOnly = true;
+            }
+        } else {
+            // Comportamento padrão para qualquer outro input editável não explicitamente restrito: editValue
+            inputValorSimul.readOnly = false;
+            delete inputValorSimul.dataset.dynamicReadonly;
+            inputPercSimul.readOnly = true;
+        }
+    });
+  }
 
   // Cálculo inicial ao carregar a página
   recalcularTudo();
   initializeDREToggle(); // Inicializa a funcionalidade de expandir/recolher
-  // applyInputRestrictions(); // Aplica as restrições de edição
+  applyInputRestrictions(); // Aplica as restrições de edição
 
   // Salvar Metas
   document.getElementById('salvarMetasBtn').addEventListener('click', function() {
