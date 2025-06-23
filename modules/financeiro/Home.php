@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtDel->execute();
     $stmtDel->close();
 
-    $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Data) VALUES (?, ?, ?, ?)");
+    $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
     if (!$stmt) {
         echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
         exit;
@@ -36,8 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($metas as $m) {
         $cat  = $m['categoria']    ?? '';
         $sub  = $m['subcategoria'] ?? '';
-        $meta = floatval($m['meta']) ?? 0;
-        $stmt->bind_param("ssds", $cat, $sub, $meta, $dataMeta);
+        $meta = floatval($m['valor']) ?? 0; // Corrigido para 'valor' para corresponder ao payload JS
+        $percentual = floatval($m['percentual']) ?? 0; // Novo: valor percentual
+        $stmt->bind_param("ssdds", $cat, $sub, $meta, $percentual, $dataMeta); // Corrigido para 'd' para percentual
         $stmt->execute();
     }
     $stmt->close();
@@ -1288,7 +1289,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 // Funções Utilitárias
 function parseBRL(str) {
   const stringValue = String(str || '');
-  return parseFloat(stringValue.replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+  return parseFloat(stringValue.replace(/[R$\s\.]/g, '').replace('%', '').replace(',', '.')) || 0; // Adicionado .replace('%', '')
 }
 
 function formatSimValue(value) { // Formata para campos de input de simulação (sem R$)
@@ -1723,6 +1724,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let categoriaAtualContexto = '';
     document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
         const primeiroTd = row.cells[0];
+        // Não precisamos do segundoTd aqui, pois o inputPercSimul já pega o valor
         if (!primeiroTd) return;
 
         const inputValorSimul = row.querySelector('input.simul-valor');
@@ -1750,20 +1752,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const valorMeta = parseBRL(inputValorSimul.value);
+        const valorMeta = parseBRL(inputValorSimul.value); // Valor do input de simulação
+        let percentualMeta = 0;
+        const inputPercSimul = row.querySelector('input.simul-perc');
+        if (inputPercSimul) { // Verifica se existe um input de percentual para esta linha
+            percentualMeta = parseBRL(inputPercSimul.value);
+        }
+
         let categoriaMeta = '';
         let subcategoriaMeta = '';
 
         if (row.classList.contains('dre-cat')) {
             categoriaMeta = primeiroTd.textContent.trim(); // Já é o categoriaAtualContexto
             subcategoriaMeta = ''; // Meta para a categoria principal
-            metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+            metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta, percentual: percentualMeta });
 
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) { // Garante que temos um contexto de categoria
                 categoriaMeta = categoriaAtualContexto;
                 subcategoriaMeta = primeiroTd.textContent.trim();
-                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta, percentual: percentualMeta });
             }
         } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
@@ -1771,23 +1779,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 categoriaMeta = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
                 subcategoriaMeta = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
-                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta });
+                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta, percentual: percentualMeta });
             }
         }
     });
 
     // Adicionar metas para linhas totalizadoras de RNO que não têm inputs diretos
-    // 1. Linha principal "RECEITAS NAO OPERACIONAIS"
+    // 1. Linha principal "RECEITAS NAO OPERACIONAIS" (dre-cat-principal)
     const rnoPrincipalRow = document.querySelector('tr.dre-cat-principal');
     if (rnoPrincipalRow) {
         const tdTotalSimulRNO = rnoPrincipalRow.querySelector('td.simul-total-cat[data-cat-total-simul="RECEITAS NAO OPERACIONAIS"]');
+        const tdPercSimulRNO = rnoPrincipalRow.querySelector('td.simul-perc-cat[data-cat-perc-simul="RECEITAS NAO OPERACIONAIS"]');
         if (tdTotalSimulRNO) {
             const valorMetaRNOPrincipal = parseBRL(tdTotalSimulRNO.textContent);
-            metasParaSalvar.push({
-                categoria: "RECEITAS NAO OPERACIONAIS",
-                subcategoria: "",
-                valor: valorMetaRNOPrincipal
-            });
+            const percentualMetaRNOPrincipal = tdPercSimulRNO ? parseBRL(tdPercSimulRNO.textContent) : 0;
+            metasParaSalvar.push({ categoria: "RECEITAS NAO OPERACIONAIS", subcategoria: "", valor: valorMetaRNOPrincipal, percentual: percentualMetaRNOPrincipal });
         }
     }
 
@@ -1795,20 +1801,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('tr.dre-subcat-l1').forEach(rowCatL1RNO => {
         const nomeCategoriaL1RNO = rowCatL1RNO.cells[0].textContent.trim();
         const tdValorCatL1RNO = rowCatL1RNO.querySelector('td[data-simul-valor-rno-cat]');
+        const tdPercCatL1RNO = rowCatL1RNO.querySelector('td[data-simul-perc-rno-cat]');
         if (nomeCategoriaL1RNO && tdValorCatL1RNO) {
             const valorMetaCatL1RNO = parseBRL(tdValorCatL1RNO.textContent);
-            metasParaSalvar.push({
-                categoria: nomeCategoriaL1RNO,
-                subcategoria: "",
-                valor: valorMetaCatL1RNO
-            });
+            const percentualMetaCatL1RNO = tdPercCatL1RNO ? parseBRL(tdPercCatL1RNO.textContent) : 0;
+            metasParaSalvar.push({ categoria: nomeCategoriaL1RNO, subcategoria: "", valor: valorMetaCatL1RNO, percentual: percentualMetaCatL1RNO });
         }
     });
 
     if (metasParaSalvar.length === 0) {
         alert('Nenhuma meta editável encontrada para salvar.');
         botaoSalvar.disabled = false;
-        botaoSalvar.textContent = 'SALVAR METAS';
+        botaoSalvar.textContent = 'SALVAR METAS OFICIAIS';
         return;
     }
 
