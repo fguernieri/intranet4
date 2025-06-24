@@ -732,18 +732,16 @@ if ($ano_selecionado && $mes_selecionado) {
   $faturamento_total_mes = array_sum(array_column($faturamento_dias_mes, 'faturamento'));
 ?>
 <div class="mt-8 bg-gray-800 rounded-lg shadow-md p-4 flex flex-col items-stretch min-h-0 w-full">
-  <div class="flex justify-center">
-    <div class="card faturamento flex flex-col justify-center items-center h-16 mb-1 w-full max-w-[180px] p-2">
-      <h2 class="text-[11px] font-semibold text-yellow-400 mb-0.5">Faturamento Total do Mês</h2>
-      <div class="text-lg font-bold text-gray-100 leading-tight">
-        R$ <?= number_format($faturamento_total_mes, 2, ',', '.') ?>
-      </div>
-      <div class="text-[10px] text-gray-400 mt-0.5">
-        <?= htmlspecialchars($meses_disponiveis[$mes_selecionado] ?? $mes_selecionado) ?> / <?= htmlspecialchars($ano_selecionado) ?>
-      </div>
-    </div>
+  <div class="text-center mb-1 text-yellow-300 text-sm font-semibold">
+    Faturamento Total do Mês: 
+    <span class="text-gray-100 font-bold">
+      R$ <?= number_format($faturamento_total_mes, 2, ',', '.') ?>
+    </span>
+    <span class="text-xs text-gray-400 ml-2">
+      (<?= htmlspecialchars($meses_disponiveis[$mes_selecionado] ?? $mes_selecionado) ?>/<?= htmlspecialchars($ano_selecionado) ?>)
+    </span>
   </div>
-  <div class="flex-1 flex items-center justify-center min-h-0" style="height:220px;">
+  <div class="flex-1 flex items-center justify-center min-h-0" style="height:160px;">
     <canvas id="graficoFaturamentoMes" class="w-full h-full"></canvas>
   </div>
 </div>
