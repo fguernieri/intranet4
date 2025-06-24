@@ -196,8 +196,7 @@ $sqlMetas = "
     SELECT 
         fm1.Categoria, 
         fm1.Subcategoria, 
-        fm1.Meta,
-        fm1.Percentual
+        fm1.Meta
     FROM 
         fMetasFabrica fm1
     INNER JOIN (
@@ -216,13 +215,11 @@ $sqlMetas = "
 ";
 $resMetas = $conn->query($sqlMetas);
 $metasArray = [];
-$percentuaisArray = [];
 if ($resMetas) {
     while ($m = $resMetas->fetch_assoc()){
-        $cat = mb_strtoupper(trim($m['Categoria']));
-        $sub = mb_strtoupper(trim($m['Subcategoria'] ?? ''));
+        $cat = $m['Categoria'];
+        $sub = $m['Subcategoria'] ?? ''; // Usar string vazia se Subcategoria for NULL/vazia
         $metasArray[$cat][$sub] = $m['Meta'];
-        $percentuaisArray[$cat][$sub] = $m['Percentual'];
     }
 }
 
@@ -299,6 +296,7 @@ if (!empty($outrasReceitasPorCatSubMes)) {
         }
     }
 }
+// ==================== [FIM DA NOVA SEÇÃO] ====================
 
 // ==================== [CÁLCULO LUCRO LÍQUIDO - PHP (ANTECIPADO)] ====================
 $mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
@@ -1327,54 +1325,32 @@ function getSimulatedValueFromInput(row) {
 
 // Atualiza os totais das categorias principais com base em suas subcategorias (se houver)
 function atualizarTotaisCategorias() {
-  const receitaBrutaSimulada = getReceitaBrutaSimulada();
   document.querySelectorAll('tr.dre-cat').forEach(catRow => {
     const catSimulValorInput = catRow.querySelector('input.simul-valor');
-    const catSimulPercInput = catRow.querySelector('input.simul-perc');
-    if (!catSimulValorInput || !catSimulPercInput) return;
-
-    const catName = catRow.cells[0]?.textContent.trim().toUpperCase();
-
-    // Para TRIBUTOS, CUSTO VARIÁVEL, DESPESA VENDA: valor = percentual * receita bruta
-    if (['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'].includes(catName)) {
-      const percentual = parseBRL(catSimulPercInput.value);
-      const novoValor = (percentual / 100) * receitaBrutaSimulada;
-      catSimulValorInput.value = formatSimValue(novoValor);
-      return;
+    // Se não houver input de valor para a categoria, não há o que atualizar.
+    if (!catSimulValorInput) { 
+        return;
     }
 
-    // Para as demais categorias, mantém o comportamento padrão (soma das subcategorias)
     let subtotal = 0;
     let hasSubCategories = false;
     let currentRow = catRow.nextElementSibling;
+
     while (currentRow && currentRow.classList.contains('dre-sub')) {
       hasSubCategories = true;
       const subInput = currentRow.querySelector('input.simul-valor');
-      if (subInput) subtotal += parseBRL(subInput.value);
+      if (subInput) {
+        subtotal += parseBRL(subInput.value);
+      }
       currentRow = currentRow.nextElementSibling;
     }
+
+    // Só atualiza o valor se o input não for o que está ativo (focado)
+    // Isso evita que a digitação do usuário no campo de total da categoria seja interrompida.
     if (hasSubCategories && catSimulValorInput !== document.activeElement) {
       catSimulValorInput.value = formatSimValue(subtotal);
+      // O percentual será atualizado por atualizarPercentuaisSimulacao
     }
-  });
-  ['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'].forEach(function(catName) {
-    const catRow = findCategoryRow(catName);
-    if (!catRow) return;
-    const catSimulValorInput = catRow.querySelector('input.simul-valor');
-    const catSimulPercInput = catRow.querySelector('input.simul-perc');
-    if (!catSimulValorInput || !catSimulPercInput) return;
-    let subtotal = 0;
-    let currentRow = catRow.nextElementSibling;
-    while (currentRow && currentRow.classList.contains('dre-sub')) {
-      const subInput = currentRow.querySelector('input.simul-valor');
-      if (subInput) subtotal += parseBRL(subInput.value);
-      currentRow = currentRow.nextElementSibling;
-    }
-    const receitaBrutaSimulada = getReceitaBrutaSimulada();
-    // Atualiza o percentual da categoria principal baseado na soma das subcategorias
-    catSimulPercInput.value = receitaBrutaSimulada > 0
-      ? ((subtotal / receitaBrutaSimulada) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'
-      : '0,00%';
   });
 }
 
@@ -1881,78 +1857,59 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Carregar Metas Oficiais
-document.getElementById('carregarMetasOficiaisBtn').addEventListener('click', function() {
+  document.getElementById('carregarMetasOficiaisBtn').addEventListener('click', function() {
     const botaoCarregar = this;
     botaoCarregar.disabled = true;
     botaoCarregar.textContent = 'CARREGANDO...';
 
     let itemsLoaded = 0;
+    // Não precisamos de categoriaAtualContexto aqui, pois estamos lendo diretamente da célula da meta.
 
-    // Array de percentuais vindos do PHP para categorias e subcategorias
-    const percentuaisMeta = <?= json_encode($percentuaisArray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-const categoriasPercentual = ['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'];
+    document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
+        const inputValorSimul = row.querySelector('input.simul-valor');
+        // A coluna "Meta" é a 7ª coluna (índice 6) na tabela.
+        const metaValueCell = row.cells[6]; 
 
-let categoriaAtualContexto = '';
-
-document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
-    const inputValorSimul = row.querySelector('input.simul-valor');
-    const inputPercSimul = row.querySelector('input.simul-perc');
-    const primeiroTd = row.cells[0];
-    if (!primeiroTd) return;
-
-    // Atualiza contexto de categoria
-    if (row.classList.contains('dre-cat')) {
-        categoriaAtualContexto = primeiroTd.textContent.trim().toUpperCase();
-    }
-
-   let categoriaLinha = categoriaAtualContexto ? categoriaAtualContexto.toUpperCase().trim() : '';
-let subcategoriaLinha = '';
-if (row.classList.contains('dre-sub')) {
-    subcategoriaLinha = primeiroTd.textContent.trim().toUpperCase();
-}
-
-// Busca o percentual corretamente
-if (inputValorSimul && !inputValorSimul.readOnly) {
-    if (categoriasPercentual.includes(categoriaLinha) && inputPercSimul) {
-        let percentualMeta = 0;
-        if (
-            percentuaisMeta[categoriaLinha] &&
-            percentuaisMeta[categoriaLinha][subcategoriaLinha] !== undefined &&
-            percentuaisMeta[categoriaLinha][subcategoriaLinha] !== null
-        ) {
-            percentualMeta = parseFloat(percentuaisMeta[categoriaLinha][subcategoriaLinha]) || 0;
+        // Apenas atualiza se o campo de simulação existe e NÃO é somente leitura (ou seja, é um campo editável).
+        // Campos somente leitura são calculados e seriam sobrescritos por recalcularTudo() de qualquer forma.
+        if (inputValorSimul && !inputValorSimul.readOnly) {
+            const metaValue = parseBRL(metaValueCell.textContent);
+            inputValorSimul.value = formatSimValue(metaValue);
+           itemsLoaded++;
         }
-        inputPercSimul.value = percentualMeta.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
-        // Atualiza o valor absoluto conforme o percentual e receita bruta
-        const receitaBrutaSimulada = getReceitaBrutaSimulada();
-        inputValorSimul.value = formatSimValue((percentualMeta / 100) * receitaBrutaSimulada);
-    } else {
-        // Para as demais, preenche o valor absoluto (coluna Meta, índice 6)
-        const metaValueCell = row.cells[6];
-        const metaValue = parseBRL(metaValueCell ? metaValueCell.textContent : '0');
-        inputValorSimul.value = formatSimValue(metaValue);
-    }
-    itemsLoaded++;
-}
-});
+    });
 
-    recalcularTudo();
+    recalcularTudo(); // Recalcula toda a DRE com os valores carregados nos campos editáveis
     alert(itemsLoaded > 0 ? 'Metas oficiais carregadas com sucesso na simulação!' : 'Nenhuma meta editável encontrada para carregar.');
     botaoCarregar.disabled = false;
     botaoCarregar.textContent = 'CARREGAR METAS OFICIAIS';
-});
+  });
 
   // Botão Ponto de Equilíbrio
   document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
-    // Helpers
+    const rowFC = document.getElementById('rowFluxoCaixa');
+    if (!rowFC) {
+      alert('Linha do Fluxo de Caixa não encontrada.');
+          return;
+    }
+    const inputFCValorSimul = rowFC.querySelector('input.simul-valor');
+    if (!inputFCValorSimul) {
+      alert('Campo de simulação do Fluxo de Caixa não encontrado.');
+      return;
+    }
+    
+    // Helper para obter o percentual de um input de percentual
     const getPercentageFromInput = (categoryName) => {
         const row = findCategoryRow(categoryName);
         if (row) {
             const inputPerc = row.querySelector('input.simul-perc');
+            // Retorna o percentual como decimal (ex: 0.05 para 5%)
             return parseBRL(inputPerc.value) / 100;
         }
         return 0;
     };
+
+    // Helper para obter o valor absoluto de um input de valor
     const getAbsoluteValueFromInput = (categoryName) => {
         const row = findCategoryRow(categoryName);
         if (row) {
@@ -1962,12 +1919,12 @@ if (inputValorSimul && !inputValorSimul.readOnly) {
         return 0;
     };
 
-    // Percentuais variáveis
+    // 1. Obter os percentuais das categorias variáveis (TRIBUTOS, CUSTO VARIÁVEL, DESPESA VENDA)
     const pTributos = getPercentageFromInput('TRIBUTOS');
     const pCustoVariavel = getPercentageFromInput('CUSTO VARIÁVEL');
     const pDespesaVenda = getPercentageFromInput('DESPESA VENDA');
 
-    // Valores absolutos fixos
+    // 2. Obter os valores absolutos das categorias fixas e outras receitas/despesas
     const cf = getAbsoluteValueFromInput('CUSTO FIXO');
     const df = getAbsoluteValueFromInput('DESPESA FIXA');
     const ii = getAbsoluteValueFromInput('INVESTIMENTO INTERNO');
@@ -1975,45 +1932,39 @@ if (inputValorSimul && !inputValorSimul.readOnly) {
     const am = getAbsoluteValueFromInput('AMORTIZAÇÃO');
     const sr = getAbsoluteValueFromInput('Z - SAIDA DE REPASSE');
 
-    // RECEITAS NAO OPERACIONAIS (soma das sub-linhas)
+    // Para RECEITAS NAO OPERACIONAIS, somar os valores de suas sub-linhas editáveis
     let rno = 0;
     document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(input => {
         rno += parseBRL(input.value);
     });
 
-    // Soma dos custos/despesas fixas e outras receitas/despesas
+    // 3. Calcular a soma dos custos/despesas fixas e outras receitas/despesas
+    // FixedCostsAndOther = (CF + DF + II + IE + SR + AM) - RNO
     const fixedCostsAndOther = (cf + df + ii + ie + sr + am) - rno;
 
-    // Fator variável
+    // 4. Calcular o fator variável (1 - soma dos percentuais das despesas variáveis)
+    // VariableFactor = 1 - (pT + pCV + pDV)
     const variableFactor = 1 - (pTributos + pCustoVariavel + pDespesaVenda);
 
+    // 5. Verificar se o fator variável é válido para evitar divisão por zero ou resultados ilógicos
     if (variableFactor <= 0) {
         alert('Não é possível calcular o Ponto de Equilíbrio. A soma dos percentuais de custos variáveis é muito alta (>= 100%).');
         return;
     }
 
-    // Receita Bruta para Fluxo de Caixa = 0
+    // 6. Calcular a nova Receita Bruta para o Ponto de Equilíbrio
     const novaReceitaBruta = fixedCostsAndOther / variableFactor;
-    const finalReceitaBruta = Math.max(0, novaReceitaBruta);
+    const finalReceitaBruta = Math.max(0, novaReceitaBruta); // Garante que não seja negativa
 
-    // Atualiza o campo da Receita Bruta
+    // 7. Atualizar o campo da Receita Bruta e recalcular toda a DRE
     const inputReceitaBrutaSimul = document.querySelector('.simul-valor[data-receita="1"]');
     if (inputReceitaBrutaSimul) {
         inputReceitaBrutaSimul.value = formatSimValue(finalReceitaBruta);
-        recalcularTudo();
-
-        // Força o campo do Fluxo de Caixa a mostrar zero
-        const rowFC = document.getElementById('rowFluxoCaixa');
-        if (rowFC) {
-            const inputFCValorSimul = rowFC.querySelector('input.simul-valor');
-            if (inputFCValorSimul) inputFCValorSimul.value = formatSimValue(0);
-            const inputFCPerc = rowFC.querySelector('input.simul-perc');
-            if (inputFCPerc) inputFCPerc.value = formatSimPerc(0, finalReceitaBruta);
-        }
+        recalcularTudo(); // Recalcula toda a DRE com a nova receita
     } else {
         alert('Campo de simulação da Receita Bruta não encontrado.');
     }
-});
+  });
 
   // --- Funcionalidade de Salvar/Carregar Simulação Local (Aprimorada) ---
   const localStorageKeyCollection = 'simulacaoDRECollection';
