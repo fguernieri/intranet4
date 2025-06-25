@@ -1336,27 +1336,45 @@ function atualizarTotaisCategorias() {
     if (!catRow) return;
     
     const catSimulValorInput = catRow.querySelector('input.simul-valor');
-    if (!catSimulValorInput) return;
+    const catSimulPercInput = catRow.querySelector('input.simul-perc');
+    if (!catSimulValorInput || !catSimulPercInput) return;
 
-    let subtotal = 0;
+    let subtotalValor = 0;
+    let subtotalPercentual = 0;
     let hasSubCategories = false;
     let currentRow = catRow.nextElementSibling;
 
-    // Soma todas as subcategorias desta categoria
+    // Soma todas as subcategorias desta categoria (tanto valor quanto percentual)
     while (currentRow && currentRow.classList.contains('dre-sub')) {
       hasSubCategories = true;
-      const subInput = currentRow.querySelector('input.simul-valor');
-      if (subInput) {
-        subtotal += parseBRL(subInput.value);
+      const subInputValor = currentRow.querySelector('input.simul-valor');
+      const subInputPerc = currentRow.querySelector('input.simul-perc');
+      
+      if (subInputValor) {
+        subtotalValor += parseBRL(subInputValor.value);
       }
+      
+      if (subInputPerc) {
+        subtotalPercentual += parseBRL(subInputPerc.value);
+      }
+      
       currentRow = currentRow.nextElementSibling;
     }
 
-    // Atualiza o valor da categoria principal apenas se houver subcategorias
-    // e se o campo não estiver sendo editado no momento
-    if (hasSubCategories && catSimulValorInput !== document.activeElement) {
-      catSimulValorInput.value = formatSimValue(subtotal);
-      // O percentual será atualizado automaticamente por atualizarPercentuaisSimulacao()
+    // Atualiza tanto o valor quanto o percentual da categoria principal
+    // apenas se houver subcategorias e se os campos não estiverem sendo editados no momento
+    if (hasSubCategories) {
+      if (catSimulValorInput !== document.activeElement) {
+        catSimulValorInput.value = formatSimValue(subtotalValor);
+      }
+      
+      if (catSimulPercInput !== document.activeElement) {
+        // Formata como percentual: adiciona o símbolo % e formata com 2 casas decimais
+        catSimulPercInput.value = subtotalPercentual.toLocaleString('pt-BR', { 
+          minimumFractionDigits: 2, 
+          maximumFractionDigits: 2 
+        }) + '%';
+      }
     }
   });
 }
@@ -1925,6 +1943,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (metaPercCell) {
                 const metaPercentual = parseBRL(metaPercCell.textContent);
                 inputPercSimul.value = formatSimPerc(metaPercentual, 100); // formata como percentual
+                // Dispara evento de input para acionar os event listeners
+                inputPercSimul.dispatchEvent(new Event('input', { bubbles: true }));
                 itemsLoaded++;
             }
         }
@@ -1933,12 +1953,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (metaValueCell) {
                 const metaValue = parseBRL(metaValueCell.textContent);
                 inputValorSimul.value = formatSimValue(metaValue);
+                // Dispara evento de input para acionar os event listeners
+                inputValorSimul.dispatchEvent(new Event('input', { bubbles: true }));
                 itemsLoaded++;
             }
         }
     });
 
-    recalcularTudo(); // Recalcula toda a DRE com os valores carregados nos campos editáveis
+    // Garante que todos os cálculos sejam atualizados
+    setTimeout(() => {
+        recalcularTudo(); // Recalcula toda a DRE com os valores carregados nos campos editáveis
+        applyInputRestrictions(); // Reaplica as restrições para garantir consistência
+    }, 100);
+    
     alert(itemsLoaded > 0 ? 'Metas oficiais carregadas com sucesso na simulação!' : 'Nenhuma meta editável encontrada para carregar.');
     botaoCarregar.disabled = false;
     botaoCarregar.textContent = 'CARREGAR METAS OFICIAIS';
