@@ -1325,17 +1325,24 @@ function getSimulatedValueFromInput(row) {
 
 // Atualiza os totais das categorias principais com base em suas subcategorias (se houver)
 function atualizarTotaisCategorias() {
-  document.querySelectorAll('tr.dre-cat').forEach(catRow => {
+  // Lista de todas as categorias principais que devem ser calculadas como soma de subcategorias
+  const categoriasParaSomar = [
+    'TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA', 'CUSTO FIXO', 'DESPESA FIXA',
+    'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'
+  ];
+
+  categoriasParaSomar.forEach(function(catName) {
+    const catRow = findCategoryRow(catName);
+    if (!catRow) return;
+    
     const catSimulValorInput = catRow.querySelector('input.simul-valor');
-    // Se não houver input de valor para a categoria, não há o que atualizar.
-    if (!catSimulValorInput) { 
-        return;
-    }
+    if (!catSimulValorInput) return;
 
     let subtotal = 0;
     let hasSubCategories = false;
     let currentRow = catRow.nextElementSibling;
 
+    // Soma todas as subcategorias desta categoria
     while (currentRow && currentRow.classList.contains('dre-sub')) {
       hasSubCategories = true;
       const subInput = currentRow.querySelector('input.simul-valor');
@@ -1345,11 +1352,11 @@ function atualizarTotaisCategorias() {
       currentRow = currentRow.nextElementSibling;
     }
 
-    // Só atualiza o valor se o input não for o que está ativo (focado)
-    // Isso evita que a digitação do usuário no campo de total da categoria seja interrompida.
+    // Atualiza o valor da categoria principal apenas se houver subcategorias
+    // e se o campo não estiver sendo editado no momento
     if (hasSubCategories && catSimulValorInput !== document.activeElement) {
       catSimulValorInput.value = formatSimValue(subtotal);
-      // O percentual será atualizado por atualizarPercentuaisSimulacao
+      // O percentual será atualizado automaticamente por atualizarPercentuaisSimulacao()
     }
   });
 }
@@ -1622,84 +1629,119 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function applyInputRestrictions() {
-    const restrictions = { // Define o tipo de edição para cada categoria principal
-        'TRIBUTOS': 'editPercent',
-        'CUSTO VARIÁVEL': 'editPercent',
-        'CUSTO FIXO': 'editValue',
-        'DESPESA FIXA': 'editValue',
-        'DESPESA VENDA': 'editPercent',
-        'INVESTIMENTO INTERNO': 'editValue',
-        'INVESTIMENTO EXTERNO': 'editValue',
-        'AMORTIZAÇÃO': 'editValue',
-        'Z - SAIDA DE REPASSE': 'editValue',
-        'RECEITAS NAO OPERACIONAIS': 'editValue'
-    };
+    // Categorias onde as subcategorias têm percentual editável (e valor calculado)
+    const percentEditableCategories = ['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'];
+    
+    // Categorias onde as subcategorias têm valor editável (e percentual calculado)
+    const valueEditableCategories = ['CUSTO FIXO', 'DESPESA FIXA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'];
 
-    // Categorias que são sempre totais calculados e devem ser somente leitura
-    const calculatedTotalCategories = [
+    // Categorias principais que são sempre totais calculados (readonly)
+    const mainCategoryNames = [
+        'TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA', 'CUSTO FIXO', 'DESPESA FIXA',
+        'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE',
+        'RECEITAS NAO OPERACIONAIS'
+    ];
+
+    // Linhas de resultado que são sempre calculadas (readonly)
+    const calculatedResultRows = [
         'RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)',
         'LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)',
         'LUCRO LÍQUIDO',
-        'FLUXO DE CAIXA',
-        'RECEITAS NAO OPERACIONAIS' // A linha principal de RNO é um total calculado
+        'FLUXO DE CAIXA'
     ];
 
-    let categoriaAtualContextoParaRestricao = '';
+    let categoriaAtualContexto = '';
 
     document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
         const primeiroTd = row.cells[0];
         if (!primeiroTd) return;
+        
         const inputValorSimul = row.querySelector('input.simul-valor');
         const inputPercSimul = row.querySelector('input.simul-perc');
 
-        if (!inputValorSimul || !inputPercSimul) {
+        if (!inputValorSimul || !inputPercSimul) return;
+
+        const nomeLinhaAtual = primeiroTd.textContent.trim();
+
+        // Atualiza contexto da categoria atual
+        if (row.classList.contains('dre-cat') || row.classList.contains('dre-cat-principal')) {
+            categoriaAtualContexto = nomeLinhaAtual;
+        }
+
+        // Limpa restrições anteriores
+        inputValorSimul.readOnly = false;
+        inputPercSimul.readOnly = false;
+        delete inputValorSimul.dataset.dynamicReadonly;
+        delete inputPercSimul.dataset.dynamicReadonly;
+
+        // 1. RECEITA BRUTA: valor editável, percentual readonly
+        if (inputValorSimul.hasAttribute('data-receita')) {
+            inputPercSimul.readOnly = true;
             return;
         }
 
-        let effectiveCategoryName = '';
-        let isCalculatedTotalRow = false;
-
-        if (row.classList.contains('dre-cat')) {
-            categoriaAtualContextoParaRestricao = primeiroTd.textContent.trim();
-            effectiveCategoryName = categoriaAtualContextoParaRestricao;
-
-            if (inputValorSimul.hasAttribute('data-receita')) {
-                inputValorSimul.readOnly = false;
-                inputPercSimul.readOnly = true;
-                delete inputValorSimul.dataset.dynamicReadonly;
-                return;
-            }
-
-            if (calculatedTotalCategories.includes(effectiveCategoryName)) {
-                isCalculatedTotalRow = true;
-            }
-        } else if (row.classList.contains('dre-sub')) {
-            effectiveCategoryName = categoriaAtualContextoParaRestricao;
-        } else if (row.classList.contains('dre-subcat-l2')) {
-            effectiveCategoryName = "RECEITAS NAO OPERACIONAIS";
-        }
-        
-        if (isCalculatedTotalRow) {
+        // 2. Categorias principais: ambos readonly (valores calculados pela soma das subcategorias)
+        if (row.classList.contains('dre-cat') && mainCategoryNames.includes(nomeLinhaAtual)) {
             inputValorSimul.readOnly = true;
             inputPercSimul.readOnly = true;
-            delete inputValorSimul.dataset.dynamicReadonly;
-        } else if (effectiveCategoryName && restrictions.hasOwnProperty(effectiveCategoryName.toUpperCase())) {
-            const restrictionType = restrictions[effectiveCategoryName.toUpperCase()];
-            if (restrictionType === 'editPercent') {
+            inputValorSimul.dataset.dynamicReadonly = 'true';
+            inputPercSimul.dataset.dynamicReadonly = 'true';
+            return;
+        }
+
+        // 3. Categoria principal de RECEITAS NAO OPERACIONAIS (dre-cat-principal): ambos readonly
+        if (row.classList.contains('dre-cat-principal') && nomeLinhaAtual === 'RECEITAS NAO OPERACIONAIS') {
+            inputValorSimul.readOnly = true;
+            inputPercSimul.readOnly = true;
+            inputValorSimul.dataset.dynamicReadonly = 'true';
+            inputPercSimul.dataset.dynamicReadonly = 'true';
+            return;
+        }
+
+        // 4. Categorias L1 de RECEITAS NAO OPERACIONAIS (dre-subcat-l1): ambos readonly
+        if (row.classList.contains('dre-subcat-l1')) {
+            inputValorSimul.readOnly = true;
+            inputPercSimul.readOnly = true;
+            inputValorSimul.dataset.dynamicReadonly = 'true';
+            inputPercSimul.dataset.dynamicReadonly = 'true';
+            return;
+        }
+
+        // 5. Linhas de resultado calculadas: ambos readonly
+        if (calculatedResultRows.includes(nomeLinhaAtual)) {
+            inputValorSimul.readOnly = true;
+            inputPercSimul.readOnly = true;
+            return;
+        }
+
+        // 6. Subcategorias (dre-sub): aplicar regras baseadas na categoria pai
+        if (row.classList.contains('dre-sub') && categoriaAtualContexto) {
+            if (percentEditableCategories.includes(categoriaAtualContexto)) {
+                // Percentual editável, valor calculado
+                inputPercSimul.readOnly = false;
                 inputValorSimul.readOnly = true;
                 inputValorSimul.dataset.dynamicReadonly = 'true';
-                inputPercSimul.readOnly = false;
-            } else { // editValue
+            } else if (valueEditableCategories.includes(categoriaAtualContexto)) {
+                // Valor editável, percentual calculado
                 inputValorSimul.readOnly = false;
-                delete inputValorSimul.dataset.dynamicReadonly;
                 inputPercSimul.readOnly = true;
+                inputPercSimul.dataset.dynamicReadonly = 'true';
             }
-        } else {
-            // Comportamento padrão para qualquer outro input editável não explicitamente restrito: editValue
-            inputValorSimul.readOnly = false;
-            delete inputValorSimul.dataset.dynamicReadonly;
-            inputPercSimul.readOnly = true;
+            return;
         }
+
+        // 7. Sub-subcategorias L2 de RECEITAS NAO OPERACIONAIS: valor editável, percentual calculado
+        if (row.classList.contains('dre-subcat-l2') && 
+            inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS") {
+            inputValorSimul.readOnly = false;
+            inputPercSimul.readOnly = true;
+            inputPercSimul.dataset.dynamicReadonly = 'true';
+            return;
+        }
+
+        // Caso padrão: ambos editáveis (para casos não cobertos)
+        inputValorSimul.readOnly = false;
+        inputPercSimul.readOnly = false;
     });
   }
 
@@ -1747,13 +1789,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const specialCalculatedRowIds = ['rowFatLiquido', 'rowLucroBruto', 'rowFluxoCaixa'];
         const isSpecialCalculatedRowToSave = specialCalculatedRowIds.includes(row.id);
 
-        // Pular se o input de valor for readonly (definido no HTML) E NÃO for uma das linhas calculadas especiais que queremos salvar
-        // E NÃO for uma linha de categoria (dre-cat), pois queremos salvar o valor da categoria mesmo que seu input seja readonly (calculado).
-        // E NÃO for um input com 'data-dynamic-readonly' (cujo valor é derivado de outra edição, mas ainda precisa ser salvo).
+        // Pular se o input de valor for readonly E NÃO for uma das seguintes exceções:
+        // 1. Linhas calculadas especiais que queremos salvar (Receita Líquida, Lucro Bruto, Fluxo de Caixa)
+        // 2. Linhas de categoria principal (dre-cat) - queremos salvar os valores das categorias principais mesmo sendo calculados
+        // 3. Inputs com 'data-dynamic-readonly' - são campos derivados mas ainda precisam ser salvos
+        // 4. Inputs editáveis (não readonly) - sempre salvamos
         if (inputValorSimul.readOnly &&
+            !isSpecialCalculatedRowToSave &&
             !row.classList.contains('dre-cat') &&
-            !inputValorSimul.hasAttribute('data-dynamic-readonly') &&
-            !isSpecialCalculatedRowToSave) {
+            !row.classList.contains('dre-cat-principal') &&
+            !row.classList.contains('dre-subcat-l1') &&
+            !inputValorSimul.hasAttribute('data-dynamic-readonly')) {
             return;
         }
 
@@ -1863,19 +1909,32 @@ document.addEventListener('DOMContentLoaded', function() {
     botaoCarregar.textContent = 'CARREGANDO...';
 
     let itemsLoaded = 0;
-    // Não precisamos de categoriaAtualContexto aqui, pois estamos lendo diretamente da célula da meta.
 
     document.querySelectorAll('#tabelaSimulacao tbody tr').forEach(row => {
         const inputValorSimul = row.querySelector('input.simul-valor');
+        const inputPercSimul = row.querySelector('input.simul-perc');
         // A coluna "Meta" é a 7ª coluna (índice 6) na tabela.
         const metaValueCell = row.cells[6]; 
+        // A coluna "Meta %" é a 8ª coluna (índice 7) na tabela.
+        const metaPercCell = row.cells[7]; 
 
-        // Apenas atualiza se o campo de simulação existe e NÃO é somente leitura (ou seja, é um campo editável).
-        // Campos somente leitura são calculados e seriam sobrescritos por recalcularTudo() de qualquer forma.
-        if (inputValorSimul && !inputValorSimul.readOnly) {
-            const metaValue = parseBRL(metaValueCell.textContent);
-            inputValorSimul.value = formatSimValue(metaValue);
-           itemsLoaded++;
+        if (!inputValorSimul || !inputPercSimul) return;
+
+        // Para subcategorias onde o percentual é editável, carrega o percentual da meta
+        if (!inputPercSimul.readOnly && inputValorSimul.readOnly) {
+            if (metaPercCell) {
+                const metaPercentual = parseBRL(metaPercCell.textContent);
+                inputPercSimul.value = formatSimPerc(metaPercentual, 100); // formata como percentual
+                itemsLoaded++;
+            }
+        }
+        // Para subcategorias onde o valor é editável, carrega o valor da meta
+        else if (!inputValorSimul.readOnly) {
+            if (metaValueCell) {
+                const metaValue = parseBRL(metaValueCell.textContent);
+                inputValorSimul.value = formatSimValue(metaValue);
+                itemsLoaded++;
+            }
         }
     });
 
@@ -1886,30 +1945,36 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Botão Ponto de Equilíbrio
-  document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
-    const rowFC = document.getElementById('rowFluxoCaixa');
-    if (!rowFC) {
-      alert('Linha do Fluxo de Caixa não encontrada.');
-          return;
-    }
-    const inputFCValorSimul = rowFC.querySelector('input.simul-valor');
-    if (!inputFCValorSimul) {
-      alert('Campo de simulação do Fluxo de Caixa não encontrado.');
-      return;
-    }
+ document.getElementById('pontoEquilibrioBtn').addEventListener('click', function() {
+    // Primeiro, captura os percentuais das subcategorias editáveis ANTES de alterar a receita bruta
+    const percentuaisFixos = {};
     
-    // Helper para obter o percentual de um input de percentual
+    // Captura percentuais das subcategorias de TRIBUTOS, CUSTO VARIÁVEL e DESPESA VENDA
+    ['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'].forEach(categoria => {
+        const catRow = findCategoryRow(categoria);
+        if (catRow) {
+            let currentRow = catRow.nextElementSibling;
+            while (currentRow && currentRow.classList.contains('dre-sub')) {
+                const inputPerc = currentRow.querySelector('input.simul-perc');
+                if (inputPerc && !inputPerc.readOnly) {
+                    const subcategoriaName = currentRow.cells[0].textContent.trim();
+                    const key = `${categoria}___${subcategoriaName}`;
+                    percentuaisFixos[key] = inputPerc.value;
+                }
+                currentRow = currentRow.nextElementSibling;
+            }
+        }
+    });
+
+    // Helpers
     const getPercentageFromInput = (categoryName) => {
         const row = findCategoryRow(categoryName);
         if (row) {
             const inputPerc = row.querySelector('input.simul-perc');
-            // Retorna o percentual como decimal (ex: 0.05 para 5%)
             return parseBRL(inputPerc.value) / 100;
         }
         return 0;
     };
-
-    // Helper para obter o valor absoluto de um input de valor
     const getAbsoluteValueFromInput = (categoryName) => {
         const row = findCategoryRow(categoryName);
         if (row) {
@@ -1919,12 +1984,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return 0;
     };
 
-    // 1. Obter os percentuais das categorias variáveis (TRIBUTOS, CUSTO VARIÁVEL, DESPESA VENDA)
+    // Percentuais variáveis
     const pTributos = getPercentageFromInput('TRIBUTOS');
     const pCustoVariavel = getPercentageFromInput('CUSTO VARIÁVEL');
     const pDespesaVenda = getPercentageFromInput('DESPESA VENDA');
 
-    // 2. Obter os valores absolutos das categorias fixas e outras receitas/despesas
+    // Valores absolutos fixos
     const cf = getAbsoluteValueFromInput('CUSTO FIXO');
     const df = getAbsoluteValueFromInput('DESPESA FIXA');
     const ii = getAbsoluteValueFromInput('INVESTIMENTO INTERNO');
@@ -1932,39 +1997,70 @@ document.addEventListener('DOMContentLoaded', function() {
     const am = getAbsoluteValueFromInput('AMORTIZAÇÃO');
     const sr = getAbsoluteValueFromInput('Z - SAIDA DE REPASSE');
 
-    // Para RECEITAS NAO OPERACIONAIS, somar os valores de suas sub-linhas editáveis
+    // RECEITAS NAO OPERACIONAIS (soma das sub-linhas)
     let rno = 0;
     document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(input => {
         rno += parseBRL(input.value);
     });
 
-    // 3. Calcular a soma dos custos/despesas fixas e outras receitas/despesas
-    // FixedCostsAndOther = (CF + DF + II + IE + SR + AM) - RNO
+    // Soma dos custos/despesas fixas e outras receitas/despesas
     const fixedCostsAndOther = (cf + df + ii + ie + sr + am) - rno;
 
-    // 4. Calcular o fator variável (1 - soma dos percentuais das despesas variáveis)
-    // VariableFactor = 1 - (pT + pCV + pDV)
+    // Fator variável
     const variableFactor = 1 - (pTributos + pCustoVariavel + pDespesaVenda);
 
-    // 5. Verificar se o fator variável é válido para evitar divisão por zero ou resultados ilógicos
     if (variableFactor <= 0) {
         alert('Não é possível calcular o Ponto de Equilíbrio. A soma dos percentuais de custos variáveis é muito alta (>= 100%).');
         return;
     }
 
-    // 6. Calcular a nova Receita Bruta para o Ponto de Equilíbrio
+    // Receita Bruta para Fluxo de Caixa = 0
     const novaReceitaBruta = fixedCostsAndOther / variableFactor;
-    const finalReceitaBruta = Math.max(0, novaReceitaBruta); // Garante que não seja negativa
+    const finalReceitaBruta = Math.max(0, novaReceitaBruta);
 
-    // 7. Atualizar o campo da Receita Bruta e recalcular toda a DRE
+    // Atualiza o campo da Receita Bruta
     const inputReceitaBrutaSimul = document.querySelector('.simul-valor[data-receita="1"]');
     if (inputReceitaBrutaSimul) {
         inputReceitaBrutaSimul.value = formatSimValue(finalReceitaBruta);
-        recalcularTudo(); // Recalcula toda a DRE com a nova receita
+        
+        // Recalcula tudo EXCETO restaura os percentuais fixos das subcategorias editáveis
+        recalcularTudo();
+        
+        // Restaura os percentuais das subcategorias que devem permanecer fixos
+        Object.keys(percentuaisFixos).forEach(key => {
+            const [categoria, subcategoria] = key.split('___');
+            const catRow = findCategoryRow(categoria);
+            if (catRow) {
+                let currentRow = catRow.nextElementSibling;
+                while (currentRow && currentRow.classList.contains('dre-sub')) {
+                    const subcategoriaName = currentRow.cells[0].textContent.trim();
+                    if (subcategoriaName === subcategoria) {
+                        const inputPerc = currentRow.querySelector('input.simul-perc');
+                        if (inputPerc && !inputPerc.readOnly) {
+                            inputPerc.value = percentuaisFixos[key];
+                        }
+                        break;
+                    }
+                    currentRow = currentRow.nextElementSibling;
+                }
+            }
+        });
+        
+        // Recalcula novamente para aplicar os percentuais restaurados
+        recalcularTudo();
+
+        // Força o campo do Fluxo de Caixa a mostrar zero
+        const rowFC = document.getElementById('rowFluxoCaixa');
+        if (rowFC) {
+            const inputFCValorSimul = rowFC.querySelector('input.simul-valor');
+            if (inputFCValorSimul) inputFCValorSimul.value = formatSimValue(0);
+            const inputFCPerc = rowFC.querySelector('input.simul-perc');
+            if (inputFCPerc) inputFCPerc.value = formatSimPerc(0, finalReceitaBruta);
+        }
     } else {
         alert('Campo de simulação da Receita Bruta não encontrado.');
     }
-  });
+});
 
   // --- Funcionalidade de Salvar/Carregar Simulação Local (Aprimorada) ---
   const localStorageKeyCollection = 'simulacaoDRECollection';
@@ -2008,12 +2104,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!primeiroTd) return;
 
         const inputValorSimul = row.querySelector('input.simul-valor');
+        const inputPercSimul = row.querySelector('input.simul-perc');
 
         if (row.classList.contains('dre-cat')) {
              categoriaAtualContexto = primeiroTd.textContent.trim();
         }
 
-        if (!inputValorSimul || inputValorSimul.readOnly) {
+        if (!inputValorSimul) {
             return;
         }
 
@@ -2032,7 +2129,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (key) {
-            simulacaoData[key] = inputValorSimul.value;
+            // Salva o valor editável (seja valor ou percentual)
+            if (!inputValorSimul.readOnly) {
+                simulacaoData[key] = inputValorSimul.value;
+            } else if (inputPercSimul && !inputPercSimul.readOnly) {
+                // Para campos onde o percentual é editável, salva o percentual com sufixo "_perc"
+                simulacaoData[key + "_perc"] = inputPercSimul.value;
+            }
         }
     });
 
@@ -2070,12 +2173,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!primeiroTd) return;
 
         const inputValorSimul = row.querySelector('input.simul-valor');
+        const inputPercSimul = row.querySelector('input.simul-perc');
 
         if (row.classList.contains('dre-cat')) {
              categoriaAtualContexto = primeiroTd.textContent.trim();
         }
 
-        if (!inputValorSimul || inputValorSimul.readOnly) {
+        if (!inputValorSimul) {
             return;
         }
 
@@ -2093,9 +2197,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (key && simulacaoData.hasOwnProperty(key)) {
-            inputValorSimul.value = simulacaoData[key];
-            itemsLoaded++;
+        if (key) {
+            // Carrega o valor se o campo de valor for editável
+            if (!inputValorSimul.readOnly && simulacaoData.hasOwnProperty(key)) {
+                inputValorSimul.value = simulacaoData[key];
+                itemsLoaded++;
+            }
+            // Carrega o percentual se o campo de percentual for editável
+            else if (inputPercSimul && !inputPercSimul.readOnly && simulacaoData.hasOwnProperty(key + "_perc")) {
+                inputPercSimul.value = simulacaoData[key + "_perc"];
+                itemsLoaded++;
+            }
         }
     });
 
