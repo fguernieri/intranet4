@@ -86,6 +86,22 @@ table.dataTable thead th.sorting_desc:after {
       </form>
 
       <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <button id="btn-farol" onclick="rodarFarol()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded">
+        🚦 Rodar Farol
+      </button>
+      <button 
+        onclick="abrirModalImportacao()"
+        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded"
+      >
+        📥 Importar CSV Insumos
+      </button>
+      <button 
+        onclick="abrirImportProdutos()"
+        class="bg-orange-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded"
+      >
+        📥 Importar XLSX Produtos
+      </button>
+
         <a href="consultar_alteracoes.php"
            class="w-full sm:w-auto text-center bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded shadow font-semibold">
           📜 Histórico
@@ -142,21 +158,6 @@ table.dataTable thead th.sorting_desc:after {
           </tbody>
         </table>
       </div>
-      <button id="btn-farol" onclick="rodarFarol()" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded mt-4">
-        🚦 Rodar Farol
-      </button>
-      <button 
-        onclick="abrirModalImportacao()"
-        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded"
-      >
-        📥 Importar CSV Insumos
-      </button>
-      <button 
-        onclick="abrirImportProdutos()"
-        class="bg-orange-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded"
-      >
-        📥 Importar XLSX Produtos
-      </button>
 
     <?php else: ?>
       <p class="text-center text-gray-400 mt-10">Nenhuma ficha encontrada com o filtro: <strong><?= htmlspecialchars($filtro) ?></strong></p>

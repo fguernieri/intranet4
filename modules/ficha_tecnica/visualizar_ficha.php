@@ -57,6 +57,8 @@ if ($codigos) {
   <title>Ficha Técnica – <?= htmlspecialchars($ficha['nome_prato'], ENT_QUOTES) ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../../assets/css/style.css" />
+
   <style media="print">
     @page { size: A4 portrait; margin: 10mm; }
     body { background: #fff !important; color: #000 !important; }
@@ -110,13 +112,18 @@ if ($codigos) {
       </script>
     <?php endif; ?>
 
-    <!-- Botão Voltar (apenas na tela) -->
-    <div class="no-print">
-      <a href="consulta.php" class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded shadow font-semibold">
-        ⬅️ Voltar para Consulta
-      </a>
+    <div class="no-print grid grid-cols-2 items-center gap-4">
+      <div>
+        <a href="consulta.php" class="btn-acao-azul">
+          ⬅️ Voltar para Consulta
+        </a>
+      </div>
+      <div class="text-right">
+        <a href="editar_ficha_form.php?id=<?= $ficha['id'] ?>" class="btn-acao">
+          Editar
+        </a>
+      </div>
     </div>
-
     <!-- Título da Ficha -->
     <h1 class="text-3xl font-bold text-cyan-400 text-center">
       <?= htmlspecialchars($ficha['nome_prato'], ENT_QUOTES) ?>
