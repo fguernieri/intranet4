@@ -6,14 +6,32 @@ error_reporting(E_ALL);
 // ==================== [ ADIÇÃO 1: TRATAMENTO POST ] ====================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    
+    // Iniciar sessão para verificar autenticação
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
     require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
     $connPost = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
     $connPost->set_charset('utf8mb4');
+    
     if ($connPost->connect_error) {
         echo json_encode(['sucesso' => false, 'erro' => "Conexão falhou: " . $connPost->connect_error]);
         exit;
     }
     $jsonData = json_decode(file_get_contents('php://input'), true);
+    
+    // Verificar se o JSON foi decodificado corretamente
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo json_encode(['sucesso' => false, 'erro' => 'Erro ao decodificar JSON: ' . json_last_error_msg()]);
+        exit;
+    }
+    
+    if (empty($jsonData)) {
+        echo json_encode(['sucesso' => false, 'erro' => 'Dados JSON vazios ou inválidos']);
+        exit;
+    }
     
     // Verificar se é uma requisição de metas
     if (isset($jsonData['metas'])) {
@@ -53,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Verificar se é uma requisição de simulação
     if (isset($jsonData['simulacao'])) {
-        session_start();
         if (empty($_SESSION['usuario_id'])) {
             echo json_encode(['sucesso' => false, 'erro' => 'Usuário não autenticado.']);
             exit;
@@ -68,67 +85,141 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Exclui previamente a simulação do usuário com o mesmo nome
-        $stmtDel = $connPost->prepare("DELETE FROM fSimulacoesFabrica WHERE NomeSimulacao = ? AND UsuarioID = ?");
-        $stmtDel->bind_param("si", $nomeSimulacao, $usuarioID);
-        $stmtDel->execute();
-        $stmtDel->close();
-
-        $stmt = $connPost->prepare("INSERT INTO fSimulacoesFabrica (NomeSimulacao, UsuarioID, Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        if (!$stmt) {
-            echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
-            exit;
-        }
-        
-        foreach ($simulacaoData as $key => $valor) {
-            $categoria = '';
-            $subcategoria = null;
-            $subSubcategoria = null;
-            $valorSimulacao = 0;
-            $percentualSimulacao = 0;
-            
-            // Parse do key para extrair categoria/subcategoria
-            if (strpos($key, 'RNO_') === 0) {
-                // Receitas Não Operacionais
-                $categoria = 'RECEITAS NAO OPERACIONAIS';
-                $parts = explode('___', substr($key, 4));
-                if (count($parts) >= 2) {
-                    $subcategoria = $parts[0];
-                    $subSubcategoria = $parts[1];
+        try {
+            // Verificar se a tabela existe
+            $tableCheck = $connPost->query("SHOW TABLES LIKE 'fSimulacoesFabrica'");
+            if ($tableCheck->num_rows == 0) {
+                // Criar tabela se não existir
+                $createTable = "
+                CREATE TABLE `fSimulacoesFabrica` (
+                    `ID` int(11) NOT NULL AUTO_INCREMENT,
+                    `NomeSimulacao` varchar(255) NOT NULL,
+                    `UsuarioID` int(11) NOT NULL,
+                    `Categoria` varchar(255) NOT NULL,
+                    `Subcategoria` varchar(255) DEFAULT NULL,
+                    `SubSubcategoria` varchar(255) DEFAULT NULL,
+                    `ValorSimulacao` decimal(15,2) DEFAULT 0.00,
+                    `PercentualSimulacao` decimal(8,4) DEFAULT 0.0000,
+                    `DataCriacao` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `Ativo` tinyint(1) DEFAULT 1,
+                    PRIMARY KEY (`ID`),
+                    KEY `idx_usuario_nome` (`UsuarioID`, `NomeSimulacao`),
+                    KEY `idx_categoria` (`Categoria`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ";
+                
+                if (!$connPost->query($createTable)) {
+                    throw new Exception("Erro ao criar tabela fSimulacoesFabrica: " . $connPost->error);
                 }
-            } elseif (strpos($key, '___') !== false) {
-                // Categoria com subcategoria
-                $parts = explode('___', $key);
-                $categoria = $parts[0];
-                $subcategoria = $parts[1];
-            } else {
-                // Categoria principal
-                $categoria = $key;
             }
-            
-            // Verificar se é valor ou percentual
-            if (strpos($key, '_perc') !== false) {
-                $percentualSimulacao = floatval(str_replace(',', '.', $valor));
-            } else {
-                $valorSimulacao = floatval(str_replace(',', '.', $valor));
-            }
-            
-            $stmt->bind_param("sissdd", $nomeSimulacao, $usuarioID, $categoria, $subcategoria, $subSubcategoria, $valorSimulacao, $percentualSimulacao);
-            $stmt->execute();
-        }
-        $stmt->close();
-        $connPost->close();
 
-        echo json_encode(['sucesso' => true]);
+            // Iniciar transação para garantir atomicidade
+            $connPost->autocommit(FALSE);
+            
+            // Exclui previamente a simulação do usuário com o mesmo nome
+            $stmtDel = $connPost->prepare("DELETE FROM fSimulacoesFabrica WHERE NomeSimulacao = ? AND UsuarioID = ?");
+            if (!$stmtDel) {
+                throw new Exception("Erro ao preparar DELETE: " . $connPost->error);
+            }
+            $stmtDel->bind_param("si", $nomeSimulacao, $usuarioID);
+            if (!$stmtDel->execute()) {
+                throw new Exception("Erro ao executar DELETE: " . $stmtDel->error);
+            }
+            $registrosExcluidos = $stmtDel->affected_rows;
+            $stmtDel->close();
+
+            $stmt = $connPost->prepare("INSERT INTO fSimulacoesFabrica (NomeSimulacao, UsuarioID, Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao, DataCriacao, Ativo) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 1)");
+            if (!$stmt) {
+                throw new Exception("Erro ao preparar INSERT: " . $connPost->error);
+            }
+            
+            $insertCount = 0;
+            foreach ($simulacaoData as $key => $valor) {
+                if (empty($valor) || $valor === '0' || $valor === '0,00') {
+                    continue; // Pula valores vazios ou zero
+                }
+                
+                $categoria = '';
+                $subcategoria = null;
+                $subSubcategoria = null;
+                $valorSimulacao = 0;
+                $percentualSimulacao = 0;
+                $isPercentual = false;
+                
+                // Verificar se é percentual
+                if (strpos($key, '_perc') !== false) {
+                    $isPercentual = true;
+                    $key = str_replace('_perc', '', $key); // Remove o sufixo para fazer o parse
+                }
+                
+                // Parse do key para extrair categoria/subcategoria
+                if (strpos($key, 'RNO_') === 0) {
+                    // Receitas Não Operacionais
+                    $categoria = 'RECEITAS NAO OPERACIONAIS';
+                    $parts = explode('___', substr($key, 4));
+                    if (count($parts) >= 2) {
+                        $subcategoria = trim($parts[0]);
+                        $subSubcategoria = trim($parts[1]);
+                    }
+                } elseif (strpos($key, '___') !== false) {
+                    // Categoria com subcategoria
+                    $parts = explode('___', $key);
+                    $categoria = trim($parts[0]);
+                    $subcategoria = trim($parts[1]);
+                } else {
+                    // Categoria principal
+                    $categoria = trim($key);
+                }
+                
+                // Converter valor
+                $valorLimpo = str_replace(['.', ','], ['', '.'], $valor);
+                $valorLimpo = preg_replace('/[^0-9.-]/', '', $valorLimpo); // Remove caracteres não numéricos
+                
+                if ($isPercentual) {
+                    $percentualSimulacao = floatval($valorLimpo);
+                } else {
+                    $valorSimulacao = floatval($valorLimpo);
+                }
+                
+                $stmt->bind_param("sisssdd", $nomeSimulacao, $usuarioID, $categoria, $subcategoria, $subSubcategoria, $valorSimulacao, $percentualSimulacao);
+                if (!$stmt->execute()) {
+                    throw new Exception("Erro ao executar INSERT para $key: " . $stmt->error);
+                }
+                $insertCount++;
+            }
+            
+            $stmt->close();
+            
+            // Commit da transação se tudo deu certo
+            $connPost->commit();
+            $connPost->autocommit(TRUE);
+            $connPost->close();
+
+            if ($insertCount > 0) {
+                echo json_encode(['sucesso' => true, 'mensagem' => "Simulação '$nomeSimulacao' salva com sucesso! ($insertCount registros inseridos, $registrosExcluidos registros antigos removidos)"]);
+            } else {
+                echo json_encode(['sucesso' => false, 'erro' => 'Nenhum dado válido encontrado para salvar.']);
+            }
+        } catch (Exception $e) {
+            // Rollback em caso de erro
+            if (isset($connPost)) {
+                $connPost->rollback();
+                $connPost->autocommit(TRUE);
+                $connPost->close();
+            }
+            echo json_encode(['sucesso' => false, 'erro' => 'Erro interno: ' . $e->getMessage()]);
+        }
         exit;
     }
 }
-// ==================== [ FIM DO TRATAMENTO POST ] ====================
 
 // ==================== [ TRATAMENTO GET PARA SIMULAÇÕES ] ====================
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'listar_simulacoes') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     header('Content-Type: application/json');
-    session_start();
+    
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     
     if (empty($_SESSION['usuario_id'])) {
         echo json_encode(['sucesso' => false, 'erro' => 'Usuário não autenticado.']);
@@ -145,24 +236,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     }
     
     $usuarioID = $_SESSION['usuario_id'];
-    $stmt = $conn->prepare("SELECT DISTINCT NomeSimulacao, DataCriacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND Ativo = 1 ORDER BY DataCriacao DESC");
-    $stmt->bind_param("i", $usuarioID);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    $simulacoes = [];
-    while ($row = $result->fetch_assoc()) {
-        $simulacoes[] = [
-            'nome' => $row['NomeSimulacao'],
-            'data' => $row['DataCriacao']
-        ];
+    // Listar simulações
+    if ($_GET['action'] === 'listar_simulacoes') {
+        // Verificar se a tabela existe
+        $tableCheck = $conn->query("SHOW TABLES LIKE 'fSimulacoesFabrica'");
+        if ($tableCheck->num_rows == 0) {
+            echo json_encode(['sucesso' => true, 'simulacoes' => []]);
+            exit;
+        }
+        
+        $stmt = $conn->prepare("SELECT DISTINCT NomeSimulacao, MAX(DataCriacao) as DataCriacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND Ativo = 1 GROUP BY NomeSimulacao ORDER BY DataCriacao DESC");
+        $stmt->bind_param("i", $usuarioID);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $simulacoes = [];
+        while ($row = $result->fetch_assoc()) {
+            $simulacoes[] = [
+                'nome' => $row['NomeSimulacao'],
+                'data' => $row['DataCriacao']
+            ];
+        }
+        
+        $stmt->close();
+        $conn->close();
+        
+        echo json_encode(['sucesso' => true, 'simulacoes' => $simulacoes]);
+        exit;
     }
     
-    $stmt->close();
-    $conn->close();
+    // Carregar simulação específica
+    if ($_GET['action'] === 'carregar_simulacao' && isset($_GET['nome'])) {
+        $nomeSimulacao = $_GET['nome'];
+        
+        $stmt = $conn->prepare("SELECT Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND NomeSimulacao = ? AND Ativo = 1");
+        $stmt->bind_param("is", $usuarioID, $nomeSimulacao);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $simulacaoData = [];
+        while ($row = $result->fetch_assoc()) {
+            $key = '';
+            if ($row['Categoria'] === 'RECEITAS NAO OPERACIONAIS' && !empty($row['Subcategoria']) && !empty($row['SubSubcategoria'])) {
+                $key = 'RNO_' . $row['Subcategoria'] . '___' . $row['SubSubcategoria'];
+            } elseif (!empty($row['Subcategoria'])) {
+                $key = $row['Categoria'] . '___' . $row['Subcategoria'];
+            } else {
+                $key = $row['Categoria'];
+            }
+            
+            if ($row['ValorSimulacao'] > 0) {
+                $simulacaoData[$key] = number_format($row['ValorSimulacao'], 2, ',', '.');
+            }
+            if ($row['PercentualSimulacao'] > 0) {
+                $simulacaoData[$key . '_perc'] = number_format($row['PercentualSimulacao'], 2, ',', '.');
+            }
+        }
+        
+        $stmt->close();
+        $conn->close();
+        
+        echo json_encode(['sucesso' => true, 'simulacao' => $simulacaoData]);
+        exit;
+    }
     
-    echo json_encode(['sucesso' => true, 'simulacoes' => $simulacoes]);
-    exit;
+    // Excluir simulação
+    if ($_GET['action'] === 'excluir_simulacao' && isset($_GET['nome'])) {
+        $nomeSimulacao = $_GET['nome'];
+        
+        $stmt = $conn->prepare("UPDATE fSimulacoesFabrica SET Ativo = 0 WHERE UsuarioID = ? AND NomeSimulacao = ?");
+        $stmt->bind_param("is", $usuarioID, $nomeSimulacao);
+        $sucesso = $stmt->execute();
+        
+        $stmt->close();
+        $conn->close();
+        
+        echo json_encode(['sucesso' => $sucesso]);
+        exit;
+    }
 }
 // ==================== [ FIM DO TRATAMENTO GET ] ====================
 
@@ -555,7 +707,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
 
   <div class="mb-6 flex items-end gap-4">
     <div>
-      <label for="nomeSimulacaoLocalInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação Local:</label>
+      <label for="nomeSimulacaoLocalInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da simulação a ser salva:</label>
       <input type="text" id="nomeSimulacaoLocalInput" placeholder="Ex: Cenário Otimista"
              class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
     </div>
@@ -2255,7 +2407,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // console.log('Enviando para salvar:', { metas: metasParaSalvar, data: dataMeta });
 
-    fetch('/modules/financeiro/salvar_metas.php', {
+    fetch(window.location.href, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2457,8 +2609,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-  // --- Funcionalidade de Salvar/Carregar Simulação Local (Aprimorada) ---
-  const localStorageKeyCollection = 'simulacaoDRECollection';
+  // --- Funcionalidade de Salvar/Carregar Simulação (Apenas Banco de Dados) ---
+  // const localStorageKeyCollection = 'simulacaoDRECollection'; // Removido - não usa mais localStorage
   const nomeSimulacaoInput = document.getElementById('nomeSimulacaoLocalInput');
   const listaSimulacoesSelect = document.getElementById('listaSimulacoesSalvas');
 
@@ -2468,55 +2620,66 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.sucesso) {
-                listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione --</option>';
+                // Limpa o select
+                listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione uma simulação --</option>';
                 
                 if (data.simulacoes.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = "";
-                    option.textContent = "Nenhuma simulação salva";
-                    option.disabled = true;
-                    listaSimulacoesSelect.appendChild(option);
+                    const optionEmpty = document.createElement('option');
+                    optionEmpty.value = "";
+                    optionEmpty.textContent = "Nenhuma simulação salva";
+                    optionEmpty.disabled = true;
+                    listaSimulacoesSelect.appendChild(optionEmpty);
                 } else {
+                    // Garantir unicidade no frontend também (por segurança)
+                    const simulacoesUnicas = [];
+                    const nomesJaAdicionados = new Set();
+                    
                     data.simulacoes.forEach(sim => {
-                        const option = document.createElement('option');
-                        option.value = sim.nome;
-                        option.textContent = sim.nome;
-                        listaSimulacoesSelect.appendChild(option);
+                        if (!nomesJaAdicionados.has(sim.nome)) {
+                            simulacoesUnicas.push(sim);
+                            nomesJaAdicionados.add(sim.nome);
+                        }
+                    });
+                    
+                    simulacoesUnicas.forEach(sim => {
+                        const optionSim = document.createElement('option');
+                        optionSim.value = sim.nome;
+                        // Exibe o nome da simulação e a data de criação para melhor identificação
+                        const dataFormatada = new Date(sim.data).toLocaleString('pt-BR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        optionSim.textContent = `${sim.nome} (${dataFormatada})`;
+                        listaSimulacoesSelect.appendChild(optionSim);
                     });
                 }
             } else {
                 console.error('Erro ao carregar simulações:', data.erro);
-                // Fallback para localStorage
-                populateSimulationsList();
+                // Mostrar lista vazia se houver erro no banco
+                listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione uma simulação --</option>';
+                const optionError = document.createElement('option');
+                optionError.value = "";
+                optionError.textContent = "Erro ao carregar simulações";
+                optionError.disabled = true;
+                listaSimulacoesSelect.appendChild(optionError);
             }
         })
         .catch(error => {
             console.error('Erro de comunicação:', error);
-            // Fallback para localStorage
-            populateSimulationsList();
+            // Mostrar lista vazia se houver erro de comunicação
+            listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione uma simulação --</option>';
+            const optionCommError = document.createElement('option');
+            optionCommError.value = "";
+            optionCommError.textContent = "Erro de comunicação com servidor";
+            optionCommError.disabled = true;
+            listaSimulacoesSelect.appendChild(optionCommError);
         });
   }
 
-  function populateSimulationsList() {
-    listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa e adiciona opção padrão
-    const collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
-    const sortedNames = Object.keys(collection).sort();
-
-    if (sortedNames.length === 0) {
-        const option = document.createElement('option');
-        option.value = "";
-        option.textContent = "Nenhuma simulação salva";
-        option.disabled = true;
-        listaSimulacoesSelect.appendChild(option);
-    } else {
-        sortedNames.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            listaSimulacoesSelect.appendChild(option);
-        });
-    }
-  }
+  // Função populateSimulationsList removida - não usa mais localStorage
 
   document.getElementById('salvarSimulacaoLocalBtn').addEventListener('click', function() {
     const nomeSimulacao = nomeSimulacaoInput.value.trim();
@@ -2576,6 +2739,8 @@ document.addEventListener('DOMContentLoaded', function() {
             simulacao: simulacaoData
         };
 
+        console.log('Enviando dados:', payload);
+
         fetch(window.location.href, {
             method: 'POST',
             headers: {
@@ -2583,26 +2748,46 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Status da resposta:', response.status);
+            console.log('Headers da resposta:', response.headers);
+            
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Resposta de erro (texto):', text);
+                    throw new Error(`Erro HTTP ${response.status}: ${response.statusText}. Resposta: ${text}`);
+                });
+            }
+            
+            return response.text().then(text => {
+                console.log('Resposta (texto):', text);
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Erro ao fazer parse do JSON:', e);
+                    console.error('Texto recebido:', text);
+                    throw new Error('Resposta não é um JSON válido: ' + text);
+                }
+            });
+        })
         .then(data => {
+            console.log('Dados recebidos:', data);
             if (data.sucesso) {
                 alert(`Simulação "${nomeSimulacao}" salva no banco com sucesso!`);
                 nomeSimulacaoInput.value = ''; // Limpa o campo do nome
                 carregarListaSimulacoes(); // Atualiza a lista dropdown
             } else {
                 alert('Erro ao salvar simulação: ' + (data.erro || 'Erro desconhecido'));
+                console.error('Erro detalhado:', data);
             }
         })
         .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro de comunicação com o servidor.');
+            console.error('Erro completo:', error);
+            console.error('Payload enviado:', payload);
+            alert('Erro de comunicação com o servidor: ' + error.message);
         });
 
-        // Também salvar no localStorage como backup
-        let collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
-        collection[nomeSimulacao] = simulacaoData;
-        localStorage.setItem(localStorageKeyCollection, JSON.stringify(collection));
-        populateSimulationsList(); // Atualiza a lista dropdown local
+        // Não salva mais no localStorage - apenas banco de dados
     } else {
         alert('Nenhum dado de simulação editável encontrado para salvar.');
     }
@@ -2615,13 +2800,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    const collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
-    if (!collection[nomeSimulacaoSelecionada]) {
-        alert(`Simulação "${nomeSimulacaoSelecionada}" não encontrada no armazenamento local.`);
-        return;
-    }
+    // Carregar apenas do banco de dados
+    fetch(window.location.href + '?action=carregar_simulacao&nome=' + encodeURIComponent(nomeSimulacaoSelecionada))
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso && Object.keys(data.simulacao).length > 0) {
+                carregarSimulacaoNaTela(data.simulacao, nomeSimulacaoSelecionada);
+            } else {
+                alert(`Simulação "${nomeSimulacaoSelecionada}" não encontrada no banco de dados.`);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar simulação do banco:', error);
+            alert('Erro de comunicação com o servidor ao carregar simulação.');
+        });
+  });
 
-    const simulacaoData = collection[nomeSimulacaoSelecionada];
+  // Função removida - não usa mais localStorage como fallback
+
+  function carregarSimulacaoNaTela(simulacaoData, nomeSimulacao) {
     let categoriaAtualContexto = '';
     let itemsLoaded = 0;
 
@@ -2643,7 +2840,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let key = '';
         if (row.classList.contains('dre-cat')) {
             key = primeiroTd.textContent.trim();
-        } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
+        } else if (row.classList.contains('dre-subcat-l2')) {
             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
                 inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
                 key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
@@ -2668,10 +2865,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    recalcularTudo(); // Recalcula toda a DRE com os valores carregados
-    alert(itemsLoaded > 0 ? `Simulação "${nomeSimulacaoSelecionada}" carregada com sucesso!` : 'Nenhum dado correspondente encontrado na simulação salva para os campos atuais.');
-    nomeSimulacaoInput.value = nomeSimulacaoSelecionada; // Preenche o nome no input para facilitar salvar novamente com o mesmo nome
-  });
+    recalcularTudo();
+    alert(itemsLoaded > 0 ? `Simulação "${nomeSimulacao}" carregada com sucesso!` : 'Nenhum dado correspondente encontrado na simulação.');
+    nomeSimulacaoInput.value = nomeSimulacao;
+  }
 
   document.getElementById('excluirSimulacaoLocalBtn').addEventListener('click', function() {
     const nomeSimulacaoSelecionada = listaSimulacoesSelect.value;
@@ -2681,20 +2878,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (confirm(`Tem certeza que deseja excluir a simulação "${nomeSimulacaoSelecionada}"? Esta ação não pode ser desfeita.`)) {
-        let collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
-        if (collection[nomeSimulacaoSelecionada]) {
-            delete collection[nomeSimulacaoSelecionada];
-            localStorage.setItem(localStorageKeyCollection, JSON.stringify(collection));
-            populateSimulationsList(); // Atualiza a lista dropdown
-            nomeSimulacaoInput.value = ''; // Limpa o campo de nome
-            alert(`Simulação "${nomeSimulacaoSelecionada}" excluída com sucesso!`);
-        } else {
-            alert(`Simulação "${nomeSimulacaoSelecionada}" não encontrada para exclusão.`);
-        }
+        // Excluir apenas do banco
+        fetch(window.location.href + '?action=excluir_simulacao&nome=' + encodeURIComponent(nomeSimulacaoSelecionada))
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    alert(`Simulação "${nomeSimulacaoSelecionada}" excluída com sucesso!`);
+                    carregarListaSimulacoes(); // Atualiza a lista
+                    nomeSimulacaoInput.value = '';
+                } else {
+                    alert('Erro ao excluir simulação do banco.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao excluir simulação:', error);
+                alert('Erro de comunicação com o servidor.');
+            });
     }
   });
 
-  populateSimulationsList();
+  carregarListaSimulacoes();
 
 });
 </script>

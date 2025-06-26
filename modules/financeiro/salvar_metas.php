@@ -23,24 +23,29 @@ if (empty($metas)) {
     exit;
 }
 
-// Limpa completamente a tabela de metas antes de inserir as novas
-if (!$conn->query("TRUNCATE TABLE fMetasFabrica")) {
-    echo json_encode(['sucesso' => false, 'erro' => "Erro ao truncar tabela fMetasFabrica: " . $conn->error]);
+// Exclui previamente as metas da data escolhida (para sobrescrever)
+$stmtDel = $conn->prepare("DELETE FROM fMetasFabrica WHERE Data = ?");
+if (!$stmtDel) {
+    echo json_encode(['sucesso' => false, 'erro' => "Erro ao preparar delete: " . $conn->error]);
     exit;
 }
+$stmtDel->bind_param("s", $dataMeta);
+$stmtDel->execute();
+$stmtDel->close();
 
-// Insere na tabela fMetasFabrica (colunas: Categoria, Subcategoria, Meta, Data)
-$stmt = $conn->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Data) VALUES (?, ?, ?, ?)");
+// Insere na tabela fMetasFabrica (colunas: Categoria, Subcategoria, Meta, Percentual, Data)
+$stmt = $conn->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
 if (!$stmt) {
-    echo json_encode(['sucesso' => false, 'erro' => $conn->error]);
+    echo json_encode(['sucesso' => false, 'erro' => "Erro ao preparar insert: " . $conn->error]);
     exit;
 }
 
 foreach ($metas as $linha) {
-    $categoria = $linha['categoria'];
-    $subcategoria = $linha['subcategoria'];
-    $metaValor = floatval($linha['valor']);
-    $stmt->bind_param("ssds", $categoria, $subcategoria, $metaValor, $dataMeta);
+    $categoria = $linha['categoria'] ?? '';
+    $subcategoria = $linha['subcategoria'] ?? '';
+    $metaValor = floatval($linha['valor'] ?? 0);
+    $percentual = floatval($linha['percentual'] ?? 0);
+    $stmt->bind_param("ssdds", $categoria, $subcategoria, $metaValor, $percentual, $dataMeta);
     $stmt->execute();
 }
 
