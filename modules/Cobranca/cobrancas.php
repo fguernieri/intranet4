@@ -143,6 +143,10 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     td.valor { font-weight: bold; text-align: right; }
     td.dias { text-align: center; /* font-weight será aplicado por JS ou CSS específico */ }
 
+    /* Oculta completamente a caixa de pesquisa padrão do DataTables */
+    .dataTables_filter { display: none !important; }
+    .dataTables_wrapper .dataTables_filter { display: none !important; }
+
     /* overlay e floating detail */
     #overlay {
         position: fixed; top: 0; left: 0;
@@ -293,6 +297,17 @@ if (json_last_error() !== JSON_ERROR_NONE) {
                 </div>
             </div>
 
+            <!-- Campo de pesquisa -->
+            <div class="mb-4">
+                <label for="search-cliente" class="block text-sm font-medium text-gray-300 mb-2">
+                    Pesquisar Cliente:
+                </label>
+                <input type="text" 
+                       id="search-cliente" 
+                       placeholder="Digite o nome do cliente para filtrar..."
+                       class="w-full max-w-md px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
             <table id="tbl-cli" class="display compact stripe">
                 <thead>
                     <tr>
@@ -301,10 +316,6 @@ if (json_last_error() !== JSON_ERROR_NONE) {
                     </tr>
                 </thead>
                 <tbody></tbody>
-        </div>
-    </div>
- 
-    <!-- overlay e floating detail -->
             </table>
         </div>
     </div>
@@ -382,8 +393,13 @@ $(function() {
         ],
         order: [[2,'desc']], // <-- coluna 2 é VALOR (R$)
         paging:false, searching:false, info:true,
-        language:{ info:'_TOTAL_ clientes', infoEmpty:'Nenhum', infoFiltered:'(de _MAX_)' },
-        rowId:'id_cli'
+        language:{ 
+            info:'_TOTAL_ clientes', 
+            infoEmpty:'Nenhum', 
+            infoFiltered:'(de _MAX_)'
+        },
+        rowId:'id_cli',
+        dom: 'lrtip' // Remove o campo de busca padrão do DOM
     });
 
     // Manipula a exibição da contagem de clientes em uma caixa customizada
@@ -409,6 +425,14 @@ $(function() {
             updateCustomInfoText();
         });
     }
+
+    // Ativa a busca programaticamente e conecta ao campo personalizado
+    tbl.settings()[0].oFeatures.bFilter = true;
+    
+    // Conecta o campo de pesquisa personalizado com o DataTable
+    $('#search-cliente').on('keyup', function() {
+        tbl.search(this.value).draw();
+    });
 
     // abre detail flutuante
     $('#tbl-cli tbody').on('click','tr',function(){
