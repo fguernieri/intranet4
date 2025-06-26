@@ -14,40 +14,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     $jsonData = json_decode(file_get_contents('php://input'), true);
-    $metas = $jsonData['metas'] ?? [];
-    $dataMeta = $jsonData['data'] ?? date('Y-m-d');
+    
+    // Verificar se é uma requisição de metas
+    if (isset($jsonData['metas'])) {
+        $metas = $jsonData['metas'];
+        $dataMeta = $jsonData['data'] ?? date('Y-m-d');
 
-    if (empty($metas)) {
-        echo json_encode(['sucesso' => false, 'erro' => 'Dados ausentes (metas vazias).']);
+        if (empty($metas)) {
+            echo json_encode(['sucesso' => false, 'erro' => 'Dados ausentes (metas vazias).']);
+            exit;
+        }
+
+        // Exclui previamente as metas da data escolhida (para sobrescrever)
+        $stmtDel = $connPost->prepare("DELETE FROM fMetasFabrica WHERE Data = ?");
+        $stmtDel->bind_param("s", $dataMeta);
+        $stmtDel->execute();
+        $stmtDel->close();
+
+        $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
+            exit;
+        }
+        foreach ($metas as $m) {
+            $cat  = $m['categoria']    ?? '';
+            $sub  = $m['subcategoria'] ?? '';
+            $meta = floatval($m['valor']) ?? 0;
+            $percentual = floatval($m['percentual']) ?? 0;
+            $stmt->bind_param("ssdds", $cat, $sub, $meta, $percentual, $dataMeta);
+            $stmt->execute();
+        }
+        $stmt->close();
+        $connPost->close();
+
+        echo json_encode(['sucesso' => true]);
         exit;
     }
+    
+    // Verificar se é uma requisição de simulação
+    if (isset($jsonData['simulacao'])) {
+        session_start();
+        if (empty($_SESSION['usuario_id'])) {
+            echo json_encode(['sucesso' => false, 'erro' => 'Usuário não autenticado.']);
+            exit;
+        }
+        
+        $nomeSimulacao = $jsonData['nomeSimulacao'] ?? '';
+        $simulacaoData = $jsonData['simulacao'] ?? [];
+        $usuarioID = $_SESSION['usuario_id'];
+        
+        if (empty($nomeSimulacao) || empty($simulacaoData)) {
+            echo json_encode(['sucesso' => false, 'erro' => 'Nome da simulação ou dados ausentes.']);
+            exit;
+        }
 
-    // Exclui previamente as metas da data escolhida (para sobrescrever)
-    $stmtDel = $connPost->prepare("DELETE FROM fMetasFabrica WHERE Data = ?");
-    $stmtDel->bind_param("s", $dataMeta);
-    $stmtDel->execute();
-    $stmtDel->close();
+        // Exclui previamente a simulação do usuário com o mesmo nome
+        $stmtDel = $connPost->prepare("DELETE FROM fSimulacoesFabrica WHERE NomeSimulacao = ? AND UsuarioID = ?");
+        $stmtDel->bind_param("si", $nomeSimulacao, $usuarioID);
+        $stmtDel->execute();
+        $stmtDel->close();
 
-    $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
+        $stmt = $connPost->prepare("INSERT INTO fSimulacoesFabrica (NomeSimulacao, UsuarioID, Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
+            exit;
+        }
+        
+        foreach ($simulacaoData as $key => $valor) {
+            $categoria = '';
+            $subcategoria = null;
+            $subSubcategoria = null;
+            $valorSimulacao = 0;
+            $percentualSimulacao = 0;
+            
+            // Parse do key para extrair categoria/subcategoria
+            if (strpos($key, 'RNO_') === 0) {
+                // Receitas Não Operacionais
+                $categoria = 'RECEITAS NAO OPERACIONAIS';
+                $parts = explode('___', substr($key, 4));
+                if (count($parts) >= 2) {
+                    $subcategoria = $parts[0];
+                    $subSubcategoria = $parts[1];
+                }
+            } elseif (strpos($key, '___') !== false) {
+                // Categoria com subcategoria
+                $parts = explode('___', $key);
+                $categoria = $parts[0];
+                $subcategoria = $parts[1];
+            } else {
+                // Categoria principal
+                $categoria = $key;
+            }
+            
+            // Verificar se é valor ou percentual
+            if (strpos($key, '_perc') !== false) {
+                $percentualSimulacao = floatval(str_replace(',', '.', $valor));
+            } else {
+                $valorSimulacao = floatval(str_replace(',', '.', $valor));
+            }
+            
+            $stmt->bind_param("sissdd", $nomeSimulacao, $usuarioID, $categoria, $subcategoria, $subSubcategoria, $valorSimulacao, $percentualSimulacao);
+            $stmt->execute();
+        }
+        $stmt->close();
+        $connPost->close();
+
+        echo json_encode(['sucesso' => true]);
         exit;
     }
-    foreach ($metas as $m) {
-        $cat  = $m['categoria']    ?? '';
-        $sub  = $m['subcategoria'] ?? '';
-        $meta = floatval($m['valor']) ?? 0; // Corrigido para 'valor' para corresponder ao payload JS
-        $percentual = floatval($m['percentual']) ?? 0; // Novo: valor percentual
-        $stmt->bind_param("ssdds", $cat, $sub, $meta, $percentual, $dataMeta); // Corrigido para 'd' para percentual
-        $stmt->execute();
-    }
-    $stmt->close();
-    $connPost->close();
-
-    echo json_encode(['sucesso' => true]);
-    exit;
 }
 // ==================== [ FIM DO TRATAMENTO POST ] ====================
+
+// ==================== [ TRATAMENTO GET PARA SIMULAÇÕES ] ====================
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'listar_simulacoes') {
+    header('Content-Type: application/json');
+    session_start();
+    
+    if (empty($_SESSION['usuario_id'])) {
+        echo json_encode(['sucesso' => false, 'erro' => 'Usuário não autenticado.']);
+        exit;
+    }
+    
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $conn->set_charset('utf8mb4');
+    
+    if ($conn->connect_error) {
+        echo json_encode(['sucesso' => false, 'erro' => "Conexão falhou: " . $conn->connect_error]);
+        exit;
+    }
+    
+    $usuarioID = $_SESSION['usuario_id'];
+    $stmt = $conn->prepare("SELECT DISTINCT NomeSimulacao, DataCriacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND Ativo = 1 ORDER BY DataCriacao DESC");
+    $stmt->bind_param("i", $usuarioID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $simulacoes = [];
+    while ($row = $result->fetch_assoc()) {
+        $simulacoes[] = [
+            'nome' => $row['NomeSimulacao'],
+            'data' => $row['DataCriacao']
+        ];
+    }
+    
+    $stmt->close();
+    $conn->close();
+    
+    echo json_encode(['sucesso' => true, 'simulacoes' => $simulacoes]);
+    exit;
+}
+// ==================== [ FIM DO TRATAMENTO GET ] ====================
 
 // Sidebar e autenticação
 require_once __DIR__ . '/../../sidebar.php';
@@ -76,6 +193,12 @@ if ($conn->connect_error) {
 // Defina o ano e mês atual (ou pegue do GET)
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
+
+// Parâmetro de ordenação das subcategorias (mantido para compatibilidade, mas não usado)
+$ordenacao = isset($_GET['ordenacao']) ? $_GET['ordenacao'] : 'nome';
+if (!in_array($ordenacao, ['nome', 'percentual', 'valor'])) {
+    $ordenacao = 'nome';
+}
 
 // Carregue todas as parcelas do ano para médias e totais
 $sql = "
@@ -190,6 +313,11 @@ foreach ($matriz as $cat => $subs) {
 if (isset($matriz['Z - SAIDA DE REPASSE'])) {
     $matrizOrdenada['Z - SAIDA DE REPASSE'] = $matriz['Z - SAIDA DE REPASSE'];
 }
+
+// Função para ordenar subcategorias na exibição (não utilizada - ordenação via JavaScript)
+// function obterSubcategoriasOrdenadas($subcategorias, $categoria, $ordenacao, $metasArray, $metaReceita) {
+//     // Função removida - ordenação agora é feita via JavaScript
+// }
 
 // Consulta para carregar a ÚLTIMA meta gravada para cada Categoria/Subcategoria
 $sqlMetas = "
@@ -366,10 +494,81 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
       border-left: 2px solid #ffb703;
       border-right: 2px solid #ffb703;
     }
+    
+    /* Estilos para ordenação de subcategorias */
+    #ordenacaoSelect {
+      font-size: 12px;
+      padding: 4px 8px;
+      width: auto;
+      min-width: 180px;
+      transition: all 0.3s ease;
+    }
+    
+    #ordenacaoSelect:focus {
+      outline: 2px solid #ffb703;
+      background-color: #f3f4f6;
+    }
+    
+    .ordenacao-container {
+      background: rgba(31, 41, 55, 0.8);
+      border: 1px solid #374151;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    
+    .ordenacao-container label {
+      margin: 0;
+      font-weight: 500;
+      color: #9CA3AF;
+    }
+    
+    .subcategoria-ordenada {
+      transition: all 0.5s ease;
+    }
+    
+    .subcategoria-highlight {
+      background-color: rgba(255, 183, 3, 0.1) !important;
+      border-left: 3px solid #ffb703;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 flex min-h-screen">
 <main class="flex-1 bg-gray-900 p-6 relative">
+
+  <!-- Controles para salvar metas -->
+  <div class="mb-6 flex items-end gap-4">
+    <div>
+      <label for="dataMetaInput" class="block text-sm font-medium text-gray-300 mb-1">Data para Salvar Metas:</label>
+      <input type="date" id="dataMetaInput" name="dataMetaInput"
+             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+             value="<?= date('Y-m-d') ?>">
+    </div>
+    <button id="pontoEquilibrioBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs">Ponto Equilíbrio</button>
+    <button id="salvarMetasBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs">Salvar Metas</button>
+    <button id="carregarMetasOficiaisBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs">Carregar Metas</button>
+  </div>
+
+  <div class="mb-6 flex items-end gap-4">
+    <div>
+      <label for="nomeSimulacaoLocalInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação Local:</label>
+      <input type="text" id="nomeSimulacaoLocalInput" placeholder="Ex: Cenário Otimista"
+             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+    </div>
+    <button id="salvarSimulacaoLocalBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs self-end">Salvar Simulação</button>
+    <div>
+      <label for="listaSimulacoesSalvas" class="block text-sm font-medium text-gray-300 mb-1">Carregar Simulação Salva:</label>
+      <select id="listaSimulacoesSalvas" class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+        <option value="">-- Selecione --</option>
+      </select>
+    </div>
+    <button id="carregarSimulacaoLocalBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs self-end">Carregar</button>
+    <button id="excluirSimulacaoLocalBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-4 rounded text-xs self-end">Excluir</button>
+  </div>
 
   <!-- Filtro de Ano/Mês -->
   <form method="get" class="mb-4 flex gap-2 items-end">
@@ -387,6 +586,17 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
         <?php foreach ($meses as $num => $nome): ?>
           <option value="<?=$num?>" <?=$num==$mesAtual?'selected':''?>><?=$nome?></option>
         <?php endforeach; ?>
+      </select>
+    </label>
+    <label>
+      Ordenar Subcategorias:
+      <select id="ordenacaoSelect" class="text-black rounded p-1">
+        <option value="nome">Nome (A-Z)</option>
+        <option value="nome-desc">Nome (Z-A)</option>
+        <option value="meta-valor">Meta - Valor (↓)</option>
+        <option value="meta-valor-asc">Meta - Valor (↑)</option>
+        <option value="meta-perc">Meta - % (↓)</option>
+        <option value="meta-perc-asc">Meta - % (↑)</option>
       </select>
     </label>
     <button type="submit" class="bg-yellow-400 text-black px-3 py-1 rounded font-bold">Filtrar</button>
@@ -1252,36 +1462,6 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal) - ($atualIn
     </tbody>
   </table>
   
-  <!-- Controles para salvar metas -->
-  <div class="mt-6 flex items-end gap-4">
-    <div>
-      <label for="dataMetaInput" class="block text-sm font-medium text-gray-300 mb-1">Data para Salvar Metas:</label>
-      <input type="date" id="dataMetaInput" name="dataMetaInput"
-             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-             value="<?= date('Y-m-d') ?>">
-    </div>
-    <button id="pontoEquilibrioBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded font-bold">CALCULAR PONTO DE EQUILÍBRIO</button>
-    <button id="salvarMetasBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded font-bold">SALVAR METAS OFICIAIS</button>
-    <button id="carregarMetasOficiaisBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded font-bold">CARREGAR METAS OFICIAIS</button>
-  </div>
-
-  <div class="mt-4 flex items-end gap-4">
-    <div>
-      <label for="nomeSimulacaoLocalInput" class="block text-sm font-medium text-gray-300 mb-1">Nome da Simulação Local:</label>
-      <input type="text" id="nomeSimulacaoLocalInput" placeholder="Ex: Cenário Otimista"
-             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-    </div>
-    <button id="salvarSimulacaoLocalBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded font-bold self-end">SALVAR SIMULAÇÃO</button>
-    <div>
-      <label for="listaSimulacoesSalvas" class="block text-sm font-medium text-gray-300 mb-1">Carregar Simulação Salva:</label>
-      <select id="listaSimulacoesSalvas" class="bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-        <option value="">-- Selecione --</option>
-      </select>
-    </div>
-    <button id="carregarSimulacaoLocalBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded font-bold self-end">CARREGAR</button>
-    <button id="excluirSimulacaoLocalBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded font-bold self-end">EXCLUIR</button>
-  </div>
-  
 </main>
 
 <!-- Scripts de Atualização, Toggle etc. (mantidos) -->
@@ -1767,6 +1947,194 @@ document.addEventListener('DOMContentLoaded', function() {
   recalcularTudo();
   initializeDREToggle(); // Inicializa a funcionalidade de expandir/recolher
   applyInputRestrictions(); // Aplica as restrições de edição
+  initializeSubcategoryOrdering(); // Inicializa a ordenação de subcategorias
+
+  // Função para ordenação dinâmica de subcategorias
+  function initializeSubcategoryOrdering() {
+    const ordenacaoSelect = document.getElementById('ordenacaoSelect');
+    
+    ordenacaoSelect.addEventListener('change', function() {
+      const criterio = this.value;
+      ordenarSubcategorias(criterio);
+    });
+
+    // Aplicar ordenação inicial por nome
+    ordenarSubcategorias('nome');
+  }
+
+  function ordenarSubcategorias(criterio) {
+    // Remover highlights anteriores
+    document.querySelectorAll('.subcategoria-highlight').forEach(el => {
+      el.classList.remove('subcategoria-highlight');
+    });
+
+    // Encontrar todas as categorias principais
+    const categoriasPrincipais = document.querySelectorAll('tr.dre-cat');
+    
+    categoriasPrincipais.forEach(function(catRow) {
+      const subcategorias = [];
+      let currentRow = catRow.nextElementSibling;
+      
+      // Coletar todas as subcategorias desta categoria
+      while (currentRow && currentRow.classList.contains('dre-sub')) {
+        subcategorias.push(currentRow);
+        currentRow = currentRow.nextElementSibling;
+      }
+      
+      if (subcategorias.length > 0) {
+        // Adicionar classe de transição
+        subcategorias.forEach(sub => sub.classList.add('subcategoria-ordenada'));
+        
+        // Ordenar as subcategorias conforme o critério
+        subcategorias.sort(function(a, b) {
+          return compararSubcategorias(a, b, criterio);
+        });
+        
+        // Reinserir as subcategorias na ordem correta
+        const proximaLinha = currentRow; // Linha após as subcategorias
+        subcategorias.forEach(function(subRow, index) {
+          if (proximaLinha) {
+            proximaLinha.parentNode.insertBefore(subRow, proximaLinha);
+          } else {
+            catRow.parentNode.appendChild(subRow);
+          }
+          
+          // Adicionar highlight temporário
+          setTimeout(() => {
+            subRow.classList.add('subcategoria-highlight');
+          }, index * 50);
+        });
+        
+        // Remover highlight após um tempo
+        setTimeout(() => {
+          subcategorias.forEach(sub => {
+            sub.classList.remove('subcategoria-highlight');
+          });
+        }, 2000);
+      }
+    });
+
+    // Ordenar também as subcategorias de Receitas Não Operacionais (L2)
+    const categoriasRNO = document.querySelectorAll('tr.dre-subcat-l1');
+    
+    categoriasRNO.forEach(function(catRNORow) {
+      const subcategoriasRNO = [];
+      let currentRow = catRNORow.nextElementSibling;
+      
+      // Coletar todas as subcategorias L2 desta categoria L1
+      while (currentRow && currentRow.classList.contains('dre-subcat-l2')) {
+        subcategoriasRNO.push(currentRow);
+        currentRow = currentRow.nextElementSibling;
+      }
+      
+      if (subcategoriasRNO.length > 0) {
+        // Adicionar classe de transição
+        subcategoriasRNO.forEach(sub => sub.classList.add('subcategoria-ordenada'));
+        
+        // Ordenar as subcategorias L2 conforme o critério
+        subcategoriasRNO.sort(function(a, b) {
+          return compararSubcategorias(a, b, criterio);
+        });
+        
+        // Reinserir as subcategorias L2 na ordem correta
+        const proximaLinha = currentRow;
+        subcategoriasRNO.forEach(function(subRow, index) {
+          if (proximaLinha) {
+            proximaLinha.parentNode.insertBefore(subRow, proximaLinha);
+          } else {
+            catRNORow.parentNode.appendChild(subRow);
+          }
+          
+          // Adicionar highlight temporário
+          setTimeout(() => {
+            subRow.classList.add('subcategoria-highlight');
+          }, index * 50);
+        });
+        
+        // Remover highlight após um tempo
+        setTimeout(() => {
+          subcategoriasRNO.forEach(sub => {
+            sub.classList.remove('subcategoria-highlight');
+          });
+        }, 2000);
+      }
+    });
+
+    // Mostrar feedback visual temporário
+    mostrarFeedbackOrdenacao(criterio);
+  }
+
+  function compararSubcategorias(rowA, rowB, criterio) {
+    const nomeA = rowA.cells[0].textContent.trim();
+    const nomeB = rowB.cells[0].textContent.trim();
+    
+    switch (criterio) {
+      case 'nome':
+        return nomeA.localeCompare(nomeB, 'pt-BR', { sensitivity: 'base' });
+      
+      case 'nome-desc':
+        return nomeB.localeCompare(nomeA, 'pt-BR', { sensitivity: 'base' });
+      
+      case 'meta-valor':
+      case 'meta-valor-asc':
+        // Coluna 6 = Meta (valor)
+        const metaA = parseBRL(rowA.cells[6] ? rowA.cells[6].textContent : '0');
+        const metaB = parseBRL(rowB.cells[6] ? rowB.cells[6].textContent : '0');
+        return criterio === 'meta-valor' ? metaB - metaA : metaA - metaB;
+      
+      case 'meta-perc':
+      case 'meta-perc-asc':
+        // Coluna 7 = Meta %
+        const metaPercA = parseBRL(rowA.cells[7] ? rowA.cells[7].textContent : '0');
+        const metaPercB = parseBRL(rowB.cells[7] ? rowB.cells[7].textContent : '0');
+        return criterio === 'meta-perc' ? metaPercB - metaPercA : metaPercA - metaPercB;
+      
+      default:
+        return 0;
+    }
+  }
+
+  function mostrarFeedbackOrdenacao(criterio) {
+    // Criar elemento de feedback se não existir
+    let feedback = document.getElementById('ordenacao-feedback');
+    if (!feedback) {
+      feedback = document.createElement('div');
+      feedback.id = 'ordenacao-feedback';
+      feedback.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300';
+      document.body.appendChild(feedback);
+    }
+
+    // Definir mensagem baseada no critério
+    let mensagem = '';
+    switch (criterio) {
+      case 'nome':
+        mensagem = 'Subcategorias ordenadas: Nome (A-Z)';
+        break;
+      case 'nome-desc':
+        mensagem = 'Subcategorias ordenadas: Nome (Z-A)';
+        break;
+      case 'meta-valor':
+        mensagem = 'Subcategorias ordenadas: Meta - Valor (Maior→Menor)';
+        break;
+      case 'meta-valor-asc':
+        mensagem = 'Subcategorias ordenadas: Meta - Valor (Menor→Maior)';
+        break;
+      case 'meta-perc':
+        mensagem = 'Subcategorias ordenadas: Meta - % (Maior→Menor)';
+        break;
+      case 'meta-perc-asc':
+        mensagem = 'Subcategorias ordenadas: Meta - % (Menor→Maior)';
+        break;
+    }
+
+    feedback.textContent = mensagem;
+    feedback.style.opacity = '1';
+
+    // Remover feedback após 3 segundos
+    setTimeout(function() {
+      feedback.style.opacity = '0';
+    }, 3000);
+  }
 
   // Salvar Metas
   document.getElementById('salvarMetasBtn').addEventListener('click', function() {
@@ -2094,6 +2462,41 @@ document.addEventListener('DOMContentLoaded', function() {
   const nomeSimulacaoInput = document.getElementById('nomeSimulacaoLocalInput');
   const listaSimulacoesSelect = document.getElementById('listaSimulacoesSalvas');
 
+  // Função para carregar simulações do banco de dados
+  function carregarListaSimulacoes() {
+    fetch(window.location.href + '?action=listar_simulacoes')
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione --</option>';
+                
+                if (data.simulacoes.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = "";
+                    option.textContent = "Nenhuma simulação salva";
+                    option.disabled = true;
+                    listaSimulacoesSelect.appendChild(option);
+                } else {
+                    data.simulacoes.forEach(sim => {
+                        const option = document.createElement('option');
+                        option.value = sim.nome;
+                        option.textContent = sim.nome;
+                        listaSimulacoesSelect.appendChild(option);
+                    });
+                }
+            } else {
+                console.error('Erro ao carregar simulações:', data.erro);
+                // Fallback para localStorage
+                populateSimulationsList();
+            }
+        })
+        .catch(error => {
+            console.error('Erro de comunicação:', error);
+            // Fallback para localStorage
+            populateSimulationsList();
+        });
+  }
+
   function populateSimulationsList() {
     listaSimulacoesSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa e adiciona opção padrão
     const collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
@@ -2167,12 +2570,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     if (Object.keys(simulacaoData).length > 0) {
+        // Salvar no banco de dados
+        const payload = {
+            nomeSimulacao: nomeSimulacao,
+            simulacao: simulacaoData
+        };
+
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                alert(`Simulação "${nomeSimulacao}" salva no banco com sucesso!`);
+                nomeSimulacaoInput.value = ''; // Limpa o campo do nome
+                carregarListaSimulacoes(); // Atualiza a lista dropdown
+            } else {
+                alert('Erro ao salvar simulação: ' + (data.erro || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro de comunicação com o servidor.');
+        });
+
+        // Também salvar no localStorage como backup
         let collection = JSON.parse(localStorage.getItem(localStorageKeyCollection) || '{}');
         collection[nomeSimulacao] = simulacaoData;
         localStorage.setItem(localStorageKeyCollection, JSON.stringify(collection));
-        populateSimulationsList(); // Atualiza a lista dropdown
-        alert(`Simulação "${nomeSimulacao}" salva localmente com sucesso!`);
-        nomeSimulacaoInput.value = ''; // Limpa o campo do nome
+        populateSimulationsList(); // Atualiza a lista dropdown local
     } else {
         alert('Nenhum dado de simulação editável encontrado para salvar.');
     }
@@ -2268,3 +2698,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
+</body>
+</html>
