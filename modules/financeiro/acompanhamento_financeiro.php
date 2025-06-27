@@ -32,46 +32,78 @@ $sql = "
         c.ID_CONTA,
         c.CATEGORIA,
         c.SUBCATEGORIA,
+        c.DESCRICAO_CONTA,
+        d.PARCELA,
         d.VALOR,
         d.DATA_VENCIMENTO
     FROM fContasAPagar AS c
     INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
     WHERE YEAR(d.DATA_VENCIMENTO) = $anoAtual AND MONTH(d.DATA_VENCIMENTO) = $mesAtual
+    ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
 ";
 $res = $conn->query($sql);
 $linhasMesAtual = [];
 while ($f = $res->fetch_assoc()) {
     $linhasMesAtual[] = [
+        'ID_CONTA'        => $f['ID_CONTA'],
         'CATEGORIA'       => $f['CATEGORIA'],
         'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+        'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+        'PARCELA'         => $f['PARCELA'],
         'VALOR_EXIBIDO'   => $f['VALOR'],
     ];
 }
 
-// Organiza em matriz por categoria e subcategoria para o mês atual
-$meses = [
-    1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
-    7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
-];
+// Organiza em matriz hierárquica: categoria > subcategoria > descrição > parcela
 $matrizAtual = [];
+$matrizHierarquica = [];
 foreach ($linhasMesAtual as $linha) {
     $cat = $linha['CATEGORIA'] ?? 'SEM CATEGORIA';
     $sub = $linha['SUBCATEGORIA'] ?? 'SEM SUBCATEGORIA';
-    $matrizAtual[$cat][$sub][] = floatval($linha['VALOR_EXIBIDO']);
+    $desc = $linha['DESCRICAO_CONTA'] ?? 'SEM DESCRIÇÃO';
+    $parcela = $linha['PARCELA'];
+    $idConta = $linha['ID_CONTA'];
+    $valor = floatval($linha['VALOR_EXIBIDO']);
+    
+    // Matriz original para manter compatibilidade
+    $matrizAtual[$cat][$sub][] = $valor;
+    
+    // Matriz hierárquica completa
+    $matrizHierarquica[$cat][$sub][$desc][$idConta][] = [
+        'parcela' => $parcela,
+        'valor' => $valor,
+    ];
 }
 
-// Calcule o total do mês atual para cada categoria e subcategoria
+// Calcule o total do mês atual para cada categoria, subcategoria, descrição
 $atualCat = [];
 $atualSub = [];
-foreach ($matrizAtual as $cat => $subs) {
+$atualDesc = [];
+foreach ($matrizHierarquica as $cat => $subs) {
     $somaAtualCat = 0;
-    foreach ($subs as $sub => $valores) {
-        $somaAtualSub = array_sum($valores);
+    foreach ($subs as $sub => $descs) {
+        $somaAtualSub = 0;
+        foreach ($descs as $desc => $contas) {
+            $somaAtualDesc = 0;
+            foreach ($contas as $parcelas) {
+                foreach ($parcelas as $parcela) {
+                    $somaAtualDesc += $parcela['valor'];
+                }
+            }
+            $atualDesc[$cat][$sub][$desc] = $somaAtualDesc;
+            $somaAtualSub += $somaAtualDesc;
+        }
         $atualSub[$cat][$sub] = $somaAtualSub;
         $somaAtualCat += $somaAtualSub;
     }
     $atualCat[$cat] = $somaAtualCat;
 }
+
+// Array de meses para exibição
+$meses = [
+    1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
+    7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
+];
 
 // Receita operacional do mês atual
 $atualRec = 0;
@@ -107,13 +139,13 @@ if ($resTodasCategorias) {
 }
 
 $matrizOrdenada = [];
-foreach ($matrizAtual as $cat => $subs) {
+foreach ($matrizHierarquica as $cat => $subs) {
     if (mb_strtoupper(trim($cat)) !== 'Z - SAIDA DE REPASSE') {
         $matrizOrdenada[$cat] = $subs;
     }
 }
-if (isset($matrizAtual['Z - SAIDA DE REPASSE'])) {
-    $matrizOrdenada['Z - SAIDA DE REPASSE'] = $matrizAtual['Z - SAIDA DE REPASSE'];
+if (isset($matrizHierarquica['Z - SAIDA DE REPASSE'])) {
+    $matrizOrdenada['Z - SAIDA DE REPASSE'] = $matrizHierarquica['Z - SAIDA DE REPASSE'];
 }
 
 
@@ -468,6 +500,8 @@ $jsonChartData = json_encode($chartData);
   <style>
     .dre-cat    { background: #22223b; font-weight: bold; cursor:pointer; }
     .dre-sub    { background: #383858; font-weight: 500; cursor:pointer; }
+    .dre-desc   { background: #2c2c4a; font-weight: normal; cursor:pointer; }
+    .dre-parcela { background: #232946; font-weight: normal; }
     .dre-subcat-l1 { background: #2c2c4a; font-weight: bold; cursor:pointer; }
     .dre-subcat-l2 { background: #383858; font-weight: 500; }
     .dre-hide   { display: none; }
@@ -477,8 +511,18 @@ $jsonChartData = json_encode($chartData);
       border: 0.5px solid #111827; /* Cor da borda ajustada para a mesma do fundo */
       border-collapse: collapse;
     }
-    .dre-cat, .dre-sub, .dre-subcat-l1 {
+    .dre-cat, .dre-sub, .dre-desc, .dre-subcat-l1 {
       font-size: 12px;
+    }
+    .toggle-icon {
+      display: inline-block;
+      width: 12px;
+      text-align: center;
+      margin-right: 5px;
+      font-family: monospace;
+    }
+    .dre-cat:hover, .dre-sub:hover, .dre-desc:hover, .dre-subcat-l1:hover {
+      background-color: #4a5568;
     }
   </style>
 </head>
@@ -557,8 +601,11 @@ $jsonChartData = json_encode($chartData);
 
     <!-- TRIBUTOS -->
     <?php if(isset($matrizOrdenada['TRIBUTOS']) || isset($metasArray['TRIBUTOS'])): ?>
-      <tr class="dre-cat cat_trib">
-        <td class="p-2 text-left">TRIBUTOS</td>
+      <tr class="dre-cat cat_trib" onclick="toggleCategory('trib')">
+        <td class="p-2 text-left">
+          <span class="toggle-icon" id="icon_trib">▶</span>
+          TRIBUTOS
+        </td>
         <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS']['']) ? 'R$ '.number_format($metasArray['TRIBUTOS'][''],2,',','.') : '-' ?></td>
         <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray['TRIBUTOS'][''])) ? number_format(($metasArray['TRIBUTOS']['']/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['TRIBUTOS'] ?? 0,2,',','.') ?></td>
@@ -585,8 +632,11 @@ $jsonChartData = json_encode($chartData);
       </tr>
       <?php foreach(($matrizOrdenada['TRIBUTOS'] ?? []) as $sub => $valores): ?>
         <?php if($sub): ?>
-          <tr class="dre-sub">
-            <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+          <tr class="dre-sub trib dre-hide" onclick="toggleSubcategory('trib_<?= md5($sub) ?>')">
+            <td class="p-2 text-left" style="padding-left:2em;">
+              <span class="toggle-icon" id="icon_trib_<?= md5($sub) ?>">▶</span>
+              <?= htmlspecialchars($sub) ?>
+            </td>
             <td class="p-2 text-right"><?= isset($metasArray['TRIBUTOS'][$sub]) ? 'R$ '.number_format($metasArray['TRIBUTOS'][$sub],2,',','.') : '-' ?></td>
             <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray['TRIBUTOS'][$sub])) ? number_format(($metasArray['TRIBUTOS'][$sub]/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
             <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['TRIBUTOS'][$sub] ?? 0,2,',','.') ?></td>
@@ -611,6 +661,38 @@ $jsonChartData = json_encode($chartData);
               ?>
             </td>
           </tr>
+
+          <?php if(isset($matrizHierarquica['TRIBUTOS'][$sub])): ?>
+            <?php foreach($matrizHierarquica['TRIBUTOS'][$sub] as $desc => $contas): ?>
+              <tr class="dre-desc trib_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('trib_<?= md5($sub . $desc) ?>')">
+                <td class="p-2 text-left" style="padding-left:3em;">
+                  <span class="toggle-icon" id="icon_trib_<?= md5($sub . $desc) ?>">▶</span>
+                  <?= htmlspecialchars($desc) ?>
+                </td>
+                <td class="p-2 text-right">-</td>
+                <td class="p-2 text-center">-</td>
+                <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc['TRIBUTOS'][$sub][$desc] ?? 0,2,',','.') ?></td>
+                <td class="p-2 text-center">-</td>
+                <td class="p-2 text-center">-</td>
+              </tr>
+
+              <?php foreach($contas as $idConta => $parcelas): ?>
+                <?php foreach($parcelas as $parcela): ?>
+                  <tr class="dre-parcela trib_<?= md5($sub . $desc) ?> dre-hide">
+                    <td class="p-2 text-left" style="padding-left:4em;">
+                      <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
+                      <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
+                    </td>
+                    <td class="p-2 text-right">-</td>
+                    <td class="p-2 text-center">-</td>
+                    <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
+                    <td class="p-2 text-center">-</td>
+                    <td class="p-2 text-center">-</td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+          <?php endif; ?>
         <?php endif; ?>
       <?php endforeach; ?>
     <?php endif; ?>
@@ -649,8 +731,11 @@ $jsonChartData = json_encode($chartData);
 
     <!-- CUSTO VARIÁVEL -->
     <?php if(isset($matrizOrdenada['CUSTO VARIÁVEL']) || isset($metasArray['CUSTO VARIÁVEL'])): ?>
-      <tr class="dre-cat cat_cvar">
-        <td class="p-2 text-left">CUSTO VARIÁVEL</td>
+      <tr class="dre-cat cat_cvar" onclick="toggleCategory('cvar')">
+        <td class="p-2 text-left">
+          <span class="toggle-icon" id="icon_cvar">▶</span>
+          CUSTO VARIÁVEL
+        </td>
         <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL']['']) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][''],2,',','.') : '-' ?></td>
         <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray['CUSTO VARIÁVEL'][''])) ? number_format(($metasArray['CUSTO VARIÁVEL']['']/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat['CUSTO VARIÁVEL'] ?? 0,2,',','.') ?></td>
@@ -675,10 +760,13 @@ $jsonChartData = json_encode($chartData);
           ?>
         </td>
       </tr>
-      <?php foreach(($matrizOrdenada['CUSTO VARIÁVEL'] ?? []) as $sub => $valores): ?>
+      <?php foreach(($matrizOrdenada['CUSTO VARIÁVEL'] ?? []) as $sub => $descricoes): ?>
         <?php if($sub): ?>
-          <tr class="dre-sub">
-            <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+          <tr class="dre-sub cvar dre-hide" onclick="toggleSubcategory('cvar_<?= md5($sub) ?>')">
+            <td class="p-2 text-left" style="padding-left:2em;">
+              <span class="toggle-icon" id="icon_cvar_<?= md5($sub) ?>">▶</span>
+              <?= htmlspecialchars($sub) ?>
+            </td>
             <td class="p-2 text-right"><?= isset($metasArray['CUSTO VARIÁVEL'][$sub]) ? 'R$ '.number_format($metasArray['CUSTO VARIÁVEL'][$sub],2,',','.') : '-' ?></td>
             <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray['CUSTO VARIÁVEL'][$sub])) ? number_format(($metasArray['CUSTO VARIÁVEL'][$sub]/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
             <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub['CUSTO VARIÁVEL'][$sub] ?? 0,2,',','.') ?></td>
@@ -703,6 +791,36 @@ $jsonChartData = json_encode($chartData);
               ?>
             </td>
           </tr>
+
+          <?php foreach($descricoes as $desc => $contas): ?>
+            <tr class="dre-desc cvar_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('cvar_<?= md5($sub . $desc) ?>')">
+              <td class="p-2 text-left" style="padding-left:3em;">
+                <span class="toggle-icon" id="icon_cvar_<?= md5($sub . $desc) ?>">▶</span>
+                <?= htmlspecialchars($desc) ?>
+              </td>
+              <td class="p-2 text-right">-</td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc['CUSTO VARIÁVEL'][$sub][$desc] ?? 0,2,',','.') ?></td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-center">-</td>
+            </tr>
+
+            <?php foreach($contas as $idConta => $parcelas): ?>
+              <?php foreach($parcelas as $parcela): ?>
+                <tr class="dre-parcela cvar_<?= md5($sub . $desc) ?> dre-hide">
+                  <td class="p-2 text-left" style="padding-left:4em;">
+                    <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
+                    <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
+                  </td>
+                  <td class="p-2 text-right">-</td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-center">-</td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+          <?php endforeach; ?>
         <?php endif; ?>
       <?php endforeach; ?>
     <?php endif; ?>
@@ -743,9 +861,13 @@ $jsonChartData = json_encode($chartData);
     <?php 
       foreach(['CUSTO FIXO','DESPESA FIXA','DESPESA VENDA'] as $catName):
         if(isset($matrizOrdenada[$catName]) || isset($metasArray[$catName])):
+        $catKey = strtolower(str_replace(' ', '_', $catName));
     ?>
-      <tr class="dre-cat">
-        <td class="p-2 text-left"><?= $catName ?></td>
+      <tr class="dre-cat" onclick="toggleCategory('<?= $catKey ?>')">
+        <td class="p-2 text-left">
+          <span class="toggle-icon" id="icon_<?= $catKey ?>">▶</span>
+          <?= $catName ?>
+        </td>
         <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '-' ?></td>
         <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
@@ -770,10 +892,13 @@ $jsonChartData = json_encode($chartData);
           ?>
         </td>
       </tr>
-      <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $valores): ?>
+      <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $descricoes): ?>
         <?php if($sub): ?>
-         <tr class="dre-sub">
-            <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+         <tr class="dre-sub <?= $catKey ?> dre-hide" onclick="toggleSubcategory('<?= $catKey ?>_<?= md5($sub) ?>')">
+            <td class="p-2 text-left" style="padding-left:2em;">
+              <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub) ?>">▶</span>
+              <?= htmlspecialchars($sub) ?>
+            </td>
             <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '-' ?></td>
             <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '-' ?></td>
             <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
@@ -798,6 +923,36 @@ $jsonChartData = json_encode($chartData);
               ?>
             </td>
           </tr>
+
+          <?php foreach($descricoes as $desc => $contas): ?>
+            <tr class="dre-desc <?= $catKey ?>_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('<?= $catKey ?>_<?= md5($sub . $desc) ?>')">
+              <td class="p-2 text-left" style="padding-left:3em;">
+                <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub . $desc) ?>">▶</span>
+                <?= htmlspecialchars($desc) ?>
+              </td>
+              <td class="p-2 text-right">-</td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc[$catName][$sub][$desc] ?? 0,2,',','.') ?></td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-center">-</td>
+            </tr>
+
+            <?php foreach($contas as $idConta => $parcelas): ?>
+              <?php foreach($parcelas as $parcela): ?>
+                <tr class="dre-parcela <?= $catKey ?>_<?= md5($sub . $desc) ?> dre-hide">
+                  <td class="p-2 text-left" style="padding-left:4em;">
+                    <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
+                    <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
+                  </td>
+                  <td class="p-2 text-right">-</td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-center">-</td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+          <?php endforeach; ?>
         <?php endif; ?>
       <?php endforeach; ?>
     <?php 
@@ -980,9 +1135,13 @@ $jsonChartData = json_encode($chartData);
     <?php
       foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'] as $catName):
         if(isset($matrizOrdenada[$catName]) || isset($metasArray[$catName])):
+        $catKey = strtolower(str_replace([' ', '-'], '_', $catName));
     ?>
-      <tr class="dre-cat">
-        <td class="p-2 text-left"><?= $catName ?></td>
+      <tr class="dre-cat" onclick="toggleCategory('<?= $catKey ?>')">
+        <td class="p-2 text-left">
+          <span class="toggle-icon" id="icon_<?= $catKey ?>">▶</span>
+          <?= $catName ?>
+        </td>
         <td class="p-2 text-right"><?= isset($metasArray[$catName]['']) ? 'R$ '.number_format($metasArray[$catName][''],2,',','.') : '-' ?></td>
         <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][''])) ? number_format(($metasArray[$catName]['']/$metaReceita)*100,2,',','.') .'%' : '-' ?></td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catName] ?? 0,2,',','.') ?></td>
@@ -1007,10 +1166,13 @@ $jsonChartData = json_encode($chartData);
           ?>
         </td>
       </tr>
-      <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $valores): ?>
+      <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $descricoes): ?>
         <?php if($sub): ?>
-          <tr class="dre-sub">
-            <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+          <tr class="dre-sub <?= $catKey ?> dre-hide" onclick="toggleSubcategory('<?= $catKey ?>_<?= md5($sub) ?>')">
+            <td class="p-2 text-left" style="padding-left:2em;">
+              <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub) ?>">▶</span>
+              <?= htmlspecialchars($sub) ?>
+            </td>
             <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '-' ?></td>
             <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '-' ?></td>
             <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
@@ -1035,6 +1197,36 @@ $jsonChartData = json_encode($chartData);
               ?>
             </td>
           </tr>
+
+          <?php foreach($descricoes as $desc => $contas): ?>
+            <tr class="dre-desc <?= $catKey ?>_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('<?= $catKey ?>_<?= md5($sub . $desc) ?>')">
+              <td class="p-2 text-left" style="padding-left:3em;">
+                <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub . $desc) ?>">▶</span>
+                <?= htmlspecialchars($desc) ?>
+              </td>
+              <td class="p-2 text-right">-</td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc[$catName][$sub][$desc] ?? 0,2,',','.') ?></td>
+              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-center">-</td>
+            </tr>
+
+            <?php foreach($contas as $idConta => $parcelas): ?>
+              <?php foreach($parcelas as $parcela): ?>
+                <tr class="dre-parcela <?= $catKey ?>_<?= md5($sub . $desc) ?> dre-hide">
+                  <td class="p-2 text-left" style="padding-left:4em;">
+                    <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
+                    <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
+                  </td>
+                  <td class="p-2 text-right">-</td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
+                  <td class="p-2 text-center">-</td>
+                  <td class="p-2 text-center">-</td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+          <?php endforeach; ?>
         <?php endif; ?>
       <?php endforeach; ?>
     <?php endif; ?>
@@ -1167,13 +1359,54 @@ function initializeDREToggle() {
         });
     });
 
-    document.querySelectorAll('tr.dre-sub, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
+    document.querySelectorAll('tr.dre-sub, tr.dre-desc, tr.dre-parcela, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
        subRow.classList.add('dre-hide');
     });
 }
 
+// Função para alternar subcategorias
+function toggleSubcategory(subcategoryKey) {
+    const elements = document.querySelectorAll('.' + subcategoryKey);
+    const icon = document.getElementById('icon_' + subcategoryKey);
+    
+    elements.forEach(element => {
+        element.classList.toggle('dre-hide');
+    });
+    
+    // Alterar ícone
+    if (icon.textContent === '▼') {
+        icon.textContent = '▶';
+    } else {
+        icon.textContent = '▼';
+    }
+    
+    // Parar propagação do evento
+    event.stopPropagation();
+}
+
+// Função para alternar descrições
+function toggleDescription(descriptionKey) {
+    const elements = document.querySelectorAll('.' + descriptionKey);
+    const icon = document.getElementById('icon_' + descriptionKey);
+    
+    elements.forEach(element => {
+        element.classList.toggle('dre-hide');
+    });
+    
+    // Alterar ícone
+    if (icon.textContent === '▼') {
+        icon.textContent = '▶';
+    } else {
+        icon.textContent = '▼';
+    }
+    
+    // Parar propagação do evento
+    event.stopPropagation();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initializeDREToggle();
+  console.log('Página DRE carregada com hierarquia completa: categoria > subcategoria > descrição > parcela');
 });
 </script>
 
