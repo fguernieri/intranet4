@@ -229,7 +229,7 @@ if (
                   <input type="hidden" name="categoria[]" value="<?=$cat?>">
                   <input type="hidden" name="unidade[]" value="<?=$uni?>">
                   <input type="number" name="quantidade[]" min="0" step="0.01"
-                         value="<?= number_format((float)($row['SUGESTAO_COMPRA'] ?? 0), 2, '.', '') ?>"
+                         value="0"
                          class="qtd-input bg-gray-600 text-white text-xs p-1 rounded">
                   <div class="qty-btn increment">+</div>
                 </div>
@@ -346,7 +346,7 @@ if (
         </div>
         <div class="flex justify-end space-x-2">
           <button id="cancel-preview" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-          <button id="export-pdf"    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Exportar PDF</button>
+        
           <button id="confirm-preview" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Confirmar pedido</button>
         </div>
       </div>
