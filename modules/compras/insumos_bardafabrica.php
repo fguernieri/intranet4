@@ -29,13 +29,13 @@ if ($conn->connect_error) {
 // busca todos os insumos dessa filial
 $stmt = $conn->prepare("
     SELECT
+        i.CODIGO,
         i.INSUMO,
         i.CATEGORIA,
         i.UNIDADE,
-        i.CODIGO,
         COALESCE(e.ESTOQUE_ATUAL, 0) AS ESTOQUE_ATUAL,
-        COALESCE(vw.total_insumo_usado_9dias, 0) AS CONSUMO_9DIAS,
-        COALESCE(vw.sugestao_compra, 0) AS SUGESTAO_COMPRA
+        COALESCE(vw.total_consumido, 0) AS CONSUMO_90DIAS,
+        COALESCE(vw.total_ajustado, 0) AS CONSUMO_9DIAS
     FROM insumos i
     LEFT JOIN (
         SELECT CODIGO, SUM(Estoquetotal) AS ESTOQUE_ATUAL
@@ -43,14 +43,10 @@ $stmt = $conn->prepare("
         GROUP BY CODIGO
     ) e ON i.CODIGO = e.CODIGO
     LEFT JOIN (
-        SELECT cod_insumo, 
-               SUM(total_insumo_usado_9dias) AS total_insumo_usado_9dias,
-               SUM(sugestao_compra) AS sugestao_compra
-        FROM vw_consumo_insumos_3m
-        GROUP BY cod_insumo
-    ) vw ON i.CODIGO = vw.cod_insumo
+        SELECT c_d_ref, total_consumido, total_ajustado
+        FROM vw_consumotap_ultimos_90_dias
+    ) vw ON i.CODIGO = vw.c_d_ref
     WHERE i.FILIAL = ?
-    GROUP BY i.INSUMO, i.CATEGORIA, i.UNIDADE, i.CODIGO, e.ESTOQUE_ATUAL, vw.total_insumo_usado_9dias, vw.sugestao_compra
     ORDER BY i.CATEGORIA, i.INSUMO
 ");
 if (!$stmt) {
@@ -70,6 +66,18 @@ $insumos = $result->fetch_all(MYSQLI_ASSOC);
 if (empty($insumos)) {
     echo '<div style="color:orange;font-weight:bold">Aviso: Nenhum insumo retornado pela consulta SQL.</div>';
 }
+
+// Recalcula a SUGESTAO_COMPRA para cada insumo: se o estoque for negativo, considera 0.
+foreach ($insumos as &$row) {
+    $consumo9dias = (float)($row['CONSUMO_9DIAS'] ?? 0);
+    $estoqueAtual = (float)($row['ESTOQUE_ATUAL'] ?? 0);
+    if ($estoqueAtual < 0) {
+        $estoqueAtual = 0;
+    }
+    $row['SUGESTAO_COMPRA'] = max(0, $consumo9dias - $estoqueAtual);
+}
+unset($row);
+
 $stmt->close();
 $conn->close();
 
@@ -328,7 +336,7 @@ if (
         </div>
         <div class="flex justify-end space-x-2">
           <button id="cancel-preview" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-          <button id="export-pdf"    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Exportar PDF</button>
+          
           <button id="confirm-preview" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Confirmar pedido</button>
         </div>
       </div>
@@ -340,13 +348,13 @@ if (
     </div>
   </main>
 
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
   <script>
-    // BLOQUEIO DE CAMPOS (front-end)
-    const bloqueado = <?php echo $bloqueado ? 'true' : 'false'; ?>;
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', () => {
+      // Bloqueio de campos (front-end)
+      const bloqueado = <?php echo $bloqueado ? 'true' : 'false'; ?>;
       if(bloqueado){
-        // Desabilita todos os campos do formulário
         document.querySelectorAll('#pedido-form input, #pedido-form select, #pedido-form textarea, #pedido-form button').forEach(el=>{
           el.disabled = true;
         });
@@ -354,238 +362,221 @@ if (
         document.getElementById('btn-scroll-top').disabled = false;
         document.getElementById('btn-scroll-bottom').disabled = false;
       }
-    });
-
-    // filtro + pesquisa
-    const rows = Array.from(document.querySelectorAll('#insumo-body tr'));
-    const btnFilter = document.getElementById('btn-filter');
-    const dropdownMenu = document.getElementById('dropdown-menu');
-
-    // Troca clique por hover
-    let dropdownTimeout;
-    function showDropdown() {
-      clearTimeout(dropdownTimeout);
-      dropdownMenu.classList.remove('hidden');
-    }
-    function hideDropdown() {
-      dropdownTimeout = setTimeout(() => {
-        dropdownMenu.classList.add('hidden');
-      }, 150); // pequeno delay para evitar sumir ao mover rápido
-    }
-    btnFilter.addEventListener('mouseenter', showDropdown);
-    btnFilter.addEventListener('mouseleave', hideDropdown);
-    dropdownMenu.addEventListener('mouseenter', showDropdown);
-    dropdownMenu.addEventListener('mouseleave', hideDropdown);
-
-    document.querySelectorAll('.cat-checkbox').forEach(chk => chk.onchange = filterRows);
-    document.getElementById('search-input').oninput = filterRows;
-    function filterRows() {
-      const cats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(c=>c.value);
-      const term = document.getElementById('search-input').value.trim().toLowerCase();
-      rows.forEach(r=>{
-        const catOK = !cats.length || cats.includes(r.dataset.cat);
-        const txtOK = !term || r.children[0].textContent.toLowerCase().includes(term); // Insumo é o primeiro filho (children[0])
-        r.style.display = (catOK && txtOK) ? '' : 'none';
-      });
-    }
-
-    // +/- buttons
-    function attachQtyButtons(container=document) {
-      container.querySelectorAll('.decrement').forEach(btn=>{
-        btn.onclick = ()=>{
-          if (bloqueado) return; // impede decremento se bloqueado
-          const inp = btn.parentElement.querySelector('input[type=number]');
-          let v = parseFloat(inp.value)||0; inp.value = Math.max(0,v-1).toFixed(2);
-        };
-      });
-      container.querySelectorAll('.increment').forEach(btn=>{
-        btn.onclick = ()=>{
-          if (bloqueado) return; // impede incremento se bloqueado
-          const inp = btn.parentElement.querySelector('input[type=number]');
-          let v = parseFloat(inp.value)||0; inp.value = (v+1).toFixed(2);
-        };
-      });
-    }
-    attachQtyButtons();
-
-    // adiciona nova linha
-    const newBody = document.getElementById('new-items-body');
-    const template = newBody.querySelector('tr').outerHTML;
-    document.getElementById('add-row').onclick = ()=>{
-      newBody.insertAdjacentHTML('beforeend', template);
-      attachQtyButtons(newBody.lastElementChild);
-    };
-
-    // deleta linha nova
-    newBody.addEventListener('click', e=>{
-      if(e.target.classList.contains('delete-row')){
-        e.target.closest('tr').remove();
-      }
-    });
-
-    // forçar maiúscula
-    document.querySelectorAll('input[type="text"]').forEach(i=>{
-      i.addEventListener('input', ()=> i.value = i.value.toUpperCase());
-    });
-
-    // abrir modal de preview
-    document.getElementById('submit-all').onclick = e=>{
-      e.preventDefault();
-      const previewBody = document.getElementById('preview-body');
-      previewBody.innerHTML = '';
-      const lines = [];
-
-      // existentes
-      document.querySelectorAll('#insumo-body tr').forEach(r=>{
-        const q = parseFloat(r.querySelector('input[name="quantidade[]"]').value);
-        if(q>0) lines.push({
-          insumo:     r.children[0].textContent.trim(), // Insumo
-          quantidade: q.toFixed(2),                     // Quantidade
-          unidade:    r.children[5].textContent.trim(), // Unidade (índice corrigido)
-          categoria:  r.children[6].textContent.trim(), // Categoria (índice corrigido)
-          obs:        r.querySelector('input[name="observacao[]"]').value.trim()
+      
+      // Scroll flutuante
+      const btnScrollTop = document.getElementById('btn-scroll-top');
+      const btnScrollBottom = document.getElementById('btn-scroll-bottom');
+      if(btnScrollTop) {
+        btnScrollTop.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         });
-      });
-      // novos
-      document.querySelectorAll('#new-items-body tr').forEach(r=>{
-        const ins = r.querySelector('input[name="new_insumo[]"]').value.trim();
-        const q   = parseFloat(r.querySelector('input[name="new_quantidade[]"]').value);
-        const uni = r.querySelector('select[name="new_unidade[]"]').value;
-        const cat = r.querySelector('select[name="new_categoria[]"]').value;
-        if(ins&&q>0) lines.push({
-          insumo: ins,
-          quantidade: q.toFixed(2),
-          unidade: uni,
-          categoria: cat,
-          obs: r.querySelector('input[name="new_observacao[]"]').value.trim()
-        });
-      });
-
-      if(!lines.length){
-        alert('Nenhum item para enviar.');
-        return;
       }
-      lines.forEach(item=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-  <td class="p-2 text-left">${item.insumo}</td>
-  <td class="p-2 text-center">${item.quantidade}</td>
-  <td class="p-2 text-left">${item.unidade}</td>
-  <td class="p-2 text-left">${item.categoria}</td>
-  <td class="p-2 text-left">${item.obs || ''}</td>
-`;
-        previewBody.appendChild(tr);
+      if(btnScrollBottom) {
+        btnScrollBottom.addEventListener('click', () => {
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        });
+      }
+      
+      // Filtros e pesquisa (idem original)
+      const rows = Array.from(document.querySelectorAll('#insumo-body tr'));
+      const btnFilter = document.getElementById('btn-filter');
+      const dropdownMenu = document.getElementById('dropdown-menu');
+      let dropdownTimeout;
+      function showDropdown() {
+        clearTimeout(dropdownTimeout);
+        dropdownMenu.classList.remove('hidden');
+      }
+      function hideDropdown() {
+        dropdownTimeout = setTimeout(() => {
+          dropdownMenu.classList.add('hidden');
+        }, 150);
+      }
+      btnFilter.addEventListener('mouseenter', showDropdown);
+      btnFilter.addEventListener('mouseleave', hideDropdown);
+      dropdownMenu.addEventListener('mouseenter', showDropdown);
+      dropdownMenu.addEventListener('mouseleave', hideDropdown);
+      document.querySelectorAll('.cat-checkbox').forEach(chk => chk.onchange = filterRows);
+      document.getElementById('search-input').oninput = filterRows;
+      function filterRows() {
+        const cats = Array.from(document.querySelectorAll('.cat-checkbox:checked')).map(c => c.value);
+        const term = document.getElementById('search-input').value.trim().toLowerCase();
+        rows.forEach(r => {
+          const catOK = !cats.length || cats.includes(r.dataset.cat);
+          const txtOK = !term || r.children[0].textContent.toLowerCase().includes(term);
+          r.style.display = (catOK && txtOK) ? '' : 'none';
+        });
+      }
+      
+      // +/- buttons
+      function attachQtyButtons(container=document) {
+        container.querySelectorAll('.decrement').forEach(btn=>{
+          btn.onclick = ()=>{
+            if (bloqueado) return;
+            const inp = btn.parentElement.querySelector('input[type=number]');
+            let v = parseFloat(inp.value)||0; 
+            inp.value = Math.max(0, v-1).toFixed(2);
+          };
+        });
+        container.querySelectorAll('.increment').forEach(btn=>{
+          btn.onclick = ()=>{
+            if (bloqueado) return;
+            const inp = btn.parentElement.querySelector('input[type=number]');
+            let v = parseFloat(inp.value)||0; 
+            inp.value = (v+1).toFixed(2);
+          };
+        });
+      }
+      attachQtyButtons();
+      
+      // Adiciona nova linha
+      const newBody = document.getElementById('new-items-body');
+      const template = newBody.querySelector('tr').outerHTML;
+      document.getElementById('add-row').onclick = ()=>{
+        newBody.insertAdjacentHTML('beforeend', template);
+        attachQtyButtons(newBody.lastElementChild);
+      };
+
+      // Deleta linha nova
+      newBody.addEventListener('click', e=>{
+        if(e.target.classList.contains('delete-row')){
+          e.target.closest('tr').remove();
+        }
       });
-      document.getElementById('preview-modal').classList.remove('hidden');
-      document.getElementById('preview-modal').classList.add('flex');
-    };
-
-    // fecha modal
-    document.getElementById('cancel-preview').onclick = ()=>{
-      document.getElementById('preview-modal').classList.add('hidden');
-      document.getElementById('preview-modal').classList.remove('flex');
-    };
-
-    // exporta PDF (mantém texto preto)
-    document.getElementById('export-pdf').onclick = ()=>{
-      const el = document.getElementById('preview-content');
-      el.style.color = '#000';
-      el.querySelectorAll('*').forEach(x=> x.style.color='#000');
-      html2pdf().set({
-        margin:0.5, filename:'pedido_insumos_bardafabrica.pdf',
-        html2canvas:{scale:2},
-        jsPDF:{unit:'in',format:'letter',orientation:'portrait'}
-      }).from(el).save().then(()=>{
-        el.style.color='';
-        el.querySelectorAll('*').forEach(x=> x.style.color='');
+      
+      // Forçar maiúscula em inputs de texto
+      document.querySelectorAll('input[type="text"]').forEach(i=>{
+        i.addEventListener('input', ()=> i.value = i.value.toUpperCase());
       });
-    };
-
-    // envia pedido existente + novos via fetch e redireciona
-    document.getElementById('confirm-preview').onclick = async ()=>{
-      const btn = document.getElementById('confirm-preview');
-      btn.disabled = true;
-      btn.innerText = 'Enviando...';
-
-      const form = document.getElementById('pedido-form');
-      const todosOsItens = [];
-
-      // Coleta itens existentes
-      document.querySelectorAll('#insumo-body tr').forEach(row => {
-        const quantidadeInput = row.querySelector('input[name="quantidade[]"]');
-        const quantidade = parseFloat(quantidadeInput.value);
-
-        if (quantidade > 0) {
-          todosOsItens.push({
-            insumo: row.querySelector('input[name="insumo[]"]').value,
-            categoria: row.querySelector('input[name="categoria[]"]').value,
-            unidade: row.querySelector('input[name="unidade[]"]').value,
-            quantidade: quantidade.toFixed(2),
-            observacao: row.querySelector('input[name="observacao[]"]').value.trim()
+      
+      // Abre modal de preview
+      document.getElementById('submit-all').onclick = e => {
+        e.preventDefault();
+        const previewBody = document.getElementById('preview-body');
+        previewBody.innerHTML = '';
+        const lines = [];
+        // Itens existentes
+        document.querySelectorAll('#insumo-body tr').forEach(r=>{
+          const q = parseFloat(r.querySelector('input[name="quantidade[]"]').value);
+          if(q>0) lines.push({
+            insumo:     r.children[0].textContent.trim(),
+            quantidade: q.toFixed(2),
+            unidade:    r.children[5].textContent.trim(),
+            categoria:  r.children[6].textContent.trim(),
+            obs:        r.querySelector('input[name="observacao[]"]').value.trim()
           });
+        });
+        // Novos itens
+        document.querySelectorAll('#new-items-body tr').forEach(r=>{
+          const ins = r.querySelector('input[name="new_insumo[]"]').value.trim();
+          const q   = parseFloat(r.querySelector('input[name="new_quantidade[]"]').value);
+          const uni = r.querySelector('select[name="new_unidade[]"]').value;
+          const cat = r.querySelector('select[name="new_categoria[]"]').value;
+          if(ins && q>0) lines.push({
+            insumo: ins,
+            quantidade: q.toFixed(2),
+            unidade: uni,
+            categoria: cat,
+            obs: r.querySelector('input[name="new_observacao[]"]').value.trim()
+          });
+        });
+        if(!lines.length){
+          alert('Nenhum item para enviar.');
+          return;
         }
-      });
+        lines.forEach(item=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="p-2 text-left">${item.insumo}</td>
+            <td class="p-2 text-center">${item.quantidade}</td>
+            <td class="p-2 text-left">${item.unidade}</td>
+            <td class="p-2 text-left">${item.categoria}</td>
+            <td class="p-2 text-left">${item.obs || ''}</td>
+          `;
+          previewBody.appendChild(tr);
+        });
+        document.getElementById('preview-modal').classList.remove('hidden');
+        document.getElementById('preview-modal').classList.add('flex');
+      };
 
-      // Coleta novos itens
-      document.querySelectorAll('#new-items-body tr').forEach(row => {
-        const insumoInput = row.querySelector('input[name="new_insumo[]"]');
-        const quantidadeInput = row.querySelector('input[name="new_quantidade[]"]');
-        
-        if (insumoInput && quantidadeInput) { // Garante que os elementos existem
-            const insumo = insumoInput.value.trim();
-            const quantidade = parseFloat(quantidadeInput.value);
-
-            if (insumo && quantidade > 0) {
-                todosOsItens.push({
-                    insumo: insumo,
-                    categoria: row.querySelector('select[name="new_categoria[]"]').value,
-                    unidade: row.querySelector('select[name="new_unidade[]"]').value,
-                    quantidade: quantidade.toFixed(2),
-                    observacao: row.querySelector('input[name="new_observacao[]"]').value.trim()
-                });
-            }
-        }
-      });
-
-      if (todosOsItens.length === 0) {
-        alert('Nenhum item com quantidade maior que zero para enviar.');
-        btn.disabled = false;
-        btn.innerText = 'Confirmar pedido';
+      // Fecha modal de preview
+      document.getElementById('cancel-preview').onclick = ()=>{
         document.getElementById('preview-modal').classList.add('hidden');
         document.getElementById('preview-modal').classList.remove('flex');
-        return;
-      }
+      };
 
-      const formData = new FormData();
-      formData.append('itensJson', JSON.stringify(todosOsItens));
-      // Os campos 'filial' e 'usuario' são pegos no PHP via sessão/hardcoded,
-      // então não é estritamente necessário enviá-los aqui se essa lógica for mantida no PHP.
+      // Envia pedido via fetch
+      document.getElementById('confirm-preview').onclick = async () => {
+        const btn = document.getElementById('confirm-preview');
+        btn.disabled = true;
+        btn.innerText = 'Enviando...';
 
-      try {
-        const response = await fetch('salvar_pedido_bardafabrica.php', {
-          method: 'POST',
-          body: formData
+        const todosOsItens = [];
+        // Coleta dos itens existentes
+        document.querySelectorAll('#insumo-body tr').forEach(row => {
+          const quantidadeInput = row.querySelector('input[name="quantidade[]"]');
+          const quantidade = parseFloat(quantidadeInput.value);
+          if (quantidade > 0) {
+            todosOsItens.push({
+              insumo: row.querySelector('input[name="insumo[]"]').value,
+              categoria: row.querySelector('input[name="categoria[]"]').value,
+              unidade: row.querySelector('input[name="unidade[]"]').value,
+              quantidade: quantidade.toFixed(2),
+              observacao: row.querySelector('input[name="observacao[]"]').value.trim()
+            });
+          }
+        });
+        // Coleta dos novos itens
+        document.querySelectorAll('#new-items-body tr').forEach(row => {
+          const insumoInput = row.querySelector('input[name="new_insumo[]"]');
+          const quantidadeInput = row.querySelector('input[name="new_quantidade[]"]');
+          if (insumoInput && quantidadeInput) {
+            const insumo = insumoInput.value.trim();
+            const quantidade = parseFloat(quantidadeInput.value);
+            if (insumo && quantidade > 0) {
+              todosOsItens.push({
+                insumo: insumo,
+                categoria: row.querySelector('select[name="new_categoria[]"]').value,
+                unidade: row.querySelector('select[name="new_unidade[]"]').value,
+                quantidade: quantidade.toFixed(2),
+                observacao: row.querySelector('input[name="new_observacao[]"]').value.trim()
+              });
+            }
+          }
         });
 
-        if (response.ok) {
-          window.location.href = 'insumos_bardafabrica.php?status=ok';
-        } else {
-          const errorText = await response.text();
-          alert(`Erro ao enviar o pedido: ${response.status} ${response.statusText}\n${errorText}`);
+        if (todosOsItens.length === 0) {
+          alert('Nenhum item com quantidade maior que zero para enviar.');
+          btn.disabled = false;
+          btn.innerText = 'Confirmar pedido';
+          document.getElementById('preview-modal').classList.add('hidden');
+          document.getElementById('preview-modal').classList.remove('flex');
+          return;
+        }
+        
+        const formData = new FormData();
+        formData.append('itensJson', JSON.stringify(todosOsItens));
+        
+        try {
+          const response = await fetch('salvar_pedido_bardafabrica.php', {
+            method: 'POST',
+            body: formData
+          });
+          if (response.ok) {
+            window.location.href = 'insumos_bardafabrica.php?status=ok';
+          } else {
+            const errorText = await response.text();
+            alert(`Erro ao enviar o pedido: ${response.status} ${response.statusText}\n${errorText}`);
+            btn.disabled = false;
+            btn.innerText = 'Confirmar pedido';
+          }
+        } catch (error) {
+          alert('Erro de comunicação ao enviar o pedido. Verifique sua conexão.');
+          console.error('Erro no fetch:', error);
           btn.disabled = false;
           btn.innerText = 'Confirmar pedido';
         }
-      } catch (error) {
-        alert('Erro de comunicação ao enviar o pedido. Verifique sua conexão.');
-        console.error('Erro no fetch:', error);
-        btn.disabled = false;
-        btn.innerText = 'Confirmar pedido';
-      }
-    };
-
-    // scroll flutuante
-    document.getElementById('btn-scroll-top').onclick = ()=> window.scrollTo({top:0,behavior:'smooth'});
-    document.getElementById('btn-scroll-bottom').onclick = ()=> window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+      };
+    });
   </script>
 </body>
 </html>
