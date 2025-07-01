@@ -33,10 +33,12 @@ if ($dataInicio && $dataFim) {
 
 // 2) Exportação CSV — roda antes de qualquer include/HTML
 if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
+    // A query agora faz o UNION dos registros dos pedidos e novos_insumos e, em seguida, faz JOIN com INSUMOS para obter o CODIGO
     $sqlTemplate = "
       SELECT
         main.QUANTIDADE_TOTAL,
         main.INSUMO,
+        i.CODIGO,
         main.UNIDADE,
         main.CATEGORIA,
         main.OBSERVACAO
@@ -46,7 +48,7 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
             t.CATEGORIA,
             t.UNIDADE,
             SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
-            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACAO
+            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVAO), '') SEPARATOR '; ') AS OBSERVACAO
         FROM (
             SELECT p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
             FROM pedidos p
@@ -58,49 +60,40 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
         ) AS t
         GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE
       ) AS main
+      JOIN insumos i ON i.INSUMO = main.INSUMO
       ORDER BY main.INSUMO
     ";
-    $sqlCsv = $sqlTemplate; // Não precisa mais de sprintf para nome de tabela/view
-
-    $stmt = $conn->prepare($sqlCsv);
+    $stmt = $conn->prepare($sqlTemplate);
     if (!$stmt) {
         error_log("Erro ao preparar consulta: " . $conn->error);
         die("Erro ao preparar consulta.");
     }
-    $stmt->bind_param(
-        'ssssss',
-        $selFilial, $dtIni, $dtFim,
-        $selFilial, $dtIni, $dtFim
-    );
+    $stmt->bind_param('ssssss', $selFilial, $dtIni, $dtFim, $selFilial, $dtIni, $dtFim);
     $stmt->execute();
     $res2 = $stmt->get_result();
-
     if (!$res2) {
         error_log("Erro ao executar consulta: " . $stmt->error);
         die("Erro ao executar consulta.");
     }
-
     $filename = sprintf("pedidos_%s_%s_a_%s.csv", $selFilial, $dataInicio, $dataFim);
     header('Content-Type: text/csv; charset=UTF-8');
     header("Content-Disposition: attachment; filename=\"{$filename}\"");
     echo "\xEF\xBB\xBF"; // BOM UTF-8
-
     $out = fopen('php://output', 'w');
-    // Cabeçalho com ordem: Produto, QTDE, Unidade, Categoria, Observação
-    fputcsv($out, ['Produto', 'QTDE', 'Unidade', 'Categoria', 'Observação'], ';');
-
+    // Cabeçalho com ordem: Categoria, Código, Produto, QTDE, Unidade, Observação
+    fputcsv($out, ['Categoria', 'Código', 'Produto', 'QTDE', 'Unidade', 'Observação'], ';');
     // Linhas
     while ($row = $res2->fetch_assoc()) {
         $qPedido = number_format((float)$row['QUANTIDADE_TOTAL'], 2, ',', '.');
         fputcsv($out, [
+            $row['CATEGORIA'],
+            $row['CODIGO'],
             $row['INSUMO'],
             $qPedido,
             $row['UNIDADE'],
-            $row['CATEGORIA'],
             $row['OBSERVACAO'] ?? ''
         ], ';');
     }
-
     fclose($out);
     exit; // interrompe antes de qualquer saída de template
 }
@@ -121,6 +114,7 @@ if ($selFilial && $dataInicio && $dataFim) {
       SELECT
         main.QUANTIDADE_TOTAL,
         main.INSUMO,
+        i.CODIGO,
         main.UNIDADE,
         main.CATEGORIA,
         main.OBSERVACOES
@@ -142,20 +136,15 @@ if ($selFilial && $dataInicio && $dataFim) {
         ) AS t
         GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE
       ) AS main
+      JOIN insumos i ON i.INSUMO = main.INSUMO
       ORDER BY main.INSUMO
     ";
-    $sqlHtml = $sqlTemplateHtml; // Não precisa mais de sprintf
-
-    $stmt = $conn->prepare($sqlHtml);
+    $stmt = $conn->prepare($sqlTemplateHtml);
     if (!$stmt) {
         error_log("Erro ao preparar consulta: " . $conn->error);
         die("Erro ao preparar consulta.");
     }
-    $stmt->bind_param(
-        'ssssss',
-        $selFilial, $dtIni, $dtFim,
-        $selFilial, $dtIni, $dtFim
-    );
+    $stmt->bind_param('ssssss', $selFilial, $dtIni, $dtFim, $selFilial, $dtIni, $dtFim);
     $stmt->execute();
     $dataRows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
@@ -233,15 +222,15 @@ require_once __DIR__ . '/../../sidebar.php';
       </div>
 
       <!-- Preview de resultados -->
-      <div id="pdf-content"
-           class="overflow-x-auto bg-gray-800 rounded-lg shadow mt-4 max-w-4xl mx-auto">
+      <div id="pdf-content" class="overflow-x-auto bg-gray-800 rounded-lg shadow mt-4 max-w-4xl mx-auto">
         <table class="min-w-full text-xs text-gray-100">
           <thead class="bg-gray-700 text-yellow-400">
             <tr>
+              <th class="p-2 text-left">Categoria</th>
+              <th class="p-2 text-center">Código</th>
               <th class="p-2 text-left">Produto</th>
               <th class="p-2 text-center">QTDE</th>
               <th class="p-2 text-left">Unidade</th>
-              <th class="p-2 text-left">Categoria</th>
               <th class="p-2 text-left">Observação</th>
             </tr>
           </thead>
@@ -250,10 +239,11 @@ require_once __DIR__ . '/../../sidebar.php';
               $qtdePedidaHtml = number_format((float)($row['QUANTIDADE_TOTAL'] ?? 0), 2, ',', '.');
             ?>
             <tr class="border-b border-gray-700">
+              <td class="p-2"><?= htmlspecialchars($row['CATEGORIA'], ENT_QUOTES) ?></td>
+              <td class="p-2 text-center"><?= htmlspecialchars($row['CODIGO'], ENT_QUOTES) ?></td>
               <td class="p-2"><?= htmlspecialchars($row['INSUMO'], ENT_QUOTES) ?></td>
               <td class="p-2 text-center"><?= $qtdePedidaHtml ?></td>
               <td class="p-2"><?= htmlspecialchars($row['UNIDADE'], ENT_QUOTES) ?></td>
-              <td class="p-2"><?= htmlspecialchars($row['CATEGORIA'], ENT_QUOTES) ?></td>
               <td class="p-2"><?= htmlspecialchars($row['OBSERVACOES'] ?? '', ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
