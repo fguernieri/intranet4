@@ -359,6 +359,9 @@ if (
 
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <!-- Incluir a biblioteca SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // Bloqueio de campos (front-end)
@@ -588,33 +591,13 @@ if (
 
       // Exportar lista para Excel
       document.getElementById('export-list').addEventListener('click', () => {
-        // Seleciona a tabela de insumos (única ou a que deseja exportar)
+        // Seleciona a tabela de insumos
         const table = document.querySelector('.overflow-x-auto table');
         if (!table) return;
-        
-        let csv = "";
-        // Extrai os cabeçalhos
-        const headerCells = Array.from(table.querySelectorAll('thead th'))
-          .map(th => th.innerText.trim());
-        csv += headerCells.join(";") + "\r\n";
-        
-        // Extrai as linhas do corpo
-        table.querySelectorAll('tbody tr').forEach(row => {
-          const cells = Array.from(row.querySelectorAll('td'))
-            .map(td => td.innerText.trim());
-          csv += cells.join(";") + "\r\n";
-        });
-        
-        // Cria um blob para o CSV e inicia o download
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.style.visibility = 'hidden';
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'lista_insumos.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Converte a tabela para um workbook
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Insumos" });
+        // Exporta para XLSX
+        XLSX.writeFile(wb, 'lista_insumos.xlsx');
       });
     });
   </script>
