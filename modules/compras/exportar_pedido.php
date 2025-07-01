@@ -38,19 +38,21 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
         main.QUANTIDADE_TOTAL,
         main.INSUMO,
         main.UNIDADE,
-        main.CATEGORIA
+        main.CATEGORIA,
+        main.OBSERVACAO
       FROM (
         SELECT
             t.INSUMO,
             t.CATEGORIA,
             t.UNIDADE,
-            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL
+            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
+            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACAO
         FROM (
-            SELECT p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.FILIAL, p.DATA_HORA
+            SELECT p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
             FROM pedidos p
             WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
             UNION ALL
-            SELECT ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.FILIAL, ni.DATA_HORA
+            SELECT ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA
             FROM novos_insumos ni
             WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
         ) AS t
@@ -84,17 +86,18 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
     echo "\xEF\xBB\xBF"; // BOM UTF-8
 
     $out = fopen('php://output', 'w');
-    // Cabeçalho
-    fputcsv($out, ['QTDE', 'Produto', 'Unidade', 'Categoria'], ';');
+    // Cabeçalho com ordem: Produto, QTDE, Unidade, Categoria, Observação
+    fputcsv($out, ['Produto', 'QTDE', 'Unidade', 'Categoria', 'Observação'], ';');
 
     // Linhas
     while ($row = $res2->fetch_assoc()) {
         $qPedido = number_format((float)$row['QUANTIDADE_TOTAL'], 2, ',', '.');
         fputcsv($out, [
-            $qPedido,
             $row['INSUMO'],
+            $qPedido,
             $row['UNIDADE'],
-            $row['CATEGORIA']
+            $row['CATEGORIA'],
+            $row['OBSERVACAO'] ?? ''
         ], ';');
     }
 
@@ -119,19 +122,21 @@ if ($selFilial && $dataInicio && $dataFim) {
         main.QUANTIDADE_TOTAL,
         main.INSUMO,
         main.UNIDADE,
-        main.CATEGORIA
+        main.CATEGORIA,
+        main.OBSERVACOES
       FROM (
         SELECT
             t.INSUMO,
             t.CATEGORIA,
             t.UNIDADE,
-            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL
+            SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
+            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACOES
         FROM (
-            SELECT p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.FILIAL, p.DATA_HORA
+            SELECT p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
             FROM pedidos p
             WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
             UNION ALL
-            SELECT ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.FILIAL, ni.DATA_HORA
+            SELECT ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA
             FROM novos_insumos ni
             WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
         ) AS t
@@ -233,21 +238,23 @@ require_once __DIR__ . '/../../sidebar.php';
         <table class="min-w-full text-xs text-gray-100">
           <thead class="bg-gray-700 text-yellow-400">
             <tr>
-              <th class="p-2 text-center">QTDE</th>
               <th class="p-2 text-left">Produto</th>
+              <th class="p-2 text-center">QTDE</th>
               <th class="p-2 text-left">Unidade</th>
               <th class="p-2 text-left">Categoria</th>
+              <th class="p-2 text-left">Observação</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($dataRows as $row):
-              $qtdePedidaHtml   = number_format((float)($row['QUANTIDADE_TOTAL'] ?? 0), 2, ',', '.');
+              $qtdePedidaHtml = number_format((float)($row['QUANTIDADE_TOTAL'] ?? 0), 2, ',', '.');
             ?>
             <tr class="border-b border-gray-700">
-              <td class="p-2 text-center"><?= $qtdePedidaHtml ?></td>
               <td class="p-2"><?= htmlspecialchars($row['INSUMO'], ENT_QUOTES) ?></td>
+              <td class="p-2 text-center"><?= $qtdePedidaHtml ?></td>
               <td class="p-2"><?= htmlspecialchars($row['UNIDADE'], ENT_QUOTES) ?></td>
               <td class="p-2"><?= htmlspecialchars($row['CATEGORIA'], ENT_QUOTES) ?></td>
+              <td class="p-2"><?= htmlspecialchars($row['OBSERVACOES'] ?? '', ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>
