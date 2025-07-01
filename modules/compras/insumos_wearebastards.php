@@ -183,6 +183,13 @@ if (
              class="bg-gray-700 text-white text-xs p-2 rounded" style="width:12rem">
     </div>
 
+    <!-- Botão Exportar Lista para Excel posicionado acima da tabela -->
+    <div class="mb-4">
+      <button id="export-list" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+        Exportar Lista para Excel
+      </button>
+    </div>
+
     <!-- Formulário de pedido -->
     <form id="pedido-form" action="salvar_pedido_wearebastards.php" method="post">
       <input type="hidden" name="filial" value="<?=htmlspecialchars($filial,ENT_QUOTES)?>">
@@ -193,6 +200,7 @@ if (
         <table class="min-w-full text-xs mx-auto">
           <thead class="bg-gray-700 text-yellow-400">
             <tr>
+              <th class="p-2 text-center">Código</th>
               <th class="p-2 text-left">Insumo</th>
               <th class="p-2 text-center" style="width:8rem">QTDE</th>
               <th class="p-2 text-center" style="width:7rem;">Estoque Atual</th>
@@ -205,24 +213,23 @@ if (
           </thead>
           <tbody id="insumo-body" class="divide-y divide-gray-700">
             <?php foreach ($insumos as $row):
+              $codigo = htmlspecialchars($row['CODIGO'] ?? '', ENT_QUOTES);
               $ins = htmlspecialchars($row['INSUMO'], ENT_QUOTES);
               $cat = htmlspecialchars($row['CATEGORIA'], ENT_QUOTES);
               $uni = htmlspecialchars($row['UNIDADE'], ENT_QUOTES);
               $estoqueAtualNum = (float)($row['ESTOQUE_ATUAL'] ?? 0);
               $estoqueAtualDisplay = number_format($estoqueAtualNum, 2, ',', '.');
               
-              $estoqueColorClass = '';
-              if ($estoqueAtualNum > 0) {
-                $estoqueColorClass = 'text-green-400';
-              } elseif ($estoqueAtualNum < 0) {
-                $estoqueColorClass = 'text-red-400';
-              }
+              $estoqueColorClass = ($estoqueAtualNum > 0) ? 'text-green-400' : (($estoqueAtualNum < 0) ? 'text-red-400' : '');
             ?>
             <tr class="hover:bg-gray-700" data-cat="<?=$cat?>">
+              <td class="p-2 text-center"><?=$codigo?></td>
               <td class="p-2"><?=$ins?></td>
               <td class="p-2 text-center">
                 <div class="inline-flex items-center space-x-1">
                   <div class="qty-btn decrement">−</div>
+                  <!-- Armazena também o código (se necessário para envio) -->
+                  <input type="hidden" name="codigo[]" value="<?=$codigo?>">
                   <input type="hidden" name="insumo[]" value="<?=$ins?>">
                   <input type="hidden" name="categoria[]" value="<?=$cat?>">
                   <input type="hidden" name="unidade[]" value="<?=$uni?>">
@@ -232,14 +239,14 @@ if (
                   <div class="qty-btn increment">+</div>
                 </div>
               </td>
-              <td class="p-2 text-center font-semibold"><?=$estoqueAtualDisplay?></td>
+              <td class="p-2 text-center font-semibold <?=$estoqueColorClass?>"><?=$estoqueAtualDisplay?></td>
               <td class="p-2 text-center font-semibold">
                 <?= number_format((float)($row['CONSUMO_9DIAS'] ?? 0), 2, ',', '.') ?>
               </td>
               <td class="p-2 text-center font-semibold">
                 <?= number_format($row['SUGESTAO_COMPRA'], 2, ',', '.') ?>
               </td>
-              <td class="p-2"><?=$uni?></td> <!-- Coluna 5 (índice) -->
+              <td class="p-2"><?=$uni?></td>
               <td class="p-2"><?=$cat?></td>
               <td class="p-2">
                 <input type="text" name="observacao[]" maxlength="200"
@@ -249,7 +256,11 @@ if (
             <?php endforeach; ?>
           </tbody>
           <?php if (empty($insumos)): ?>
-            <tr><td colspan="8" class="p-4 text-center text-orange-400 font-semibold">Aviso: Nenhum insumo encontrado para esta filial ou os dados de consumo/estoque não estão disponíveis.</td></tr>
+            <tr>
+              <td colspan="9" class="p-4 text-center text-orange-400 font-semibold">
+                Aviso: Nenhum insumo encontrado para esta filial ou os dados de consumo/estoque não estão disponíveis.
+              </td>
+            </tr>
           <?php endif; ?>
         </table>
       </div>
@@ -350,6 +361,12 @@ if (
     <div class="fixed bottom-6 right-6 flex flex-col" style="gap:3px">
       <button id="btn-scroll-top"    class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 p-3 rounded-full shadow-lg text-xl" title="Ir para o topo">↑</button>
       <button id="btn-scroll-bottom" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 p-3 rounded-full shadow-lg text-xl" title="Ir para o final">↓</button>
+    </div>
+
+    <div class="mb-4">
+      <button id="export-list" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+        Exportar Lista para Excel
+      </button>
     </div>
   </main>
 
@@ -559,6 +576,37 @@ if (
         btn.innerText = 'Confirmar pedido';
       }
     };
+
+    // Exportar lista para Excel
+    document.getElementById('export-list').addEventListener('click', () => {
+      const table = document.querySelector('.overflow-x-auto table');
+      if (!table) return;
+      
+      let csv = "";
+      // Captura os headers (incluindo Código)
+      const headerCells = Array.from(table.querySelectorAll('thead th'))
+        .map(th => th.innerText.trim());
+      csv += headerCells.join(";") + "\r\n";
+      
+      // Captura as linhas da tabela
+      table.querySelectorAll('tbody tr').forEach(row => {
+        // Se a linha estiver visível (após os filtros)
+        if (row.style.display === 'none') return;
+        const cells = Array.from(row.querySelectorAll('td'))
+          .map(td => td.innerText.trim());
+        csv += cells.join(";") + "\r\n";
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.style.visibility = 'hidden';
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'lista_insumos_wearebastards.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
 
     // Scroll flutuante
     document.getElementById('btn-scroll-top').onclick = ()=> window.scrollTo({top:0,behavior:'smooth'});

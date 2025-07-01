@@ -181,6 +181,12 @@ if (
              class="bg-gray-700 text-white text-xs p-2 rounded" style="width:12rem">
     </div>
 
+    <div class="mb-4">
+      <button id="export-list" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+        Exportar Lista para Excel
+      </button>
+    </div>
+
     <form id="pedido-form" action="salvar_pedido_bardafabrica.php" method="post">
       <input type="hidden" name="filial"  value="<?=htmlspecialchars($filial,ENT_QUOTES)?>">
       <input type="hidden" name="usuario" value="<?=htmlspecialchars($usuario,ENT_QUOTES)?>">
@@ -190,6 +196,7 @@ if (
         <table class="min-w-full text-xs mx-auto">
           <thead class="bg-gray-700 text-yellow-400">
             <tr>
+              <th class="p-2 text-center">Código</th>
               <th class="p-2 text-left">Insumo</th>
               <th class="p-2 text-center" style="width:8rem">QTDE</th>
               <th class="p-2 text-center" style="width:7rem;">Estoque Atual</th>
@@ -202,6 +209,7 @@ if (
           </thead>
           <tbody id="insumo-body" class="divide-y divide-gray-700">
             <?php foreach ($insumos as $row):
+              $codigo = htmlspecialchars($row['CODIGO'] ?? '', ENT_QUOTES);
               $ins = htmlspecialchars($row['INSUMO'], ENT_QUOTES);
               $cat = htmlspecialchars($row['CATEGORIA'], ENT_QUOTES);
               $uni = htmlspecialchars($row['UNIDADE'], ENT_QUOTES);
@@ -216,14 +224,15 @@ if (
               }
             ?>
             <tr class="hover:bg-gray-700" data-cat="<?=$cat?>">
+              <td class="p-2 text-center"><?=$codigo?></td>
               <td class="p-2"><?=$ins?></td>
               <td class="p-2 text-center">
                 <div class="inline-flex items-center space-x-1">
                   <div class="qty-btn decrement">−</div>
-                  <input type="hidden"   name="insumo[]"    value="<?=$ins?>">
-                  <input type="hidden"   name="categoria[]" value="<?=$cat?>">
-                  <input type="hidden"   name="unidade[]"   value="<?=$uni?>">
-                  <input type="number"   name="quantidade[]" min="0" step="0.01"
+                  <input type="hidden" name="insumo[]" value="<?=$ins?>">
+                  <input type="hidden" name="categoria[]" value="<?=$cat?>">
+                  <input type="hidden" name="unidade[]" value="<?=$uni?>">
+                  <input type="number" name="quantidade[]" min="0" step="0.01"
                          value="<?= number_format((float)($row['SUGESTAO_COMPRA'] ?? 0), 2, '.', '') ?>"
                          class="qtd-input bg-gray-600 text-white text-xs p-1 rounded">
                   <div class="qty-btn increment">+</div>
@@ -576,6 +585,37 @@ if (
           btn.innerText = 'Confirmar pedido';
         }
       };
+
+      // Exportar lista para Excel
+      document.getElementById('export-list').addEventListener('click', () => {
+        // Seleciona a tabela de insumos (única ou a que deseja exportar)
+        const table = document.querySelector('.overflow-x-auto table');
+        if (!table) return;
+        
+        let csv = "";
+        // Extrai os cabeçalhos
+        const headerCells = Array.from(table.querySelectorAll('thead th'))
+          .map(th => th.innerText.trim());
+        csv += headerCells.join(";") + "\r\n";
+        
+        // Extrai as linhas do corpo
+        table.querySelectorAll('tbody tr').forEach(row => {
+          const cells = Array.from(row.querySelectorAll('td'))
+            .map(td => td.innerText.trim());
+          csv += cells.join(";") + "\r\n";
+        });
+        
+        // Cria um blob para o CSV e inicia o download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.visibility = 'hidden';
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'lista_insumos.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
     });
   </script>
 </body>
