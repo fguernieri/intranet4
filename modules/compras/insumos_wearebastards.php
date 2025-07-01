@@ -35,8 +35,8 @@ $stmt = $conn->prepare("
         i.UNIDADE,
         i.CODIGO,
         COALESCE(e.ESTOQUE_ATUAL, 0) AS ESTOQUE_ATUAL,
-        COALESCE(vw.total_insumo_usado_9dias, 0) AS CONSUMO_9DIAS,
-        COALESCE(vw.sugestao_compra, 0) AS SUGESTAO_COMPRA
+        COALESCE(vw.total_consumido, 0) AS CONSUMO_90DIAS,
+        COALESCE(vw.total_ajustado, 0) AS CONSUMO_9DIAS
     FROM insumos i
     LEFT JOIN (
         SELECT CODIGO, SUM(Estoquetotal) AS ESTOQUE_ATUAL
@@ -44,14 +44,11 @@ $stmt = $conn->prepare("
         GROUP BY CODIGO
     ) e ON i.CODIGO = e.CODIGO
     LEFT JOIN (
-        SELECT cod_insumo, 
-               SUM(total_insumo_usado_9dias) AS total_insumo_usado_9dias,
-               SUM(sugestao_compra) AS sugestao_compra
-        FROM vw_consumo_insumosWab_3m
-        GROUP BY cod_insumo
-    ) vw ON i.CODIGO = vw.cod_insumo
+        SELECT c_d_ref, total_consumido, total_ajustado
+        FROM vw_consumowab_ultimos_90_dias
+    ) vw ON i.CODIGO = vw.c_d_ref
     WHERE i.FILIAL = ?
-    GROUP BY i.INSUMO, i.CATEGORIA, i.UNIDADE, i.CODIGO, e.ESTOQUE_ATUAL, vw.total_insumo_usado_9dias, vw.sugestao_compra
+    GROUP BY i.INSUMO, i.CATEGORIA, i.UNIDADE, i.CODIGO, e.ESTOQUE_ATUAL, vw.total_consumido, vw.total_ajustado
     ORDER BY i.CATEGORIA, i.INSUMO
 ");
 if (!$stmt) {
@@ -69,12 +66,14 @@ if (!$result) {
 }
 $insumosFromDb = $result->fetch_all(MYSQLI_ASSOC);
 
-// Recalcula a SUGESTAO_COMPRA e garante que não seja negativa.
 $insumos = [];
 foreach ($insumosFromDb as $row) {
     $consumo9dias = (float)($row['CONSUMO_9DIAS'] ?? 0);
     $estoqueAtual = (float)($row['ESTOQUE_ATUAL'] ?? 0);
-    $row['SUGESTAO_COMPRA'] = max(0, ($consumo9dias - $estoqueAtual));
+    if ($estoqueAtual < 0) {
+        $estoqueAtual = 0;
+    }
+    $row['SUGESTAO_COMPRA'] = max(0, $consumo9dias - $estoqueAtual);
     $insumos[] = $row;
 }
 
@@ -343,7 +342,6 @@ if (
         </div>
         <div class="flex justify-end space-x-2">
           <button id="cancel-preview" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-          <button id="export-pdf"    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Exportar PDF</button>
           <button id="confirm-preview" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Confirmar pedido</button>
         </div>
       </div>
@@ -355,7 +353,6 @@ if (
     </div>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
   <script>
     // BLOQUEIO DE CAMPOS (front-end)
     const bloqueado = <?php echo $bloqueado ? 'true' : 'false'; ?>;
@@ -494,21 +491,6 @@ if (
     document.getElementById('cancel-preview').onclick = ()=>{
       document.getElementById('preview-modal').classList.add('hidden');
       document.getElementById('preview-modal').classList.remove('flex');
-    };
-
-    // exporta PDF
-    document.getElementById('export-pdf').onclick = ()=>{
-      const el = document.getElementById('preview-content');
-      el.style.color = '#000';
-      el.querySelectorAll('*').forEach(x=> x.style.color='#000');
-      html2pdf().set({
-        margin:0.5, filename:'pedido_insumos_wearebastards.pdf',
-        html2canvas:{scale:2},
-        jsPDF:{unit:'in',format:'letter',orientation:'portrait'}
-      }).from(el).save().then(()=>{
-        el.style.color='';
-        el.querySelectorAll('*').forEach(x=> x.style.color='');
-      });
     };
 
     // envia pedido via fetch
