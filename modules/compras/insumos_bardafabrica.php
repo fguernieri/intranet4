@@ -414,7 +414,8 @@ if (
         const term = document.getElementById('search-input').value.trim().toLowerCase();
         rows.forEach(r => {
           const catOK = !cats.length || cats.includes(r.dataset.cat);
-          const txtOK = !term || r.children[0].textContent.toLowerCase().includes(term);
+          // Supondo que "Insumo" esteja na segunda coluna (índice 1)
+          const txtOK = !term || r.children[1].textContent.toLowerCase().includes(term);
           r.style.display = (catOK && txtOK) ? '' : 'none';
         });
       }
@@ -594,9 +595,23 @@ if (
         // Seleciona a tabela de insumos
         const table = document.querySelector('.overflow-x-auto table');
         if (!table) return;
-        // Converte a tabela para um workbook
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Insumos" });
-        // Exporta para XLSX
+        // Converte a tabela para um workbook e utiliza raw:true para pegar os valores não formatados
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Insumos", raw:true });
+        const ws = wb.Sheets["Insumos"];
+        // Percorre as células do worksheet e força a conversão de números com vírgula para ponto
+        for (const cell in ws) {
+          if (cell[0] === '!') continue;
+          const cellValue = ws[cell].v;
+          if (typeof cellValue === 'string') {
+            // Remove pontos de milhar e substitui vírgula decimal por ponto
+            const cleaned = cellValue.replace(/\./g, '').replace(/,/g, '.');
+            const num = parseFloat(cleaned);
+            if (!isNaN(num)) {
+              ws[cell].v = num;
+              ws[cell].t = 'n';
+            }
+          }
+        }
         XLSX.writeFile(wb, 'lista_insumos.xlsx');
       });
     });
