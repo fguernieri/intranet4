@@ -106,118 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['arquivo'])) {
     $mesesDisponiveis = extrairMesesUnicos($colunaDatas);
     $dadosFiltrados = filtrarPorMesEProduto($dados, $mesSelecionado, $palavrasChave, $dados[0]);
 }
-
-// === Início Fechamento Choripan ===
-// 1. Captura os rebates (aceita vírgula ou ponto)
-$rawWelt      = str_replace(',', '.', $_POST['rebate_welt']      ?? '');
-$rawEspecial  = str_replace(',', '.', $_POST['rebate_especiais'] ?? '');
-$rebateWelt      = filter_var($rawWelt,     FILTER_VALIDATE_FLOAT) ?: 1.00;
-$rebateEspeciais = filter_var($rawEspecial, FILTER_VALIDATE_FLOAT) ?: 0.50;
-
-// 2. Carrega ou processa o arquivo
-$dadosChoripan = [];
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && ($_POST['formulario'] ?? '') === 'choripan'
-) {
-    // se veio upload novo, parseia e salva cache
-    if (!empty($_FILES['arquivoChoripan']['tmp_name'])) {
-        $tmpCh = $_FILES['arquivoChoripan']['tmp_name'];
-        try {
-            $readerCh = IOFactory::createReader('Xlsx');
-            $readerCh->setReadDataOnly(true);
-            $spreadsheetCh = $readerCh->load($tmpCh);
-            $sheetCh = $spreadsheetCh->getActiveSheet();
-
-            $cabecalhoCh  = [];
-            $idxProdutoCh = $idxClienteCh = null;
-
-            foreach ($sheetCh->getRowIterator() as $i => $rowCh) {
-                // pula as 4 primeiras linhas
-                if ($i < 4) {
-                    continue;
-                }
-                $linhaCh = [];
-                foreach ($rowCh->getCellIterator() as $cellCh) {
-                    try {
-                        $valorCh = $cellCh->getFormattedValue();
-                    } catch (Exception $eCh) {
-                        $valorCh = '[ERRO DE FÓRMULA]';
-                    }
-                    if (is_string($valorCh) && preg_match('/^="?(.+?)"?$/', $valorCh, $mCh)) {
-                        $valorCh = trim($mCh[1]);
-                    }
-                    $linhaCh[] = $valorCh;
-                }
-
-                // identifica cabeçalho e índices
-                if (empty($cabecalhoCh)) {
-                    $cabecalhoCh   = $linhaCh;
-                    $idxProdutoCh  = array_search('Produto', $cabecalhoCh, true);
-                    $idxClienteCh  = array_search('Cliente', $cabecalhoCh, true);
-                    $dadosChoripan[] = $cabecalhoCh;
-                    continue;
-                }
-
-                // filtra linha: pula se PRODUTO **ou** CLIENTE vazios
-                $produtoVazio = ($idxProdutoCh !== false && trim($linhaCh[$idxProdutoCh] ?? '') === '');
-                $clienteVazio = ($idxClienteCh !== false && trim($linhaCh[$idxClienteCh] ?? '') === '');
-                if ($produtoVazio || $clienteVazio) {
-                    continue;
-                }
-
-                $dadosChoripan[] = $linhaCh;
-            }
-
-            file_put_contents(__DIR__ . '/tmp_choripan.json', json_encode($dadosChoripan));
-        } catch (Exception $eCh) {
-            echo 'Erro ao processar Fechamento Choripan: ' . $eCh->getMessage();
-        }
-    }
-    // se não veio arquivo, carrega do cache
-    else {
-        $dadosChoripan = json_decode(file_get_contents(__DIR__ . '/tmp_choripan.json'), true);
-    }
-
-    // 3. Totalizador por Cliente/Produto (só “choripan”)
-    $totaisChoripan = [];
-    if (!empty($dadosChoripan)) {
-        $cabCh      = $dadosChoripan[0];
-        $idxCli     = array_search('Cliente',           $cabCh, true);
-        $idxProd    = array_search('Produto',           $cabCh, true);
-        $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
-
-        foreach (array_slice($dadosChoripan, 1) as $linha) {
-            $cliente = $linha[$idxCli]  ?? '';
-            if (stripos($cliente, 'choripan') === false) {
-                continue;
-            }
-            $produto = $linha[$idxProd]  ?? '';
-            $quant   = intval($linha[$idxQuant] ?? 0);
-            $totaisChoripan[$cliente][$produto] = 
-                ($totaisChoripan[$cliente][$produto] ?? 0) + $quant;
-        }
-    }
-
-    // 4. Cálculo de repasses
-    $quantWelt   = 0;
-    $quantOutros = 0;
-    foreach ($totaisChoripan as $cli => $produtos) {
-        foreach ($produtos as $prod => $qtde) {
-            // comparação case-insensitive
-            if (strcasecmp($prod, 'Welt Pilsen') === 0) {
-                $quantWelt += $qtde;
-            } else {
-                $quantOutros += $qtde;
-            }
-        }
-    }
-    $repasseWelt      = $quantWelt   * $rebateWelt;
-    $repasseEspeciais = $quantOutros * $rebateEspeciais;
-    $totalRepasse     = $repasseWelt + $repasseEspeciais;
-}
-// === Fim Fechamento Choripan ===
-
 ?>
 <!DOCTYPE html>
 
@@ -316,7 +204,7 @@ if (
         <div class="mt-10 card1 no-hover p-6">
             <h2 class="text-xl font-semibold mb-4">📊 Resumo por Produto</h2>
             <div class="overflow-auto">
-                <table id="bulldog" class="table-auto text-sm text-left border border-gray-700 w-full">
+                <table class="table-auto text-sm text-left border border-gray-700 w-full">
                     <thead class="bg-gray-700 text-white">
                         <tr>
                             <th class="px-4 py-2 border">Produto</th>
@@ -382,166 +270,16 @@ window.addEventListener("unload", function () {
 });
 </script>
 
-<hr class="divider_yellow my-6">
-
-<h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
-<form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-  <input type="hidden" name="formulario" value="choripan" />
-
-  <!-- upload -->
-  <div>
-    <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Arquivo Choripan</label>
-    <input
-      type="file"
-      name="arquivoChoripan"
-      id="arquivoChoripan"
-      accept=".xlsx"
-      class="w-full text-black bg-gray-600 rounded p-2"
-    />
-  </div>
-
-  <!-- Rebate Welt -->
-  <div>
-    <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Welt (R$)</label>
-    <input
-      type="number"
-      name="rebate_welt"
-      id="rebate_welt"
-      step="0.01"
-      value="<?= number_format($rebateWelt, 2, '.', '') ?>"
-      class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-    />
-  </div>
-
-  <!-- Rebate Especiais -->
-  <div>
-    <label for="rebate_especiais" class="block mb-1 text-sm font-semibold">Rebate Especiais (R$)</label>
-    <input
-      type="number"
-      name="rebate_especiais"
-      id="rebate_especiais"
-      step="0.01"
-      value="<?= number_format($rebateEspeciais, 2, '.', '') ?>"
-      class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-    />
-  </div>
-
-  <!-- botão -->
-  <div>
-    <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
-  </div>
-  
-  <!-- Botão de copiar para e-mail -->
-  <button
-    onclick="copiarChoripanEmail()" class="mt-4 btn-acao">
-    📋 Copiar para E-mail
-  </button>
-</form>
-
-<?php if (!empty($totaisChoripan)): ?>
-  <div id="card-choripan" class="mt-6 card1 no-hover p-6">
-    <div class="overflow-auto">
-      <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-        <thead class="bg-gray-700 text-white">
-          <tr>
-            <th class="px-4 py-2 border">Cliente</th>
-            <th class="px-4 py-2 border">Produto</th>
-            <th class="px-4 py-2 border">Quantidade vendida</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($totaisChoripan as $cliente => $lista): ?>
-            <?php foreach ($lista as $produto => $qtde): ?>
-              <tr class="border-t border-gray-600">
-                <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
-                <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
-                <td class="px-4 py-1 border"><?= $qtde ?></td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endforeach; ?>
-          <tr class="border-t border-gray-600-600">
-            <td class="px-4 py-1 border text-center text-lg font-semibold" colspan='3'>
-              TOTAL REPASSE R$ <?= number_format($repasseWelt,      2, ',', '.') ?>
-              + R$ <?= number_format($repasseEspeciais, 2, ',', '.') ?>
-              = R$ <?= number_format($totalRepasse,     2, ',', '.') ?>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div>
-<?php endif; ?>
-
-
 </body>
 
 <script>
-function copiarChoripanEmail() {
-    const cardOriginal = document.getElementById('card-choripan');
-    const card = cardOriginal.cloneNode(true);
-
-    // estilos idênticos aos do copiarResumoEmail
-    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;";
-    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;";
-    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;";
-
-    // percorre todas as tabelas dentro do card
-    card.querySelectorAll('table').forEach(table => {
-        table.removeAttribute('class');
-        const linhas = table.querySelectorAll('tr');
-        linhas.forEach((linha, i) => {
-            const celulas = linha.children;
-            for (const celula of celulas) {
-                celula.removeAttribute('class');
-                celula.removeAttribute('style');
-                if (i === 0) {
-                    // cabeçalho
-                    celula.setAttribute("style", estiloHeader);
-                } else if (
-                    linha.innerText.includes("TOTAL GERAL") ||
-                    linha.innerText.includes("REPASSE")
-                ) {
-                    // se por acaso tiver alguma linha de totalização
-                    celula.setAttribute("style", estiloTotal);
-                } else {
-                    // todas as outras células
-                    celula.setAttribute("style", estiloCelula);
-                }
-            }
-        });
-    });
-    
-
-    // clona o card para fora da tela, copia e limpa
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.appendChild(card);
-    document.body.appendChild(container);
-
-    const range = document.createRange();
-    range.selectNode(container);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    document.execCommand('copy');
-    sel.removeAllRanges();
-
-    document.body.removeChild(container);
-    alert('Conteúdo do Choripan copiado! Agora é só colar no e-mail.');
-}
-</script>
-
-
-<script>
 function copiarResumoEmail() {
-    const tabelaOriginal = document.getElementById('bulldog');
+    const tabelaOriginal = document.querySelector('div.mt-10 table');
     const tabela = tabelaOriginal.cloneNode(true);
 
-    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:6px;font-size:14px;";
-    const estiloCelula = "border:1px solid #ccc;padding:6px;color:#333;background-color:#fff;font-size:12px;";
-    const estiloTotal = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:6px;color:#111;font-size:12px;";
+    const estiloHeader = "background-color:#f3f4f6;font-weight:bold;border:1px solid #ccc;padding:6px;";
+    const estiloCelula = "border:1px solid #ccc;padding:6px;color:#333;";
+    const estiloTotal = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:6px;color:#111;";
 
     tabela.removeAttribute("class");
     const linhas = tabela.querySelectorAll("tr");
