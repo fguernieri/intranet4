@@ -139,6 +139,23 @@ $stmt_meta = $pdoMetas->prepare($sql_meta);
 $stmt_meta->execute([$anoMeta, $mesMeta]);
 $metas = $stmt_meta->fetchAll(PDO::FETCH_KEY_PAIR);
 
+// Buscar metas de abertura
+$pdoMetas = $pdo;
+
+$anoMeta = date('Y', strtotime($startDate));
+$mesMeta = date('m', strtotime($startDate));
+
+$sql_meta = "
+  SELECT v.nome, mv.valor
+  FROM metas_valores mv
+  JOIN metas_tipos mt ON mv.id_tipo = mt.id
+  JOIN vendedores v ON v.id = mv.id_vendedor
+  WHERE mv.ano = ? AND mv.mes = ? AND mt.slug = '_bertura'
+";
+$stmt_meta = $pdoMetas->prepare($sql_meta);
+$stmt_meta->execute([$anoMeta, $mesMeta]);
+$metas_abertura = $stmt_meta->fetchAll(PDO::FETCH_KEY_PAIR);
+
 
 foreach ($pedidos as $p) {
     $ven = $p['Vendedor'];
@@ -167,6 +184,11 @@ foreach (array_keys($porVendedor) as $vendedor) {
   $metasV[$vendedor] = isset($metas[$vendedor]) ? (float)$metas[$vendedor] : 0;
 }
 
+$metasAB = [];
+foreach (array_keys($porVendedor) as $vendedor) {
+  $metasAB[$vendedor] = isset($metas_abertura[$vendedor]) ? (float)$metas_abertura[$vendedor] : 0;
+}
+
 // Calcula somatório de meta
 $metaFaturamentoTotal = 0;
 foreach ($filteredVend as $vendedor) {
@@ -180,7 +202,10 @@ $percentualMeta = $metaFaturamentoTotal > 0
     ? ($totalFaturado / $metaFaturamentoTotal) * 100
     : 0;
 
-$clientesCount = array_map('count', $clientesPorV);
+$clientesCount = [];
+foreach ($clientesPorV as $vendedor => $clientes) {
+  $clientesCount[$vendedor] = count($clientes);
+}
 
 $sql = "SELECT MAX(data_hora) AS UltimaAtualizacao FROM fAtualizacoes";
 $stmt = $pdo_dw->query($sql);
@@ -336,6 +361,8 @@ $UltimaAtualizacao = $stmt->fetchColumn();
         
         // metas
         const metasVendedor = <?= json_encode($metasV) ?>;
+        const metasAbertura = <?= json_encode($metasAB) ?>;
+
 
         // 📊 Mapa com dados dos gráficos categóricos
         const chartDataMap = {
@@ -345,7 +372,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
             type: 'bar'
           },
           chartClientes: {
-            labels: <?= json_encode(array_keys($clientesCount)) ?>.map(v => v.split(' ')[0]),
+            labels: <?= json_encode(array_keys($clientesCount)) ?>,
             values: <?= json_encode(array_values($clientesCount)) ?>,
             type: 'bar'
           },
@@ -366,7 +393,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           },
             
           chartCadastros: {
-            labels: <?= json_encode($cadLabels, JSON_THROW_ON_ERROR) ?>,
+            labels: <?= json_encode($cadLabels, JSON_THROW_ON_ERROR) ?>.map(v => v.split(' ')[0]),
             values: <?= json_encode($cadValues, JSON_THROW_ON_ERROR) ?>,
             type: 'bar'
           }
@@ -455,7 +482,15 @@ $UltimaAtualizacao = $stmt->fetchColumn();
               return metasVendedor[fullName] ?? 0;
             });
           }
-
+          
+          if (chartId === 'chartCadastros') {
+            metas = sortedLabels.map(primeiroNome => {
+              const found = Object.keys(metasAbertura)
+                .find(m => m.startsWith(primeiroNome));
+              return found ? metasAbertura[found] : 0;
+            });
+          }
+          
           renderApex(`#${chartId}`, {
             type,
             labels: sortedLabels,
