@@ -406,6 +406,33 @@ foreach ($linhas as $linha) {
     $matriz[$cat][$sub][$mes][$id][] = floatval($linha['VALOR_EXIBIDO']);
 }
 
+// ==================== [CARREGAR DADOS DE fOutrasReceitas PARA A MATRIZ PRINCIPAL] ====================
+// Buscar dados de fOutrasReceitas e incluir diretamente na matriz principal
+$sqlOutrasRec = "
+    SELECT CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA, SUM(VALOR) AS TOTAL
+    FROM fOutrasReceitas
+    WHERE YEAR(DATA_COMPETENCIA) = $anoAtual
+    GROUP BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
+    ORDER BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
+";
+$resOutrasRec = $conn->query($sqlOutrasRec);
+
+if ($resOutrasRec) {
+    while ($row = $resOutrasRec->fetch_assoc()) {
+        $catOR = !empty($row['CATEGORIA']) ? $row['CATEGORIA'] : 'NÃO CATEGORIZADO';
+        $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
+        $mesOR = (int)date('n', strtotime($row['DATA_COMPETENCIA']));
+        $valor = floatval($row['TOTAL']);
+        
+        // Se a categoria for "Z - ENTRADA DE REPASSE", adiciona à matriz principal
+        if ($catOR === 'Z - ENTRADA DE REPASSE') {
+            // Usar um ID único baseado na data para simular estrutura da matriz principal
+            $id_simulado = 'OR_' . $row['DATA_COMPETENCIA'] . '_' . $catOR . '_' . $subOR;
+            $matriz[$catOR][$subOR][$mesOR][$id_simulado][] = $valor;
+        }
+    }
+}
+
 // Calcule os 3 últimos meses fechados a partir do mês selecionado
 $mesesUltimos3 = [];
 for ($i = 1; $i <= 3; $i++) {
@@ -543,34 +570,33 @@ $atualFATLiquido = ($atualRec - ($atualCat['TRIBUTOS'] ?? 0));
 $mediaCustoVariavel = $media3Cat['CUSTO VARIÁVEL'] ?? 0;
 $atualCustoVariavel = $atualCat['CUSTO VARIÁVEL'] ?? 0;
 
-// ==================== [NOVA SEÇÃO: BUSCAR DADOS DE fOutrasReceitas] ====================
+// ==================== [NOVA SEÇÃO: BUSCAR DADOS DE fOutrasReceitas PARA ESTRUTURAS ESPECIAIS] ====================
 $outrasReceitasPorCatSubMes = []; // Estrutura: [categoria][subcategoria][mes] = valor
-$entradaRepassePorCatSubMes = []; // Nova estrutura para ENTRADA DE REPASSE
-$sqlOutrasRec = "
-    SELECT CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA, SUM(VALOR) AS TOTAL
-    FROM fOutrasReceitas
-    WHERE YEAR(DATA_COMPETENCIA) = $anoAtual
-    GROUP BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
-    ORDER BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
-";
-$resOutrasRec = $conn->query($sqlOutrasRec);
+$entradaRepassePorCatSubMes = []; // Nova estrutura para ENTRADA DE REPASSE (categorias que não são Z - ENTRADA DE REPASSE)
 
 // Definir quais subcategorias pertencem a RECEITAS NÃO OPERACIONAIS
 $subcategoriasReceitasNaoOp = ['EMPRÉSTIMO', 'RETORNO DE INVESTIMENTO', 'OUTRAS RECEITAS'];
 
+// Reprocessar apenas para as estruturas especiais (RNO e ER complexas)
 if ($resOutrasRec) {
+    $resOutrasRec->data_seek(0); // Reset do cursor para reler os dados
     while ($row = $resOutrasRec->fetch_assoc()) {
         $catOR = !empty($row['CATEGORIA']) ? $row['CATEGORIA'] : 'NÃO CATEGORIZADO';
         $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
         $mesOR = (int)date('n', strtotime($row['DATA_COMPETENCIA']));
         $valor = floatval($row['TOTAL']);
         
-        // Verificar se a subcategoria pertence a RECEITAS NÃO OPERACIONAIS ou ENTRADA DE REPASSE
+        // Pular "Z - ENTRADA DE REPASSE" pois já foi processada na matriz principal
+        if ($catOR === 'Z - ENTRADA DE REPASSE') {
+            continue;
+        }
+        
+        // Verificar se a subcategoria pertence a RECEITAS NÃO OPERACIONAIS
         if (in_array($subOR, $subcategoriasReceitasNaoOp)) {
             // Manter em RECEITAS NÃO OPERACIONAIS
             $outrasReceitasPorCatSubMes[$catOR][$subOR][$mesOR] = ($outrasReceitasPorCatSubMes[$catOR][$subOR][$mesOR] ?? 0) + $valor;
         } else {
-            // Mover para ENTRADA DE REPASSE
+            // Outras categorias vão para ENTRADA DE REPASSE (estrutura complexa)
             $entradaRepassePorCatSubMes[$catOR][$subOR][$mesOR] = ($entradaRepassePorCatSubMes[$catOR][$subOR][$mesOR] ?? 0) + $valor;
         }
     }
@@ -1438,164 +1464,110 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $totalAtua
       <?php endif; ?>
       <!-- ==================== [FIM DA SEÇÃO RECEITAS NAO OPERACIONAIS] ==================== -->
 
-      <!-- ==================== [NOVA SEÇÃO: ENTRADA DE REPASSE] ==================== -->
-      <tr class="dre-cat-principal text-white font-bold" style="background:#1a4c2b;">
-        <td class="p-2 text-left" colspan="1">ENTRADA DE REPASSE</td>
-        <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3EntradaRepasseGlobal,2,',','.') ?></td>
-        <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3EntradaRepasseGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-        <td class="p-2 text-right simul-total-cat" data-cat-total-simul="ENTRADA DE REPASSE">
-            <?= 'R$ '.number_format($totalMedia3EntradaRepasseGlobal,2,',','.') ?>
-        </td> <!-- Total Simulado (será atualizado por JS) -->
-        <td class="p-2 text-center simul-perc-cat" data-cat-perc-simul="ENTRADA DE REPASSE">
-            <?= $media3Rec > 0 ? number_format(($totalMedia3EntradaRepasseGlobal / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
-        </td> <!-- % Total Simulado s/ FAT. (será atualizado por JS) -->
-        <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-        <td class="p-2 text-right">
-            <?= isset($metasArray['ENTRADA DE REPASSE']['']) ? 'R$ '.number_format($metasArray['ENTRADA DE REPASSE'][''],2,',','.') : '' ?>
-         </td> <!-- Meta para a linha principal ENTRADA DE REPASSE -->
-        <td class="p-2 text-center">
-            <?php // % Meta s/ FAT. para linha principal ENTRADA DE REPASSE
-              if ($metaReceita > 0 && isset($metasArray['ENTRADA DE REPASSE'][''])) {
-                echo number_format(($metasArray['ENTRADA DE REPASSE'][''] / $metaReceita) * 100, 2, ',', '.') . '%';
+      <!-- Z - ENTRADA DE REPASSE (categoria normal) -->
+      <?php
+        $catNameER = 'Z - ENTRADA DE REPASSE';
+        // DEBUG: Verificar se a categoria existe na matriz
+        echo "<!-- DEBUG: matrizOrdenada[$catNameER] = " . (isset($matrizOrdenada[$catNameER]) ? 'EXISTS' : 'NOT EXISTS') . " -->";
+        if (isset($matrizOrdenada[$catNameER])) {
+            echo "<!-- DEBUG: Subcategorias: " . implode(', ', array_keys($matrizOrdenada[$catNameER])) . " -->";
+        }
+        if(isset($matrizOrdenada[$catNameER])):
+      ?>
+        <tr class="dre-cat">
+          <td class="p-2 text-left"><?= htmlspecialchars($catNameER) ?></td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($media3Cat[$catNameER] ?? 0,2,',','.') ?></td>
+          <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Cat[$catNameER] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
+          <td class="p-2 text-right">
+            <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
+                   value="<?= number_format($media3Cat[$catNameER] ?? 0,2,',','.') ?>">
+          </td>
+          <td class="p-2 text-center">
+            <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
+                   style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Cat[$catNameER] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
+          </td>
+          <td class="p-2 text-right">-</td> <!-- Diferença -->
+          <td class="p-2 text-right"><?= isset($metasArray[$catNameER]['']) ? 'R$ '.number_format($metasArray[$catNameER][''],2,',','.') : '' ?></td>
+          <td class="p-2 text-center">
+            <?php
+              if ($metaReceita > 0 && isset($metasArray[$catNameER][''])) {
+                echo number_format(($metasArray[$catNameER][''] / $metaReceita) * 100, 2, ',', '.') . '%';
               } else { echo '-'; }
             ?>
-        </td>
-        <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualEntradaRepasseGlobal,2,',','.') ?></td>
-        <td class="p-2 text-center">
+          </td>
+          <td class="p-2 text-right"><?= 'R$ '.number_format($atualCat[$catNameER] ?? 0,2,',','.') ?></td>
+          <td class="p-2 text-center">
             <?php
-              // % Realizado s/ Meta para a linha principal de ENTRADA DE REPASSE
-              if(isset($metasArray['ENTRADA DE REPASSE']['']) && $metasArray['ENTRADA DE REPASSE'][''] != 0) {
-                  echo number_format(($totalAtualEntradaRepasseGlobal / $metasArray['ENTRADA DE REPASSE']['']) * 100, 2, ',', '.') . '%';
-              } else { echo '-';}
+              $meta_er_val = $metasArray[$catNameER][''] ?? null;
+              $realizado_er_val = $atualCat[$catNameER] ?? 0;
+              if (isset($meta_er_val) && $meta_er_val != 0) {
+                echo number_format(($realizado_er_val / $meta_er_val) * 100, 2, ',', '.') . '%';
+              } else { echo '-'; }
             ?>
-        </td>
-        <td class="p-2 text-center">
-            <?php
-              $meta_er_principal_val = $metasArray['ENTRADA DE REPASSE'][''] ?? null;
-              if(isset($meta_er_principal_val)) {
-                  $comparacaoER_Principal = $meta_er_principal_val - $totalAtualEntradaRepasseGlobal;
-                  $corCompER_Principal = ($comparacaoER_Principal >=0) ? 'text-green-400' : 'text-red-400';
-                  echo '<span class="'.$corCompER_Principal.'">R$ '.number_format($comparacaoER_Principal, 2, ',', '.').'</span>';
-              } else { echo '-';}
-            ?>
-        </td>
-      </tr>
-
-      <?php if (!empty($entradaRepassePorCatSubMes)): ?>
-        <?php foreach ($entradaRepassePorCatSubMes as $catNomeER => $subcategoriasER): ?>
-          <?php
-            // Calcular totais de Média e Atual para esta Categoria de ENTRADA DE REPASSE ($catNomeER)
-            $totalMedia3CatER = 0;
-            $totalAtualCatER = 0;
-            if (isset($media3EntradaRepasseSub[$catNomeER])) {
-                foreach ($media3EntradaRepasseSub[$catNomeER] as $mediaSubValor) {
-                    $totalMedia3CatER += $mediaSubValor;
-                }
-            }
-            if (isset($atualEntradaRepasseSub[$catNomeER])) {
-                foreach ($atualEntradaRepasseSub[$catNomeER] as $atualSubValor) {
-                    $totalAtualCatER += $atualSubValor;
-                }
-            }
-            $dataCatKeyER = htmlspecialchars(str_replace(' ', '_', $catNomeER));
-          ?>
-          <!-- Linha da Categoria de Entrada de Repasse -->
-          <tr class="dre-subcat-l1">
-            <td class="p-2 pl-6 text-left font-semibold"><?= htmlspecialchars($catNomeER) ?></td>
-            <td class="p-2 text-right"><?= 'R$ '.number_format($totalMedia3CatER,2,',','.') ?></td>
-            <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($totalMedia3CatER / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
-            <td class="p-2 text-right" data-simul-valor-er-cat="<?= $dataCatKeyER ?>"></td> <!-- JS Preenche Simulação Valor -->
-            <td class="p-2 text-center" data-simul-perc-er-cat="<?= $dataCatKeyER ?>"></td> <!-- JS Preenche Simulação % -->
-            <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-            <td class="p-2 text-right">
-                               <?= isset($metasArray[$catNomeER]['']) ? 'R$ '.number_format($metasArray[$catNomeER][''],2,',','.') : '-' ?>
-            </td>
-            <td class="p-2 text-center">
-                <?php // % Meta s/ FAT. para Categoria L1 de ENTRADA DE REPASSE
-                  if ($metaReceita > 0 && isset($metasArray[$catNomeER][''])) {
-                    echo number_format(($metasArray[$catNomeER][''] / $metaReceita) * 100, 2, ',', '.') . '%';
-                  } else { echo '-'; }
-                ?>
-            </td>
-            <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualCatER,2,',','.') ?></td>
-            <td class="p-2 text-center">
-                 <?php
-                  if(isset($metasArray[$catNomeER]['']) && $metasArray[$catNomeER][''] != 0) {
-                      echo number_format(($totalAtualCatER / $metasArray[$catNomeER]['']) * 100, 2, ',', '.') . '%';
-                  } else { echo '-';}
-                 ?>
-            </td>
-            <td class="p-2 text-center">
-                <?php
-                  $meta_er_l1_val = $metasArray[$catNomeER][''] ?? null;
-                  if(isset($meta_er_l1_val)) {
-                      $comparacaoER_L1 = $meta_er_l1_val - $totalAtualCatER;
-                      $corCompER_L1 = ($comparacaoER_L1 >=0) ? 'text-green-400' : 'text-red-400';
-                      echo '<span class="'.$corCompER_L1.'">R$ '.number_format($comparacaoER_L1, 2, ',', '.').'</span>';
-                  } else { echo '-';}
-                ?>
-            </td>
-          </tr>
-
-          <?php foreach ($subcategoriasER as $subNomeER => $valoresMensaisER): ?>
-            <?php
-              $mediaSubER = $media3EntradaRepasseSub[$catNomeER][$subNomeER] ?? 0;
-              $atualSubER = $atualEntradaRepasseSub[$catNomeER][$subNomeER] ?? 0;
-              // Usar nomes de categoria e subcategoria para data attributes, normalizando-os para JS
-              // $dataCatKeyER já definido acima
-              $dataSubCatKeyER = htmlspecialchars(str_replace(' ', '_', $subNomeER));
-            ?>
-            <tr class="dre-subcat-l2">
-              <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeER) ?></td>
-              <td class="p-2 text-right"><?= 'R$ '.number_format($mediaSubER,2,',','.') ?></td>
-              <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaSubER / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+          </td>
+          <td class="p-2 text-center">
+            <?php 
+              $meta_val = $metasArray[$catNameER][''] ?? null;
+              $realizado_val = $atualCat[$catNameER] ?? 0;
+              if (isset($meta_val)) {
+                $comparacao = $meta_val - $realizado_val;
+                $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+              } else { echo '-'; } ?>
+          </td>
+        </tr>
+        <?php foreach(($matrizOrdenada[$catNameER] ?? []) as $sub => $mesValores): ?>
+          <?php if($sub): ?>
+           <tr class="dre-sub">
+              <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
+              <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catNameER][$sub] ?? 0,2,',','.') ?></td>
+              <td class="p-2 text-center">
+                <?= $media3Rec > 0 ? number_format((($media3Sub[$catNameER][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
+              </td>
               <td class="p-2 text-right">
                 <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
-                       data-cat="ENTRADA DE REPASSE" data-sub-cat="<?= $dataCatKeyER ?>" data-sub-sub-cat="<?= $dataSubCatKeyER ?>"
-                       value="<?= number_format($mediaSubER,2,',','.') ?>">
+                       value="<?= number_format($media3Sub[$catNameER][$sub] ?? 0, 2, ',', '.') ?>">
               </td>
               <td class="p-2 text-center">
                 <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
-                       style="width:60px;" data-cat="ENTRADA DE REPASSE" data-sub-cat="<?= $dataCatKeyER ?>" data-sub-sub-cat="<?= $dataSubCatKeyER ?>"
-                       value="<?= $media3Rec > 0 ? number_format(($mediaSubER / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
+                       style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Sub[$catNameER][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>">
               </td>
-              <td class="p-2 text-right">-</td> <!-- Diferença (R$) -->
-              <td class="p-2 text-right">
-                                <?= isset($metasArray[$catNomeER][$subNomeER]) ? 'R$ '.number_format($metasArray[$catNomeER][$subNomeER],2,',','.') : '-' ?>
-              </td>
+              <td class="p-2 text-right">-</td>
+              <td class="p-2 text-right"><?= isset($metasArray[$catNameER][$sub]) ? 'R$ ' . number_format($metasArray[$catNameER][$sub], 2, ',', '.') : '' ?></td>
               <td class="p-2 text-center">
-                <?php // % Meta s/ FAT. para Subcategoria L2 de ENTRADA DE REPASSE
-                  if ($metaReceita > 0 && isset($metasArray[$catNomeER][$subNomeER])) {
-                    echo number_format(($metasArray[$catNomeER][$subNomeER] / $metaReceita) * 100, 2, ',', '.') . '%';
+                <?php
+                  if ($metaReceita > 0 && isset($metasArray[$catNameER][$sub])) {
+                    echo number_format(($metasArray[$catNameER][$sub] / $metaReceita) * 100, 2, ',', '.') . '%';
                   } else { echo '-'; }
                 ?>
               </td>
-              <td class="p-2 text-right"><?= 'R$ '.number_format($atualSubER,2,',','.') ?></td>
+              <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catNameER][$sub] ?? 0, 2, ',', '.') ?></td>
               <td class="p-2 text-center">
                 <?php
-                  // Para Entrada de Repasse, a meta é salva com Categoria = $catNomeER e Subcategoria = $subNomeER
-                  $meta_er_val = $metasArray[$catNomeER][$subNomeER] ?? null;
-                  if (isset($meta_er_val) && $meta_er_val != 0) {
-                    echo number_format(($atualSubER / $meta_er_val) * 100, 2, ',', '.') . '%';
+                  $meta_ers_val = $metasArray[$catNameER][$sub] ?? null;
+                  $realizado_ers_val = $atualSub[$catNameER][$sub] ?? 0;
+                  if (isset($meta_ers_val) && $meta_ers_val != 0) {
+                    echo number_format(($realizado_ers_val / $meta_ers_val) * 100, 2, ',', '.') . '%';
                   } else { echo '-'; }
                 ?>
               </td>
               <td class="p-2 text-center">
-                <?php
-                  if(isset($metasArray[$catNomeER][$subNomeER])) {
-                      $comparacaoER_L2 = ($metasArray[$catNomeER][$subNomeER] ?? 0) - $atualSubER;
-                      $corCompER_L2 = ($comparacaoER_L2 >=0) ? 'text-green-400' : 'text-red-400';
-                      echo '<span class="'.$corCompER_L2.'">R$ '.number_format($comparacaoER_L2, 2, ',', '.').'</span>';
-                  } else { echo '-';}
-                ?>
+                <?php 
+                  $meta_val = $metasArray[$catNameER][$sub] ?? null;
+                  $realizado_val = $atualSub[$catNameER][$sub] ?? 0;
+                  if (isset($meta_val)) {
+                    $comparacao = $meta_val - $realizado_val;
+                    $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                    echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+                  } else { echo '-'; } ?>
               </td>
             </tr>
-          <?php endforeach; // Fim do loop de subcategorias de Entrada de Repasse ?>
-        <?php endforeach; // Fim do loop de categorias de Entrada de Repasse ?>
+          <?php endif; ?>
+        <?php endforeach; ?>
       <?php endif; ?>
-      <!-- ==================== [FIM DA SEÇÃO ENTRADA DE REPASSE] ==================== -->
+      <!-- ==================== [FIM DA SEÇÃO Z - ENTRADA DE REPASSE] ==================== -->
 
-      <!-- Z - SAIDA DE REPASSE (movido para logo após ENTRADA DE REPASSE) -->
+      <!-- Z - SAIDA DE REPASSE -->
       <?php
         $catNameSR = 'Z - SAIDA DE REPASSE';
         if(isset($matrizOrdenada[$catNameSR])):
@@ -1867,7 +1839,7 @@ function atualizarTotaisCategorias() {
   // Lista de todas as categorias principais que devem ser calculadas como soma de subcategorias
   const categoriasParaSomar = [
     'TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA', 'CUSTO FIXO', 'DESPESA FIXA',
-    'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'
+    'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE'
   ];
 
   categoriasParaSomar.forEach(function(catName) {
@@ -1996,16 +1968,13 @@ function recalcSinteticas() {
   }
 
   // 4. FLUXO DE CAIXA
-  // (LUCRO LIQUIDO + RECEITAS NAO OPERACIONAIS + ENTRADA DE REPASSE) - (INVESTIMENTO INTERNO + INVESTIMENTO EXTERNO + Z - SAIDA DE REPASSE)
+  // (LUCRO LIQUIDO + RECEITAS NAO OPERACIONAIS + Z - ENTRADA DE REPASSE) - (INVESTIMENTO INTERNO + INVESTIMENTO EXTERNO + Z - SAIDA DE REPASSE)
   let simReceitasNaoOp = 0;
   document.querySelectorAll('input.simul-valor[data-cat="RECEITAS NAO OPERACIONAIS"]').forEach(input => {
     simReceitasNaoOp += parseBRL(input.value);
   });
 
-  let simEntradaRepasse = 0;
-  document.querySelectorAll('input.simul-valor[data-cat="ENTRADA DE REPASSE"]').forEach(input => {
-    simEntradaRepasse += parseBRL(input.value);
-  });
+  const simEntradaRepasse = getSimulatedValueFromInput(findCategoryRow('Z - ENTRADA DE REPASSE'));
 
   const simInvestInterno = getSimulatedValueFromInput(findCategoryRow('INVESTIMENTO INTERNO'));
   const simInvestExterno = getSimulatedValueFromInput(findCategoryRow('INVESTIMENTO EXTERNO'));
@@ -2056,42 +2025,6 @@ function recalcSinteticas() {
   const tdPercGeralSimulRNO = document.querySelector('td.simul-perc-cat[data-cat-perc-simul="RECEITAS NAO OPERACIONAIS"]');
   if (tdPercGeralSimulRNO) {
     tdPercGeralSimulRNO.textContent = formatSimPerc(totalGeralSimulRNO, receitaBrutaSimulada);
-  }
-
-  // --- ATUALIZAÇÃO ENTRADA DE REPASSE (ER) ---
-  let totalGeralSimulER = 0;
-
-  // Passo 1: Calcular e atualizar totais para cada CATEGORIA de ER (linhas dre-subcat-l1)
-  document.querySelectorAll('tr.dre-subcat-l1').forEach(rowCatER => {
-    const dataCatKey = rowCatER.querySelector('[data-simul-valor-er-cat]')?.dataset.simulValorErCat;
-    if (!dataCatKey) return;
-
-    let subTotalCategoriaER = 0;
-    // Seleciona os inputs da subcategoria L2 que pertencem a esta categoria L1
-    document.querySelectorAll(`input.simul-valor[data-cat="ENTRADA DE REPASSE"][data-sub-cat="${dataCatKey}"]`).forEach(inputSubCatL2ER => {
-        subTotalCategoriaER += parseBRL(inputSubCatL2ER.value);
-    });
-
-    const tdValorCatER = rowCatER.querySelector(`td[data-simul-valor-er-cat="${dataCatKey}"]`);
-    if (tdValorCatER) {
-        tdValorCatER.textContent = 'R$ ' + formatSimValue(subTotalCategoriaER);
-    }
-    const tdPercCatER = rowCatER.querySelector(`td[data-simul-perc-er-cat="${dataCatKey}"]`);
-    if (tdPercCatER) {
-        tdPercCatER.textContent = formatSimPerc(subTotalCategoriaER, receitaBrutaSimulada);
-    }
-    totalGeralSimulER += subTotalCategoriaER; // Acumula para o total geral de ER
-  });
-
-  // Passo 2: Atualizar o total geral da linha principal "ENTRADA DE REPASSE" (dre-cat-principal)
-  const tdTotalGeralSimulER = document.querySelector('td.simul-total-cat[data-cat-total-simul="ENTRADA DE REPASSE"]');
-  if (tdTotalGeralSimulER) {
-    tdTotalGeralSimulER.textContent = 'R$ ' + formatSimValue(totalGeralSimulER);
-  }
-
-  const tdPercGeralSimulER = document.querySelector('td.simul-perc-cat[data-cat-perc-simul="ENTRADA DE REPASSE"]');
-  if (tdPercGeralSimulER) {
-    tdPercGeralSimulER.textContent = formatSimPerc(totalGeralSimulER, receitaBrutaSimulada);
   }
 }
 
@@ -2231,13 +2164,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const percentEditableCategories = ['TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA'];
     
     // Categorias onde as subcategorias têm valor editável (e percentual calculado)
-    const valueEditableCategories = ['CUSTO FIXO', 'DESPESA FIXA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'];
+    const valueEditableCategories = ['CUSTO FIXO', 'DESPESA FIXA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE'];
 
     // Categorias principais que são sempre totais calculados (readonly)
     const mainCategoryNames = [
         'TRIBUTOS', 'CUSTO VARIÁVEL', 'DESPESA VENDA', 'CUSTO FIXO', 'DESPESA FIXA',
-        'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE',
-        'RECEITAS NAO OPERACIONAIS', 'ENTRADA DE REPASSE'
+        'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE',
+        'RECEITAS NAO OPERACIONAIS'
     ];
 
     // Linhas de resultado que são sempre calculadas (readonly)
@@ -2331,6 +2264,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // 7. Sub-subcategorias L2 de RECEITAS NAO OPERACIONAIS: valor editável, percentual calculado
         if (row.classList.contains('dre-subcat-l2') && 
             inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS") {
+            inputValorSimul.readOnly = false;
+            inputPercSimul.readOnly = true;
+            inputPercSimul.dataset.dynamicReadonly = 'true';
+            return;
+        }
+
+        // 8. Sub-subcategorias L2 de Z - ENTRADA DE REPASSE: valor editável, percentual calculado
+        if (row.classList.contains('dre-subcat-l2') && 
+            inputValorSimul.dataset.cat === "Z - ENTRADA DE REPASSE") {
             inputValorSimul.readOnly = false;
             inputPercSimul.readOnly = true;
             inputPercSimul.dataset.dynamicReadonly = 'true';
@@ -2617,6 +2559,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoriaMeta = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
                 subcategoriaMeta = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
                 metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta, percentual: percentualMeta });
+            } else if (inputValorSimul.dataset.cat === "Z - ENTRADA DE REPASSE" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+
+                categoriaMeta = inputValorSimul.dataset.subCat.replace(/_/g, ' ');
+                subcategoriaMeta = inputValorSimul.dataset.subSubCat.replace(/_/g, ' ');
+                metasParaSalvar.push({ categoria: categoriaMeta, subcategoria: subcategoriaMeta, valor: valorMeta, percentual: percentualMeta });
             }
         }
     });
@@ -2799,10 +2747,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ENTRADA DE REPASSE (soma das sub-linhas)
-    let entradaRepasse = 0;
-    document.querySelectorAll('input.simul-valor[data-cat="ENTRADA DE REPASSE"]').forEach(input => {
-        entradaRepasse += parseBRL(input.value);
-    });
+    const entradaRepasse = getAbsoluteValueFromInput('Z - ENTRADA DE REPASSE');
 
     // Soma dos custos/despesas fixas e outras receitas/despesas
     const fixedCostsAndOther = (cf + df + ii + ie + sr + am) - (rno + entradaRepasse);
@@ -2968,6 +2913,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
                 inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
                 key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
+            } else if (inputValorSimul.dataset.cat === "Z - ENTRADA DE REPASSE" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                key = `ER_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
             }
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) {
@@ -3098,6 +3046,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
                 inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
                 key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
+            } else if (inputValorSimul.dataset.cat === "Z - ENTRADA DE REPASSE" &&
+                inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
+                key = `ER_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
             }
         } else if (row.classList.contains('dre-sub')) {
             if (categoriaAtualContexto) {
