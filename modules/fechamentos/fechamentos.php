@@ -482,9 +482,9 @@ function copiarChoripanEmail() {
     const card = cardOriginal.cloneNode(true);
 
     // estilos idênticos aos do copiarResumoEmail
-    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;";
-    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;";
-    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;";
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
 
     // percorre todas as tabelas dentro do card
     card.querySelectorAll('table').forEach(table => {
