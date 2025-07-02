@@ -407,7 +407,7 @@ foreach ($linhas as $linha) {
 }
 
 // ==================== [CARREGAR DADOS DE fOutrasReceitas PARA A MATRIZ PRINCIPAL] ====================
-// Buscar dados de fOutrasReceitas e incluir diretamente na matriz principal
+// IMPORTANTE: Fazer ANTES do cálculo das médias para que "Z - ENTRADA DE REPASSE" seja considerada
 $sqlOutrasRec = "
     SELECT CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA, SUM(VALOR) AS TOTAL
     FROM fOutrasReceitas
@@ -417,12 +417,20 @@ $sqlOutrasRec = "
 ";
 $resOutrasRec = $conn->query($sqlOutrasRec);
 
+// DEBUG: Verificar quantos registros foram encontrados
+echo "<!-- DEBUG: fOutrasReceitas query returned " . ($resOutrasRec ? $resOutrasRec->num_rows : 0) . " rows -->";
+
 if ($resOutrasRec) {
     while ($row = $resOutrasRec->fetch_assoc()) {
         $catOR = !empty($row['CATEGORIA']) ? $row['CATEGORIA'] : 'NÃO CATEGORIZADO';
         $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
         $mesOR = (int)date('n', strtotime($row['DATA_COMPETENCIA']));
         $valor = floatval($row['TOTAL']);
+        
+        // DEBUG para categoria Z - ENTRADA DE REPASSE
+        if ($catOR === 'Z - ENTRADA DE REPASSE') {
+            echo "<!-- DEBUG: Found Z - ENTRADA DE REPASSE: $subOR, month $mesOR, value $valor -->";
+        }
         
         // Se a categoria for "Z - ENTRADA DE REPASSE", adiciona à matriz principal
         if ($catOR === 'Z - ENTRADA DE REPASSE') {
@@ -468,9 +476,19 @@ foreach ($matriz as $cat => $subs) {
         }
         $media3Sub[$cat][$sub] = $soma3Sub / 3;
         $atualSub[$cat][$sub] = $somaAtualSub;
+        
+        // DEBUG para Z - ENTRADA DE REPASSE
+        if ($cat === 'Z - ENTRADA DE REPASSE') {
+            echo "<!-- DEBUG: $cat -> $sub: média3=$soma3Sub/3=" . ($soma3Sub/3) . ", atual=$somaAtualSub -->";
+        }
     }
     $media3Cat[$cat] = $soma3Cat / 3;
     $atualCat[$cat]   = $somaAtualCat;
+    
+    // DEBUG para Z - ENTRADA DE REPASSE total
+    if ($cat === 'Z - ENTRADA DE REPASSE') {
+        echo "<!-- DEBUG: $cat TOTAL: média3=$soma3Cat/3=" . ($soma3Cat/3) . ", atual=$somaAtualCat -->";
+    }
 }
 
 // Receita operacional (exemplo simplificado)
@@ -676,15 +694,23 @@ $mediaInvestInterno = $media3Cat['INVESTIMENTO INTERNO'] ?? 0;
 $mediaInvestExterno = $media3Cat['INVESTIMENTO EXTERNO'] ?? 0;
 $mediaSaidaRepasse  = $media3Cat['Z - SAIDA DE REPASSE'] ?? 0;
 $mediaAmortizacao   = $media3Cat['AMORTIZAÇÃO'] ?? 0;
-// Incluir ambas as categorias de receitas não operacionais no cálculo
-$mediaFluxoCaixa = ($mediaLucroLiquido + $totalMedia3OutrasRecGlobal + $totalMedia3EntradaRepasseGlobal) - ($mediaInvestInterno + $mediaInvestExterno + $mediaSaidaRepasse + $mediaAmortizacao);
+$mediaEntradaRepasse = $media3Cat['Z - ENTRADA DE REPASSE'] ?? 0; // Usar diretamente da matriz principal
+
+// DEBUG do cálculo do fluxo
+echo "<!-- DEBUG FLUXO: LucroLiq=$mediaLucroLiquido, RNO=$totalMedia3OutrasRecGlobal, EntradaRepasse=$mediaEntradaRepasse -->";
+echo "<!-- DEBUG FLUXO: InvInt=$mediaInvestInterno, InvExt=$mediaInvestExterno, SaidaRep=$mediaSaidaRepasse, Amort=$mediaAmortizacao -->";
+
+// Incluir "Z - ENTRADA DE REPASSE" diretamente + outras receitas não operacionais
+$mediaFluxoCaixa = ($mediaLucroLiquido + $totalMedia3OutrasRecGlobal + $mediaEntradaRepasse) - ($mediaInvestInterno + $mediaInvestExterno + $mediaSaidaRepasse + $mediaAmortizacao);
 
 $atualInvestInterno = $atualCat['INVESTIMENTO INTERNO'] ?? 0;
 $atualInvestExterno = $atualCat['INVESTIMENTO EXTERNO'] ?? 0;
 $atualSaidaRepasse  = $atualCat['Z - SAIDA DE REPASSE'] ?? 0;
 $atualAmortizacao   = $atualCat['AMORTIZAÇÃO'] ?? 0;
-// Incluir ambas as categorias de receitas não operacionais no cálculo
-$atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $totalAtualEntradaRepasseGlobal) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
+$atualEntradaRepasse = $atualCat['Z - ENTRADA DE REPASSE'] ?? 0; // Usar diretamente da matriz principal
+
+// Incluir "Z - ENTRADA DE REPASSE" diretamente + outras receitas não operacionais
+$atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntradaRepasse) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
 // ==================== [FIM CÁLCULO FLUXO DE CAIXA - PHP] ====================
 
 
