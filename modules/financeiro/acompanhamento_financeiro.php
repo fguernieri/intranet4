@@ -99,6 +99,29 @@ foreach ($matrizHierarquica as $cat => $subs) {
     $atualCat[$cat] = $somaAtualCat;
 }
 
+// ==================== [ADICIONAR fOutrasReceitas À MATRIZ PRINCIPAL] ====================
+// Buscar dados de fOutrasReceitas para adicionar "Z - ENTRADA DE REPASSE" como categoria normal
+$sqlOutrasRecMatriz = "
+    SELECT CATEGORIA, SUBCATEGORIA, SUM(VALOR) AS TOTAL
+    FROM fOutrasReceitas
+    WHERE YEAR(DATA_COMPETENCIA) = $anoAtual AND MONTH(DATA_COMPETENCIA) = $mesAtual
+    GROUP BY CATEGORIA, SUBCATEGORIA
+";
+$resOutrasRecMatriz = $conn->query($sqlOutrasRecMatriz);
+if ($resOutrasRecMatriz) {
+    while ($row = $resOutrasRecMatriz->fetch_assoc()) {
+        $catOR = !empty($row['CATEGORIA']) ? $row['CATEGORIA'] : 'NÃO CATEGORIZADO';
+        $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
+        $valorOR = floatval($row['TOTAL']);
+        
+        // Se a categoria for "Z - ENTRADA DE REPASSE", adiciona à matriz principal
+        if ($catOR === 'Z - ENTRADA DE REPASSE') {
+            $atualSub[$catOR][$subOR] = ($atualSub[$catOR][$subOR] ?? 0) + $valorOR;
+            $atualCat[$catOR] = ($atualCat[$catOR] ?? 0) + $valorOR;
+        }
+    }
+}
+
 // Array de meses para exibição
 $meses = [
     1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun',
@@ -121,7 +144,7 @@ $categoriasDRE = [
     'RECEITA BRUTA', 'TRIBUTOS', 'RECEITA LÍQUIDA (RECEITA BRUTA - TRIBUTOS)',
     'CUSTO VARIÁVEL', 'LUCRO BRUTO (RECEITA LÍQUIDA - CUSTO VARIÁVEL)',
     'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'LUCRO LÍQUIDO',
-    'RECEITAS NAO OPERACIONAIS',
+    'RECEITAS NAO OPERACIONAIS', 'Z - ENTRADA DE REPASSE',
     'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO',
     'Z - SAIDA DE REPASSE', 'FLUXO DE CAIXA'
 ];
@@ -215,9 +238,7 @@ $atualLucroLiquido = $atualLucroBruto - $totalAtualDespesasOperacionais;
 
 // ==================== [DADOS DE fOutrasReceitas - MÊS ATUAL E METAS] ====================
 $outrasReceitasPorCatSubMesAtual = [];
-$entradaRepassePorCatSubMesAtual = []; // Nova estrutura para ENTRADA DE REPASSE
 $totalAtualOutrasRecGlobal = 0;
-$totalAtualEntradaRepasseGlobal = 0;
 
 // Definir quais subcategorias pertencem a RECEITAS NÃO OPERACIONAIS
 $subcategoriasReceitasNaoOp = ['EMPRÉSTIMO', 'RETORNO DE INVESTIMENTO', 'OUTRAS RECEITAS'];
@@ -235,26 +256,21 @@ if ($resOutrasRecAtual) {
         $subOR = !empty($row['SUBCATEGORIA']) ? $row['SUBCATEGORIA'] : 'NÃO ESPECIFICADO';
         $valorOR = floatval($row['TOTAL']);
         
-        // Verificar se a subcategoria pertence a RECEITAS NÃO OPERACIONAIS ou ENTRADA DE REPASSE
+        // Pular "Z - ENTRADA DE REPASSE" pois já foi processada na matriz principal
+        if ($catOR === 'Z - ENTRADA DE REPASSE') {
+            continue;
+        }
+        
+        // Apenas processar RECEITAS NÃO OPERACIONAIS
         if (in_array($subOR, $subcategoriasReceitasNaoOp)) {
-            // Manter em RECEITAS NÃO OPERACIONAIS
             $outrasReceitasPorCatSubMesAtual[$catOR][$subOR] = $valorOR;
             $totalAtualOutrasRecGlobal += $valorOR;
-        } else {
-            // Mover para ENTRADA DE REPASSE
-            $entradaRepassePorCatSubMesAtual[$catOR][$subOR] = $valorOR;
-            $totalAtualEntradaRepasseGlobal += $valorOR;
         }
     }
 }
-// Garantir que todas as categorias/subs de RNO e ER que têm metas apareçam, mesmo sem valor atual
+// Garantir que todas as categorias/subs de RNO que têm metas apareçam, mesmo sem valor atual
 if (isset($metasArray['RECEITAS NAO OPERACIONAIS'])) { // Meta principal para RNO
     if (!isset($outrasReceitasPorCatSubMesAtual['RECEITAS NAO OPERACIONAIS'])) {
-         // Não precisa adicionar explicitamente, o loop abaixo cuidará das subcategorias
-    }
-}
-if (isset($metasArray['ENTRADA DE REPASSE'])) { // Meta principal para ER
-    if (!isset($entradaRepassePorCatSubMesAtual['ENTRADA DE REPASSE'])) {
          // Não precisa adicionar explicitamente, o loop abaixo cuidará das subcategorias
     }
 }
@@ -266,7 +282,7 @@ foreach ($metasArray as $metaCatKey => $metaSubArray) {
     $isCategoriaRNO = true; // Assumir que é RNO se não for uma das principais DRE
     $isCategoriaER = true;  // Assumir que é ER se não for uma das principais DRE
     
-    $categoriasPrincipaisDRE = ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'];
+    $categoriasPrincipaisDRE = ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE'];
     if (in_array($metaCatKey, $categoriasPrincipaisDRE) || 
         $metaCatKey === $keyReceitaLiquida || 
         $metaCatKey === $keyLucroBruto ||
@@ -332,17 +348,39 @@ $metaInvestInterno = $metasArray['INVESTIMENTO INTERNO'][''] ?? 0;
 $metaInvestExterno = $metasArray['INVESTIMENTO EXTERNO'][''] ?? 0;
 $metaSaidaRepasse  = $metasArray['Z - SAIDA DE REPASSE'][''] ?? 0;
 $metaAmortizacao   = $metasArray['AMORTIZAÇÃO'][''] ?? 0;
-$metaTotalRNO      = $metasArray['RECEITAS NAO OPERACIONAIS'][''] ?? 0;
-$metaTotalER       = $metasArray['ENTRADA DE REPASSE'][''] ?? 0;
 
-$metaFluxoCaixaCalculado = ($metaLucroLiquidoDisplay + $metaTotalRNO + $metaTotalER) - ($metaInvestInterno + $metaInvestExterno + $metaSaidaRepasse + $metaAmortizacao);
-$metaFluxoCaixaDisplay = $metasArray[$keyFluxoCaixa][''] ?? $metaFluxoCaixaCalculado;
+$metaTotalRNO = 0;
+if (isset($metasArray['RECEITAS NAO OPERACIONAIS'])) {
+    foreach ($metasArray['RECEITAS NAO OPERACIONAIS'] as $subcat => $metaValor) {
+        if ($subcat !== '' && strtoupper(trim($subcat)) !== 'Z - ENTRADA DE REPASSE') {
+            $metaTotalRNO += floatval($metaValor);
+        }
+    }
+}
+$metaEntradaRepasse = $metasArray['Z - ENTRADA DE REPASSE'][''] ?? 0; // Categoria normal
+
+// DEBUG TEMPORÁRIO: Verificar valores usados no cálculo do fluxo de caixa da meta
+error_log('DEBUG META FLUXO: ' . json_encode([
+  'metaLucroLiquidoDisplay' => $metaLucroLiquidoDisplay,
+  'metaTotalRNO' => $metaTotalRNO,
+  'metaEntradaRepasse' => $metaEntradaRepasse,
+  'metaInvestInterno' => $metaInvestInterno,
+  'metaInvestExterno' => $metaInvestExterno,
+  'metaSaidaRepasse' => $metaSaidaRepasse,
+  'metaAmortizacao' => $metaAmortizacao,
+]));
+
+$metaFluxoCaixaCalculado = ($metaLucroLiquidoDisplay + $metaTotalRNO + $metaEntradaRepasse) - ($metaInvestInterno + $metaInvestExterno + $metaSaidaRepasse + $metaAmortizacao);
+$metaFluxoCaixaDisplay = $metaFluxoCaixaCalculado;
 
 $atualInvestInterno = $atualCat['INVESTIMENTO INTERNO'] ?? 0;
 $atualInvestExterno = $atualCat['INVESTIMENTO EXTERNO'] ?? 0;
 $atualSaidaRepasse  = $atualCat['Z - SAIDA DE REPASSE'] ?? 0;
 $atualAmortizacao   = $atualCat['AMORTIZAÇÃO'] ?? 0;
-$atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $totalAtualEntradaRepasseGlobal) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
+$atualEntradaRepasse = $atualCat['Z - ENTRADA DE REPASSE'] ?? 0; // Categoria normal
+
+// Cálculo correto: LUCRO + RNO + Z-ENTRADA - (INVEST + Z-SAIDA + AMORT)
+$atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntradaRepasse) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
 
 // ==================== [SETUP DE DATAS] ====================
 // Período para análise de metas excedidas (últimos 6 meses)
@@ -531,18 +569,19 @@ $resOutrasRecChart = $conn->query($sqlOutrasRecChart);
 if($resOutrasRecChart) {
     while ($row = $resOutrasRecChart->fetch_assoc()) {
         $monthKey = $row['ano'] . '-' . str_pad($row['mes'], 2, '0', STR_PAD_LEFT);
+        $categoria = $row['CATEGORIA'] ?? '';
         $subCategoria = $row['SUBCATEGORIA'] ?? '';
         
         if (isset($monthlyData[$monthKey])) {
-            // Separar entre RNO e ER baseado na subcategoria
-            if (in_array($subCategoria, $subcategoriasReceitasNaoOp)) {
-                // RECEITAS NAO OPERACIONAIS
+            // Se for "Z - ENTRADA DE REPASSE", tratar como categoria normal
+            if ($categoria === 'Z - ENTRADA DE REPASSE') {
+                $monthlyData[$monthKey]['despesas']['Z - ENTRADA DE REPASSE'] = 
+                    ($monthlyData[$monthKey]['despesas']['Z - ENTRADA DE REPASSE'] ?? 0) + (float)$row['total'];
+            }
+            // Para outras categorias, apenas adicionar às RECEITAS NAO OPERACIONAIS
+            elseif (in_array($subCategoria, $subcategoriasReceitasNaoOp)) {
                 $monthlyData[$monthKey]['despesas']['RECEITAS NAO OPERACIONAIS'] = 
                     ($monthlyData[$monthKey]['despesas']['RECEITAS NAO OPERACIONAIS'] ?? 0) + (float)$row['total'];
-            } else {
-                // ENTRADA DE REPASSE
-                $monthlyData[$monthKey]['despesas']['ENTRADA DE REPASSE'] = 
-                    ($monthlyData[$monthKey]['despesas']['ENTRADA DE REPASSE'] ?? 0) + (float)$row['total'];
             }
         }
     }
@@ -554,7 +593,7 @@ foreach ($monthlyData as $monthKey => $data) {
     $despesas = $data['despesas'];
     
     $outrasReceitas = $despesas['RECEITAS NAO OPERACIONAIS'] ?? 0;
-    $entradaRepasse = $despesas['ENTRADA DE REPASSE'] ?? 0;
+    $zEntradaRepasse = $despesas['Z - ENTRADA DE REPASSE'] ?? 0; // Categoria normal
 
     // DRE
     $tributos = $despesas['TRIBUTOS'] ?? 0;
@@ -567,13 +606,13 @@ foreach ($monthlyData as $monthKey => $data) {
     $despesaVenda = $despesas['DESPESA VENDA'] ?? 0;
     $lucroLiquido = $lucroBruto - ($custoFixo + $despesaFixa + $despesaVenda);
 
-    // Fluxo de Caixa
+    // Fluxo de Caixa - cálculo correto
     $investInterno = $despesas['INVESTIMENTO INTERNO'] ?? 0;
     $investExterno = $despesas['INVESTIMENTO EXTERNO'] ?? 0;
     $saidaRepasse = $despesas['Z - SAIDA DE REPASSE'] ?? 0;
     $amortizacao = $despesas['AMORTIZAÇÃO'] ?? 0;
     
-    $fluxoDeCaixa = ($lucroLiquido + $outrasReceitas + $entradaRepasse) - ($investInterno + $investExterno + $saidaRepasse + $amortizacao);
+    $fluxoDeCaixa = ($lucroLiquido + $outrasReceitas + $zEntradaRepasse) - ($investInterno + $investExterno + $saidaRepasse + $amortizacao);
     
     $chartData[] = round($fluxoDeCaixa, 2);
 }
@@ -1114,7 +1153,7 @@ $jsonChartData = json_encode($chartData);
       </td>
     </tr>
 
-    <?php if (!empty($outrasReceitasPorCatSubMesAtual) || count(array_filter(array_keys($metasArray), function($k){ return strpos($k, "RECEITAS NAO OPERACIONAIS") === false && !in_array($k, ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', $GLOBALS['keyReceitaLiquida'], $GLOBALS['keyLucroBruto'], $GLOBALS['keyLucroLiquidoPHP'], $GLOBALS['keyFluxoCaixa']]); })) > 0 ): ?>
+    <?php if (!empty($outrasReceitasPorCatSubMesAtual) || count(array_filter(array_keys($metasArray), function($k){ return strpos($k, "RECEITAS NAO OPERACIONAIS") === false && !in_array($k, ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE', $GLOBALS['keyReceitaLiquida'], $GLOBALS['keyLucroBruto'], $GLOBALS['keyLucroLiquidoPHP'], $GLOBALS['keyFluxoCaixa']]); })) > 0 ): ?>
       <?php
         // Consolidar categorias de RNO (aquelas em $outrasReceitasPorCatSubMesAtual que não são DRE principal)
         $categoriasRNOExibiveis = [];
@@ -1125,7 +1164,7 @@ $jsonChartData = json_encode($chartData);
         // Adicionar categorias de RNO que só têm meta
         foreach ($metasArray as $metaCatKey => $metaSubArray) {
             $isCategoriaRNO = true;
-            $categoriasPrincipaisDRE = ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'RECEITAS NAO OPERACIONAIS'];
+            $categoriasPrincipaisDRE = ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE', 'RECEITAS NAO OPERACIONAIS'];
             if (in_array($metaCatKey, $categoriasPrincipaisDRE) || $metaCatKey === $keyReceitaLiquida || $metaCatKey === $keyLucroBruto || $metaCatKey === $keyLucroLiquidoPHP || $metaCatKey === $keyFluxoCaixa) {
                 $isCategoriaRNO = false;
             }
@@ -1224,160 +1263,9 @@ $jsonChartData = json_encode($chartData);
       <?php endforeach; ?>
     <?php endif; ?>
 
-    <!-- ENTRADA DE REPASSE -->
-    <tr class="dre-cat-principal text-white font-bold" style="background:#1a4c2b;">
-      <td class="p-2 text-left">ENTRADA DE REPASSE</td>
-      <td class="p-2 text-right"><?= isset($metasArray['ENTRADA DE REPASSE']['']) ? 'R$ '.number_format($metasArray['ENTRADA DE REPASSE'][''],2,',','.') : '-' ?></td>
-      <td class="p-2 text-center">
-          <?php
-            if ($metaReceita > 0 && isset($metasArray['ENTRADA DE REPASSE'][''])) {
-              echo number_format(($metasArray['ENTRADA DE REPASSE'][''] / $metaReceita) * 100, 2, ',', '.') . '%';
-            } else { echo '-'; }
-          ?>
-      </td>
-      <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualEntradaRepasseGlobal,2,',','.') ?></td>
-      <td class="p-2 text-center">
-          <?php
-            $meta_er_principal_val = $metasArray['ENTRADA DE REPASSE'][''] ?? null;
-            if(isset($meta_er_principal_val) && $meta_er_principal_val != 0) {
-                echo number_format(($totalAtualEntradaRepasseGlobal / $meta_er_principal_val) * 100, 2, ',', '.') . '%';
-            } else { echo '-';}
-          ?>
-      </td>
-      <td class="p-2 text-center">
-          <?php
-            if(isset($meta_er_principal_val)) {
-                $comparacaoER_Principal = $totalAtualEntradaRepasseGlobal - $meta_er_principal_val;
-                $corCompER_Principal = ($comparacaoER_Principal >=0) ? 'text-green-400' : 'text-red-400';
-                echo '<span class="'.$corCompER_Principal.'">R$ '.number_format($comparacaoER_Principal, 2, ',', '.').'</span>';
-            } else { echo '-';}
-          ?>
-      </td>
-    </tr>
-
-    <?php if (!empty($entradaRepassePorCatSubMesAtual) || count(array_filter(array_keys($metasArray), function($k){ return strpos($k, "ENTRADA DE REPASSE") === false && !in_array($k, ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'RECEITAS NAO OPERACIONAIS', $GLOBALS['keyReceitaLiquida'], $GLOBALS['keyLucroBruto'], $GLOBALS['keyLucroLiquidoPHP'], $GLOBALS['keyFluxoCaixa']]); })) > 0 ): ?>
-      <?php
-        // Consolidar categorias de ER (aquelas em $entradaRepassePorCatSubMesAtual que não são DRE principal)
-        $categoriasERExibiveis = [];
-        foreach ($entradaRepassePorCatSubMesAtual as $catNomeER => $subcategoriasER) {
-            if ($catNomeER === 'ENTRADA DE REPASSE') continue; // Já exibida como principal
-            $categoriasERExibiveis[$catNomeER] = $subcategoriasER;
-        }
-        // Adicionar categorias de ER que só têm meta
-        foreach ($metasArray as $metaCatKey => $metaSubArray) {
-            $isCategoriaER = true;
-            $categoriasPrincipaisDRE = ['RECEITA BRUTA', 'TRIBUTOS', 'CUSTO VARIÁVEL', 'CUSTO FIXO', 'DESPESA FIXA', 'DESPESA VENDA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'RECEITAS NAO OPERACIONAIS', 'ENTRADA DE REPASSE'];
-            if (in_array($metaCatKey, $categoriasPrincipaisDRE) || $metaCatKey === $keyReceitaLiquida || $metaCatKey === $keyLucroBruto || $metaCatKey === $keyLucroLiquidoPHP || $metaCatKey === $keyFluxoCaixa) {
-                $isCategoriaER = false;
-            }
-            // Verificar se tem subcategorias que NÃO são de RNO
-            if ($isCategoriaER && isset($metaSubArray)) {
-                $temSubcategoriaER = false;
-                foreach ($metaSubArray as $metaSubKey => $metaValor) {
-                    if ($metaSubKey !== '' && !in_array($metaSubKey, $subcategoriasReceitasNaoOp)) {
-                        $temSubcategoriaER = true;
-                        break;
-                    }
-                }
-                if ($temSubcategoriaER && !isset($categoriasERExibiveis[$metaCatKey])) {
-                    $categoriasERExibiveis[$metaCatKey] = []; // Adiciona para garantir que apareça
-                }
-            }
-        }
-        ksort($categoriasERExibiveis); // Ordenar alfabeticamente
-      ?>
-
-      <?php foreach ($categoriasERExibiveis as $catNomeER => $subcategoriasER): ?>
-        <?php
-          $totalAtualCatER = 0;
-          if (isset($entradaRepassePorCatSubMesAtual[$catNomeER])) {
-              foreach ($entradaRepassePorCatSubMesAtual[$catNomeER] as $atualSubValor) {
-                  $totalAtualCatER += $atualSubValor;
-              }
-          }
-        ?>
-        <tr class="dre-subcat-l1">
-          <td class="p-2 pl-6 text-left font-semibold"><?= htmlspecialchars($catNomeER) ?></td>
-          <td class="p-2 text-right"><?= isset($metasArray[$catNomeER]['']) ? 'R$ '.number_format($metasArray[$catNomeER][''],2,',','.') : '-' ?></td>
-          <td class="p-2 text-center">
-              <?php
-                if ($metaReceita > 0 && isset($metasArray[$catNomeER][''])) {
-                  echo number_format(($metasArray[$catNomeER][''] / $metaReceita) * 100, 2, ',', '.') . '%';
-                } else { echo '-'; }
-              ?>
-          </td>
-          <td class="p-2 text-right"><?= 'R$ '.number_format($totalAtualCatER,2,',','.') ?></td>
-          <td class="p-2 text-center">
-               <?php
-                $meta_er_l1_val = $metasArray[$catNomeER][''] ?? null;
-                if(isset($meta_er_l1_val) && $meta_er_l1_val != 0) {
-                    echo number_format(($totalAtualCatER / $meta_er_l1_val) * 100, 2, ',', '.') . '%';
-                } else { echo '-';}
-               ?>
-          </td>
-          <td class="p-2 text-center">
-              <?php
-                if(isset($meta_er_l1_val)) {
-                    $comparacaoER_L1 = $totalAtualCatER - $meta_er_l1_val;
-                    $corCompER_L1 = ($comparacaoER_L1 >=0) ? 'text-green-400' : 'text-red-400';
-                    echo '<span class="'.$corCompER_L1.'">R$ '.number_format($comparacaoER_L1, 2, ',', '.').'</span>';
-                } else { echo '-';}
-              ?>
-          </td>
-        </tr>
-
-        <?php
-          // Garantir que todas as subcategorias com meta apareçam (apenas ER)
-          $subsParaExibirER = $subcategoriasER; // Começa com as que têm valor atual
-          if (isset($metasArray[$catNomeER])) {
-              foreach ($metasArray[$catNomeER] as $metaSubKeyER => $metaValorER) {
-                  if ($metaSubKeyER !== '' && !in_array($metaSubKeyER, $subcategoriasReceitasNaoOp) && !isset($subsParaExibirER[$metaSubKeyER])) {
-                      $subsParaExibirER[$metaSubKeyER] = 0; // Adiciona sub com valor 0 se só tiver meta
-                  }
-              }
-          }
-          ksort($subsParaExibirER);
-        ?>
-        <?php foreach ($subsParaExibirER as $subNomeER => $valorAtualSubER): ?>
-          <?php
-            $atualSubER = $entradaRepassePorCatSubMesAtual[$catNomeER][$subNomeER] ?? 0;
-          ?>
-          <tr class="dre-subcat-l2">
-            <td class="p-2 pl-10 text-left"><?= htmlspecialchars($subNomeER) ?></td>
-            <td class="p-2 text-right"><?= isset($metasArray[$catNomeER][$subNomeER]) ? 'R$ '.number_format($metasArray[$catNomeER][$subNomeER],2,',','.') : '-' ?></td>
-            <td class="p-2 text-center">
-              <?php
-                if ($metaReceita > 0 && isset($metasArray[$catNomeER][$subNomeER])) {
-                  echo number_format(($metasArray[$catNomeER][$subNomeER] / $metaReceita) * 100, 2, ',', '.') . '%';
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td class="p-2 text-right"><?= 'R$ '.number_format($atualSubER,2,',','.') ?></td>
-            <td class="p-2 text-center">
-              <?php
-                $meta_er_val = $metasArray[$catNomeER][$subNomeER] ?? null;
-                if (isset($meta_er_val) && $meta_er_val != 0) {
-                  echo number_format(($atualSubER / $meta_er_val) * 100, 2, ',', '.') . '%';
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td class="p-2 text-center">
-              <?php
-                if(isset($metasArray[$catNomeER][$subNomeER])) {
-                    $comparacaoER_L2 = $atualSubER - ($metasArray[$catNomeER][$subNomeER] ?? 0);
-                    $corCompER_L2 = ($comparacaoER_L2 >=0) ? 'text-green-400' : 'text-red-400';
-                    echo '<span class="'.$corCompER_L2.'">R$ '.number_format($comparacaoER_L2, 2, ',', '.').'</span>';
-                } else { echo '-';}
-              ?>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      <?php endforeach; ?>
-    <?php endif; ?>
-
-    <!-- INVESTIMENTO INTERNO, EXTERNO, AMORTIZAÇÃO, Z - SAIDA DE REPASSE -->
+    <!-- INVESTIMENTO INTERNO, EXTERNO, AMORTIZAÇÃO, Z - SAIDA DE REPASSE, Z - ENTRADA DE REPASSE -->
     <?php
-      foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE'] as $catName):
+      foreach(['INVESTIMENTO INTERNO','INVESTIMENTO EXTERNO','AMORTIZAÇÃO', 'Z - SAIDA DE REPASSE', 'Z - ENTRADA DE REPASSE'] as $catName):
         if(isset($matrizOrdenada[$catName]) || isset($metasArray[$catName])):
         $catKey = strtolower(str_replace([' ', '-'], '_', $catName));
     ?>
@@ -1555,73 +1443,98 @@ $jsonChartData = json_encode($chartData);
 
 <script>
 function initializeDREToggle() {
-    document.querySelectorAll('tr.dre-cat, tr.dre-cat-principal').forEach(cat => {
-        cat.addEventListener('click', function() {
-            const isCat = this.classList.contains('dre-cat');
-            const isCatPrincipalRNO = this.classList.contains('dre-cat-principal');
-            const isSubCatL1 = this.classList.contains('dre-subcat-l1');
-
-            let currentRow = this.nextElementSibling;
-            while (currentRow) {
-                let stopIterating = false;
-                if (isCat) {
-                    if (currentRow.classList.contains('dre-sub')) {
-                        currentRow.classList.toggle('dre-hide');
-                    } else if (currentRow.classList.contains('dre-cat') || 
-                               currentRow.classList.contains('dre-cat-principal') ||
-                               currentRow.classList.contains('dre-subcat-l1')) {
-                        stopIterating = true;
-                    }
-                } else if (isCatPrincipalRNO) {
-                    if (currentRow.classList.contains('dre-subcat-l1')) {
-                        currentRow.classList.toggle('dre-hide');
-                        if (currentRow.classList.contains('dre-hide')) {
-                            let subL2 = currentRow.nextElementSibling;
-                            while(subL2 && subL2.classList.contains('dre-subcat-l2')) {
-                                subL2.classList.add('dre-hide');
-                                subL2 = subL2.nextElementSibling;
-                            }
-                        }
-                    } else if (currentRow.classList.contains('dre-cat') || currentRow.classList.contains('dre-cat-principal')) {
-                        stopIterating = true;
-                    }
-                } else if (isSubCatL1) {
-                    if (currentRow.classList.contains('dre-subcat-l2')) {
-                        currentRow.classList.toggle('dre-hide');
-                    } else if (currentRow.classList.contains('dre-subcat-l1') || 
-                               currentRow.classList.contains('dre-cat-principal') ||
-                               currentRow.classList.contains('dre-cat')) {
-                        stopIterating = true;
-                    }
-                }
-
-                if (stopIterating) {
-                    break;
-                }
-                currentRow = currentRow.nextElementSibling;
-            }
-        });
-    });
-
+    // Inicializa todos os elementos como fechados (escondidos)
     document.querySelectorAll('tr.dre-sub, tr.dre-desc, tr.dre-parcela, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
        subRow.classList.add('dre-hide');
     });
 }
 
-// Função para alternar subcategorias
-function toggleSubcategory(subcategoryKey) {
-    const elements = document.querySelectorAll('.' + subcategoryKey);
-    const icon = document.getElementById('icon_' + subcategoryKey);
+// Função para alternar categorias
+function toggleCategory(categoryKey) {
+    const categoryElements = document.querySelectorAll('.' + categoryKey);
+    const categoryIcon = document.getElementById('icon_' + categoryKey);
     
-    elements.forEach(element => {
+    // Verifica se a categoria está fechada (ícone ▶) ou aberta (ícone ▼)
+    const isOpening = categoryIcon && categoryIcon.textContent === '▶';
+    
+    // Toggle das subcategorias diretas
+    categoryElements.forEach(element => {
         element.classList.toggle('dre-hide');
     });
     
-    // Alterar ícone
-    if (icon.textContent === '▼') {
-        icon.textContent = '▶';
-    } else {
-        icon.textContent = '▼';
+    if (!isOpening) {
+        // Se estamos fechando a categoria (estava ▼, vai para ▶)
+        // Fechar todas as subcategorias e descrições
+        
+        // Encontrar todas as subcategorias desta categoria (que começam com categoryKey_)
+        const subcategoryPrefix = categoryKey + '_';
+        const allSubElements = document.querySelectorAll('[class*="' + subcategoryPrefix + '"]');
+        
+        allSubElements.forEach(element => {
+            if (element.classList.contains('dre-desc') || element.classList.contains('dre-parcela')) {
+                element.classList.add('dre-hide');
+            }
+        });
+        
+        // Resetar todos os ícones das subcategorias e descrições
+        document.querySelectorAll('[id^="icon_' + subcategoryPrefix + '"]').forEach(icon => {
+            icon.textContent = '▶';
+        });
+    }
+    
+    // Alterar ícone da categoria
+    if (categoryIcon) {
+        if (categoryIcon.textContent === '▼') {
+            categoryIcon.textContent = '▶';
+        } else {
+            categoryIcon.textContent = '▼';
+        }
+    }
+    
+    // Parar propagação do evento
+    event.stopPropagation();
+}
+
+// Função para alternar subcategorias
+function toggleSubcategory(subcategoryKey) {
+    const subcategoryElements = document.querySelectorAll('.' + subcategoryKey);
+    const subcategoryIcon = document.getElementById('icon_' + subcategoryKey);
+    
+    // Verifica se a subcategoria está fechada (ícone ▶) ou aberta (ícone ▼)
+    const isOpening = subcategoryIcon && subcategoryIcon.textContent === '▶';
+    
+    // Toggle das descrições diretas desta subcategoria
+    subcategoryElements.forEach(element => {
+        element.classList.toggle('dre-hide');
+    });
+    
+    if (!isOpening) {
+        // Se estamos fechando a subcategoria (estava ▼, vai para ▶)
+        // Fechar todas as descrições e parcelas
+        
+        // Encontrar todas as descrições desta subcategoria (que começam com subcategoryKey_)
+        const descriptionPrefix = subcategoryKey + '_';
+        const allDescElements = document.querySelectorAll('[class*="' + descriptionPrefix + '"]');
+        
+        allDescElements.forEach(element => {
+            if (element.classList.contains('dre-desc') || element.classList.contains('dre-parcela')) {
+                element.classList.add('dre-hide');
+            }
+        });
+        
+        // Resetar todos os ícones das descrições
+        document.querySelectorAll('[id^="icon_' + descriptionPrefix + '"]').forEach(icon => {
+            icon.textContent = '▶';
+        });
+    }
+    
+    // Alterar ícone da subcategoria
+    if (subcategoryIcon) {
+        if (subcategoryIcon.textContent === '▼') {
+            subcategoryIcon.textContent = '▶';
+        } else {
+            subcategoryIcon.textContent = '▼';
+        }
     }
     
     // Parar propagação do evento

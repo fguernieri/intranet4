@@ -1783,11 +1783,29 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
   <?php endif; ?>
 <?php endforeach; ?>
 
-      <!-- FLUXO DE CAIXA (CALCULADO) -->
+      <!-- FLUXO DE CAIXA (META - igual acompanhamento_financeiro) -->
+      <?php
+        // Cálculo igual acompanhamento_financeiro.php: sempre calcular a partir das metas das demais linhas
+        $metaInvestInterno = $metasArray['INVESTIMENTO INTERNO'][''] ?? 0;
+        $metaInvestExterno = $metasArray['INVESTIMENTO EXTERNO'][''] ?? 0;
+        $metaSaidaRepasse  = $metasArray['Z - SAIDA DE REPASSE'][''] ?? 0;
+        $metaAmortizacao   = $metasArray['AMORTIZAÇÃO'][''] ?? 0;
+        $metaEntradaRepasse = $metasArray['Z - ENTRADA DE REPASSE'][''] ?? 0;
+        // RECEITAS NAO OPERACIONAIS: somar apenas subcategorias, nunca a principal
+        $metaTotalRNO = 0;
+        if (!empty($metasArray['RECEITAS NAO OPERACIONAIS'])) {
+          foreach ($metasArray['RECEITAS NAO OPERACIONAIS'] as $sub => $valor) {
+            if ($sub !== '' && is_numeric($valor)) $metaTotalRNO += $valor;
+          }
+        }
+        // Lucro Líquido da meta: Receita - Tributos - Custo Variável - Custo Fixo - Despesa Fixa - Despesa Venda
+        $metaLucroLiquidoDisplay = $metasArray[$keyLucroLiquidoPHP][''] ?? $metaLucroLiquido;
+        $metaFluxoCaixaCalculado = ($metaLucroLiquidoDisplay + $metaTotalRNO + $metaEntradaRepasse) - ($metaInvestInterno + $metaInvestExterno + $metaSaidaRepasse + $metaAmortizacao);
+      ?>
       <tr id="rowFluxoCaixa" class="dre-cat" style="background:#082f49; color: #e0f2fe; font-weight: bold;">
         <td class="p-2 text-left">FLUXO DE CAIXA</td>
-        <td class="p-2 text-right"><?= 'R$ '.number_format($mediaFluxoCaixa,2,',','.') ?></td>
-        <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format(($mediaFluxoCaixa / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?></td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($metaFluxoCaixaCalculado,2,',','.') ?></td>
+        <td class="p-2 text-center"><?= $metaReceita > 0 ? number_format(($metaFluxoCaixaCalculado / $metaReceita) * 100, 2, ',', '.') . '%' : '-' ?></td>
         <td class="p-2 text-right">
           <input type="text" class="simul-valor font-bold bg-gray-700 text-yellow-300 text-right w-24 rounded px-1" readonly>
         </td>
@@ -1796,21 +1814,21 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
         </td>
         <td class="p-2 text-right">-</td> <!-- Diferença -->
         <td class="p-2 text-right">
-            <?= isset($metasArray[$keyFluxoCaixa]['']) ? 'R$ '.number_format($metasArray[$keyFluxoCaixa][''],2,',','.') : '-' ?>
+            <?= 'R$ '.number_format($metaFluxoCaixaCalculado,2,',','.') ?>
         </td>
         <td class="p-2 text-center">
             <?php
               // % Meta s/ FAT. para FLUXO DE CAIXA
-              if ($metaReceita > 0 && isset($metasArray[$keyFluxoCaixa][''])) {
-                echo number_format(($metasArray[$keyFluxoCaixa][''] / $metaReceita) * 100, 2, ',', '.') . '%';
+              if ($metaReceita > 0) {
+                echo number_format(($metaFluxoCaixaCalculado / $metaReceita) * 100, 2, ',', '.') . '%';
               } else { echo '-'; }
             ?>
         </td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualFluxoCaixa,2,',','.') ?></td>
         <td class="p-2 text-center">
             <?php
-                if(isset($metasArray[$keyFluxoCaixa]['']) && $metasArray[$keyFluxoCaixa][''] != 0) {
-                    echo number_format(($atualFluxoCaixa / $metasArray[$keyFluxoCaixa]['']) * 100, 2, ',', '.') . '%';
+                if($metaFluxoCaixaCalculado != 0) {
+                    echo number_format(($atualFluxoCaixa / $metaFluxoCaixaCalculado) * 100, 2, ',', '.') . '%';
                 } else { echo '-';}
             ?>
         </td> 
