@@ -150,7 +150,7 @@ $sql_meta = "
   FROM metas_valores mv
   JOIN metas_tipos mt ON mv.id_tipo = mt.id
   JOIN vendedores v ON v.id = mv.id_vendedor
-  WHERE mv.ano = ? AND mv.mes = ? AND mt.slug = '_bertura'
+  WHERE mv.ano = ? AND mv.mes = ? AND mt.nome = 'Abertura'
 ";
 $stmt_meta = $pdoMetas->prepare($sql_meta);
 $stmt_meta->execute([$anoMeta, $mesMeta]);
