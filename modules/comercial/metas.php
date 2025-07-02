@@ -13,7 +13,7 @@ $stmt = $pdoMetas->query("SELECT * FROM metas_tipos WHERE ativo = 1 ORDER BY nom
 $tipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Buscar vendedores
-$stmt = $pdoMain->query("SELECT id, nome FROM vendedores ORDER BY nome");
+$stmt = $pdoMain->query("SELECT id, nome FROM vendedores WHERE ativo = 1 ORDER BY nome");
 $vendedores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Buscar metas existentes
@@ -71,6 +71,31 @@ foreach ($dadosGrafico as $id => $tipo) {
     ];
 }
 $seriesJson = json_encode($seriesPorTipo);
+
+// CLONAGEM DE METAS - PDO IMPLEMENTAÇÃO
+if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
+  $mes_origem = $_GET['mes_origem'];
+  $mes_destino = $_GET['mes_destino'];
+  $ano = date('Y'); // ajuste conforme sua lógica se necessário
+
+  // Excluir metas existentes do mês destino
+  $stmtDelete = $pdoMetas->prepare("DELETE FROM metas_valores WHERE mes = ? AND ano = ?");
+  $stmtDelete->execute([$mes_destino, $ano]);
+
+  // Buscar metas do mês origem
+  $stmtSelect = $pdoMetas->prepare("SELECT id_vendedor, id_tipo, valor FROM metas_valores WHERE mes = ? AND ano = ?");
+  $stmtSelect->execute([$mes_origem, $ano]);
+  $metas = $stmtSelect->fetchAll(PDO::FETCH_ASSOC);
+
+  // Inserir metas clonadas no mês destino
+  $stmtInsert = $pdoMetas->prepare("INSERT INTO metas_valores (id_vendedor, id_tipo, valor, ano, mes) VALUES (?, ?, ?, ?, ?)");
+  foreach ($metas as $meta) {
+    $stmtInsert->execute([$meta['id_vendedor'], $meta['id_tipo'], $meta['valor'], $ano, $mes_destino]);
+  }
+
+  echo json_encode(['message' => 'Metas clonadas com sucesso.']);
+  exit;
+}
 
 ?>
 
@@ -193,7 +218,17 @@ $seriesJson = json_encode($seriesPorTipo);
             <?php endfor; ?>
           </select>
         </label>
-        <button type="submit" class="ml-auto btn-acao-azul">Filtrar</button>
+        <button type="submit" class="ml-2 btn-acao-azul">Filtrar</button>
+        <!-- FRONTEND SELECTOR -->
+        <p class="ml-auto">Selecione o mês para clonar as metas:</p>
+        <select id="mes_origem_selector" class="bg-gray-700 border border-gray-600 text-white p-1 rounded ml-2">
+          <?php for ($m = 1; $m <= 12; $m++): ?>
+            <option value="<?= $m ?>"><?= str_pad((string)$m, 2, '0', STR_PAD_LEFT) ?></option>
+          <?php endfor; ?>
+        </select>
+        <button onclick="clonarMetas()" class="btn-acao-azul">
+          Clonar Metas
+        </button>
       </form>
 
       <h1 class="text-2xl text-yellow-400 font-semibold mb-4">Metas por Vendedor (<?= str_pad((string)$mesAtual, 2, '0', STR_PAD_LEFT) ?>/<?= $anoAtual ?>)</h1>
@@ -248,6 +283,18 @@ $seriesJson = json_encode($seriesPorTipo);
             input.classList.add('border-green-500');
           } else {
             input.classList.add('border-red-500');
+          }
+        }
+        function clonarMetas() {
+          if(confirm('Tem certeza que deseja clonar as metas do mês selecionado? Isso substituirá as metas atuais do mês destino.')) {
+            const mesOrigem = document.getElementById('mes_origem_selector').value;
+            const mesDestino = document.querySelector('select[name=mes]').value;
+            fetch('metas.php?action=clonar&mes_origem=' + mesOrigem + '&mes_destino=' + mesDestino)
+            .then(response => response.json())
+            .then(data => {
+              alert(data.message);
+              location.reload();
+            });
           }
         }
       </script>
