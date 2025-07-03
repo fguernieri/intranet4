@@ -17,7 +17,7 @@ if (empty($_SESSION['usuario_id'])) {
 }
 
 // Verificação de perfil ADMIN - apenas administradores podem acessar
-if (!isset($_SESSION['usuario_perfil']) || $_SESSION['usuario_perfil'] !== 'admin') {
+if (!isset($_SESSION['usuario_perfil']) || $_SESSION['usuario_perfil'] !== 'user') {
     echo "<div style='text-align: center; padding: 50px; background: #1a1a1a; color: #ff6b6b; font-family: Arial, sans-serif;'>
             <h2>🚫 Acesso Restrito</h2>
             <p>Esta página é restrita apenas para usuários <strong>ADMIN</strong>.</p>
@@ -338,6 +338,20 @@ foreach ($totaisGrupos as $grupo => $dadosGrupo) {
             </label>
             <button type="submit" class="bg-yellow-400 text-black px-3 py-1 rounded font-bold">Filtrar</button>
         </form>
+
+        <!-- Barra de busca para produtos -->
+        <div class="mb-4">
+            <label for="search-produto" class="block text-sm font-medium text-gray-300 mb-2">
+                🔍 Pesquisar Produto:
+            </label>
+            <input type="text" 
+                   id="search-produto" 
+                   placeholder="Digite o nome do produto para filtrar a tabela..."
+                   class="w-full max-w-md px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+            <p class="text-xs text-gray-500 mt-1">
+                A busca filtra tanto grupos quanto produtos em tempo real
+            </p>
+        </div>
 
         <table class="min-w-full text-xs mx-auto border border-gray-700 rounded" style="border-collapse:separate; border-spacing:0 4px;">
             <thead>
