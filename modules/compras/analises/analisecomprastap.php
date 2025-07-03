@@ -16,6 +16,17 @@ if (empty($_SESSION['usuario_id'])) {
     exit;
 }
 
+// Verificação de perfil ADMIN - apenas administradores podem acessar
+if (!isset($_SESSION['usuario_perfil']) || $_SESSION['usuario_perfil'] !== 'admin') {
+    echo "<div style='text-align: center; padding: 50px; background: #1a1a1a; color: #ff6b6b; font-family: Arial, sans-serif;'>
+            <h2>🚫 Acesso Restrito</h2>
+            <p>Esta página é restrita apenas para usuários <strong>ADMIN</strong>.</p>
+            <p>Seu perfil atual: <strong>" . htmlspecialchars($_SESSION['usuario_perfil'] ?? 'Não definido') . "</strong></p>
+            <a href='/painel.php' style='color: #4dabf7; text-decoration: none; font-weight: bold;'>← Voltar ao Painel</a>
+          </div>";
+    exit;
+}
+
 // Conexão com o banco igual ao acompanhamento financeiro
 require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
