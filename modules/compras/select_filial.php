@@ -107,7 +107,7 @@ $map = [
 
   <!-- Botões fixos no canto inferior direito -->
   <div class="fixed bottom-4 right-4 flex gap-2">
-    <a href="analises/analisecomprastap.php"
+    <a href="analises/menu_analises_compras.php"
        class="text-xs font-semibold py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg"
     >Análise de Compras</a>
     <a href="exportar_pedido.php"
