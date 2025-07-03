@@ -22,6 +22,14 @@ if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
 
+// Busca a data/hora da última atualização na tabela fAtualizacoes
+$sqlUltimaAtualizacao = "SELECT data_hora FROM fAtualizacoes ORDER BY data_hora DESC LIMIT 1";
+$resUltimaAtualizacao = $conn->query($sqlUltimaAtualizacao);
+$ultimaAtualizacao = null;
+if ($resUltimaAtualizacao && $row = $resUltimaAtualizacao->fetch_assoc()) {
+    $ultimaAtualizacao = $row['data_hora'];
+}
+
 // Defina o ano e mês atual (ou pegue do GET)
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
@@ -661,6 +669,13 @@ $jsonChartData = json_encode($chartData);
 <body class="bg-gray-900 text-gray-100 flex min-h-screen">
 <main class="flex-1 bg-gray-900 p-6 relative">
 
+  <!-- Data/hora atualização -->
+  <?php if ($ultimaAtualizacao): ?>
+    <div style="position:absolute;top:1.5rem;right:2.5rem;z-index:10;font-size:0.95rem;color:#ffe066;">
+      Data/hora atualização: <?= date('d/m/Y H:i', strtotime($ultimaAtualizacao)) ?>
+    </div>
+  <?php endif; ?>
+
   <!-- Filtro de Ano/Mês -->
   <form method="get" class="mb-4 flex gap-2 items-end">
     <label>
@@ -1298,71 +1313,131 @@ $jsonChartData = json_encode($chartData);
           ?>
         </td>
       </tr>
-      <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $descricoes): ?>
-        <?php if($sub): ?>
-          <tr class="dre-sub <?= $catKey ?> dre-hide" onclick="toggleSubcategory('<?= $catKey ?>_<?= md5($sub) ?>')">
+      <?php if ($catName === 'Z - ENTRADA DE REPASSE' || $catName === 'RECEITAS NAO OPERACIONAIS'): ?>
+        <?php
+          // Buscar subcategorias e valores de fOutrasReceitas para Z - ENTRADA DE REPASSE ou RECEITAS NAO OPERACIONAIS
+          $subcategoriasRepasse = [];
+          $sqlSubRepasse = "SELECT SUBCATEGORIA, SUM(VALOR) as TOTAL FROM fOutrasReceitas WHERE CATEGORIA = '" . $conn->real_escape_string($catName) . "' AND YEAR(DATA_COMPETENCIA) = $anoAtual AND MONTH(DATA_COMPETENCIA) = $mesAtual GROUP BY SUBCATEGORIA ORDER BY SUBCATEGORIA";
+          $resSubRepasse = $conn->query($sqlSubRepasse);
+          if ($resSubRepasse) {
+            while ($rowSub = $resSubRepasse->fetch_assoc()) {
+              $sub = $rowSub['SUBCATEGORIA'] ?: 'NÃO ESPECIFICADO';
+              $valor = floatval($rowSub['TOTAL']);
+              $subcategoriasRepasse[] = ['sub' => $sub, 'valor' => $valor];
+            }
+          }
+        ?>
+        <?php foreach($subcategoriasRepasse as $item): ?>
+          <tr class="dre-sub <?= $catKey ?> dre-hide">
             <td class="p-2 text-left" style="padding-left:2em;">
-              <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub) ?>">▶</span>
-              <?= htmlspecialchars($sub) ?>
+              <?= htmlspecialchars($item['sub']) ?>
             </td>
-            <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '-' ?></td>
-            <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '-' ?></td>
-            <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
-            <td class="p-2 text-center">
-              <?php
-                $meta_invs_val = $metasArray[$catName][$sub] ?? null;
-                $realizado_invs_val = $atualSub[$catName][$sub] ?? 0;
-                if (isset($meta_invs_val) && $meta_invs_val != 0) {
-                  echo number_format(($realizado_invs_val / $meta_invs_val) * 100, 2, ',', '.') . '%';
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td class="p-2 text-center">
-              <?php 
-                $meta_val = $metasArray[$catName][$sub] ?? null;
-                $realizado_val = $atualSub[$catName][$sub] ?? 0;
-                if (isset($meta_val)) {
-                  $comparacao = $meta_val - $realizado_val;
-                  $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
-                  echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
-                } else { echo '-'; }
-              ?>
-            </td>
+            <td class="p-2 text-right">-</td>
+            <td class="p-2 text-center">-</td>
+            <td class="p-2 text-right">R$ <?= number_format($item['valor'],2,',','.') ?></td>
+            <td class="p-2 text-center">-</td>
+            <td class="p-2 text-center">-</td>
           </tr>
-
-          <?php foreach($descricoes as $desc => $contas): ?>
-            <tr class="dre-desc <?= $catKey ?>_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('<?= $catKey ?>_<?= md5($sub . $desc) ?>')">
-              <td class="p-2 text-left" style="padding-left:3em;">
-                <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub . $desc) ?>">▶</span>
-                <?= htmlspecialchars($desc) ?>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <?php foreach(($matrizOrdenada[$catName] ?? []) as $sub => $descricoes): ?>
+          <?php if($sub): ?>
+            <tr class="dre-sub <?= $catKey ?> dre-hide" onclick="toggleSubcategory('<?= $catKey ?>_<?= md5($sub) ?>')">
+              <td class="p-2 text-left" style="padding-left:2em;">
+                <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub) ?>">▶</span>
+                <?= htmlspecialchars($sub) ?>
               </td>
-              <td class="p-2 text-right">-</td>
-              <td class="p-2 text-center">-</td>
-              <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc[$catName][$sub][$desc] ?? 0,2,',','.') ?></td>
-              <td class="p-2 text-center">-</td>
-              <td class="p-2 text-center">-</td>
+              <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '-' ?></td>
+              <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '-' ?></td>
+              <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
+              <td class="p-2 text-center">
+                <?php
+                  $meta_invs_val = $metasArray[$catName][$sub] ?? null;
+                  $realizado_invs_val = $atualSub[$catName][$sub] ?? 0;
+                  if (isset($meta_invs_val) && $meta_invs_val != 0) {
+                    echo number_format(($realizado_invs_val / $meta_invs_val) * 100, 2, ',', '.') . '%';
+                  } else { echo '-'; }
+                ?>
+              </td>
+              <td class="p-2 text-center">
+                <?php 
+                  $meta_val = $metasArray[$catName][$sub] ?? null;
+                  $realizado_val = $atualSub[$catName][$sub] ?? 0;
+                  if (isset($meta_val)) {
+                    $comparacao = $meta_val - $realizado_val;
+                    $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
+                    echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
+                  } else { echo '-'; }
+                ?>
+              </td>
             </tr>
 
-            <?php foreach($contas as $idConta => $parcelas): ?>
-              <?php foreach($parcelas as $parcela): ?>
-                <tr class="dre-parcela <?= $catKey ?>_<?= md5($sub . $desc) ?> dre-hide">
-                  <td class="p-2 text-left" style="padding-left:4em;">
-                    <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
-                    <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
-                  </td>
-                  <td class="p-2 text-right">-</td>
-                  <td class="p-2 text-center">-</td>
-                  <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
-                  <td class="p-2 text-center">-</td>
-                  <td class="p-2 text-center">-</td>
-                </tr>
+            <?php foreach($descricoes as $desc => $contas): ?>
+              <tr class="dre-desc <?= $catKey ?>_<?= md5($sub) ?> dre-hide" onclick="toggleDescription('<?= $catKey ?>_<?= md5($sub . $desc) ?>')">
+                <td class="p-2 text-left" style="padding-left:3em;">
+                  <span class="toggle-icon" id="icon_<?= $catKey ?>_<?= md5($sub . $desc) ?>">▶</span>
+                  <?= htmlspecialchars($desc) ?>
+                </td>
+                <td class="p-2 text-right">-</td>
+                <td class="p-2 text-center">-</td>
+                <td class="p-2 text-right"><?= 'R$ '.number_format($atualDesc[$catName][$sub][$desc] ?? 0,2,',','.') ?></td>
+                <td class="p-2 text-center">-</td>
+                <td class="p-2 text-center">-</td>
+              </tr>
+
+              <?php foreach($contas as $idConta => $parcelas): ?>
+                <?php foreach($parcelas as $parcela): ?>
+                  <tr class="dre-parcela <?= $catKey ?>_<?= md5($sub . $desc) ?> dre-hide">
+                    <td class="p-2 text-left" style="padding-left:4em;">
+                      <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
+                      <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
+                    </td>
+                    <td class="p-2 text-right">-</td>
+                    <td class="p-2 text-center">-</td>
+                    <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
+                    <td class="p-2 text-center">-</td>
+                    <td class="p-2 text-center">-</td>
+                  </tr>
+                <?php endforeach; ?>
               <?php endforeach; ?>
             <?php endforeach; ?>
-          <?php endforeach; ?>
-        <?php endif; ?>
-      <?php endforeach; ?>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
     <?php endif; ?>
   <?php endforeach; ?>
+
+    <!-- SALDO REPASSE (ENTRADA - SAIDA) -->
+    <?php
+      $metaSaldoRepasse = ($metasArray['Z - ENTRADA DE REPASSE'][''] ?? 0) - ($metasArray['Z - SAIDA DE REPASSE'][''] ?? 0);
+      $realizadoSaldoRepasse = ($atualCat['Z - ENTRADA DE REPASSE'] ?? 0) - ($atualCat['Z - SAIDA DE REPASSE'] ?? 0);
+    ?>
+    <tr class="dre-cat" style="background:#3b3b3b; color: #ffe066; font-weight: bold;">
+      <td class="p-2 text-left">SALDO REPASSE</td>
+      <td class="p-2 text-right">R$ <?= number_format($metaSaldoRepasse,2,',','.') ?></td>
+      <td class="p-2 text-center">
+        <?php
+          if ($metaReceita > 0) {
+            echo number_format(($metaSaldoRepasse / $metaReceita) * 100, 2, ',', '.') . '%';
+          } else { echo '-'; }
+        ?>
+      </td>
+      <td class="p-2 text-right">R$ <?= number_format($realizadoSaldoRepasse,2,',','.') ?></td>
+      <td class="p-2 text-center">
+        <?php
+          if ($metaSaldoRepasse != 0) {
+            echo number_format(($realizadoSaldoRepasse / $metaSaldoRepasse) * 100, 2, ',', '.') . '%';
+          } else { echo '-'; }
+        ?>
+      </td>
+      <td class="p-2 text-center">
+        <?php
+          $comparacaoSaldo = $realizadoSaldoRepasse - $metaSaldoRepasse;
+          $corComparacaoSaldo = ($comparacaoSaldo >= 0) ? 'text-green-400' : 'text-red-400';
+          echo '<span class="' . $corComparacaoSaldo . '">R$ ' . number_format($comparacaoSaldo, 2, ',', '.') . '</span>';
+        ?>
+      </td>
+    </tr>
 
     <!-- FLUXO DE CAIXA -->
     <tr id="rowFluxoCaixa" class="dre-cat" style="background:#082f49; color: #e0f2fe; font-weight: bold;">
@@ -1396,46 +1471,6 @@ $jsonChartData = json_encode($chartData);
     </tbody>
   </table>
 
-  <!-- Tabela de Metas Excedidas -->
-  <div class="mt-12 p-6 bg-gray-800 rounded-lg shadow-lg">
-    <h2 class="text-xl font-bold text-yellow-400 mb-4">Categorias com Metas de Gasto Excedidas (Últimos 6 Meses)</h2>
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm text-left text-gray-300">
-        <thead class="text-xs text-yellow-400 uppercase bg-gray-700">
-          <tr>
-            <th scope="col" class="px-6 py-3">Categoria</th>
-            <th scope="col" class="px-6 py-3">Mês/Ano</th>
-            <th scope="col" class="px-6 py-3 text-right">Meta de Gasto</th>
-            <th scope="col" class="px-6 py-3 text-right">Gasto Realizado</th>
-            <th scope="col" class="px-6 py-3 text-right">Diferença (Excedido)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if (empty($metasExcedidas)): ?>
-            <tr class="bg-gray-800 border-b border-gray-700">
-              <td colspan="5" class="px-6 py-4 text-center">Nenhuma categoria excedeu a meta nos últimos 6 meses.</td>
-            </tr>
-          <?php else: ?>
-            <?php foreach ($metasExcedidas as $item): ?>
-              <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-700">
-                <td class="px-6 py-4 font-medium text-white whitespace-nowrap"><?= htmlspecialchars($item['categoria']) ?></td>
-                <td class="px-6 py-4"><?= $item['mes'] ?></td>
-                <td class="px-6 py-4 text-right">R$ <?= number_format($item['meta'], 2, ',', '.') ?></td>
-                <td class="px-6 py-4 text-right">R$ <?= number_format($item['realizado'], 2, ',', '.') ?></td>
-                <td class="px-6 py-4 text-right">
-                  <?php
-                    $diferenca = $item['diferenca'];
-                    $corDiferenca = ($diferenca >= 0) ? 'text-red-400' : 'text-green-400';
-                    echo '<span class="' . $corDiferenca . '">R$ ' . number_format(abs($diferenca), 2, ',', '.') . '</span>';
-                  ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
 </main>
 </body>
