@@ -105,8 +105,11 @@ $map = [
 
 </main>
 
-  <!-- Botão "Exportar Pedidos" fixo e menor -->
-  <div class="fixed bottom-4 right-4">
+  <!-- Botões fixos no canto inferior direito -->
+  <div class="fixed bottom-4 right-4 flex gap-2">
+    <a href="analises/analisecomprastap.php"
+       class="text-xs font-semibold py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg"
+    >Análise de Compras</a>
     <a href="exportar_pedido.php"
        class="text-xs font-semibold py-1 px-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded shadow-lg"
     >Exportar Pedidos</a>
