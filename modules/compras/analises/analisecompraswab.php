@@ -307,6 +307,34 @@ foreach ($totaisGrupos as $grupo => $dadosGrupo) {
 
         <h1 class="text-2xl font-bold text-yellow-400 mb-6">Análise de Compras - Curva ABC</h1>
 
+        <!-- Navegação entre análises e Barra de busca -->
+        <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <!-- Botões de navegação -->
+            <div class="flex gap-3">
+                <a href="analisecomprastap.php<?php echo isset($_GET['periodo']) ? '?periodo=' . $_GET['periodo'] : ''; ?>" 
+                   class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors shadow-lg border-2 border-gray-600 hover:border-gray-500">
+                    📊 TAP
+                </a>
+                <div class="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold shadow-lg">
+                    📈 WAB (Atual)
+                </div>
+            </div>
+            
+            <!-- Barra de busca -->
+            <div class="flex-1 sm:max-w-md">
+                <label for="search-produto" class="block text-sm font-medium text-gray-300 mb-2">
+                    🔍 Pesquisar Produto:
+                </label>
+                <input type="text" 
+                       id="search-produto" 
+                       placeholder="Digite o nome do produto para filtrar..."
+                       class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                <p class="text-xs text-gray-500 mt-1">
+                    Busca em grupos e produtos em tempo real
+                </p>
+            </div>
+        </div>
+
         <!-- Explicação da Curva ABC -->
         <div class="mb-4 p-3 bg-gray-800 rounded-lg text-sm">
             <strong class="text-yellow-400">Curva ABC:</strong> 
@@ -521,6 +549,69 @@ foreach ($totaisGrupos as $grupo => $dadosGrupo) {
         document.addEventListener('DOMContentLoaded', function() {
             initializeDREToggle();
             console.log('Página de análise de compras carregada - efeitos simplificados');
+            
+            // Funcionalidade de busca
+            const searchInput = document.getElementById('search-produto');
+            const allRows = document.querySelectorAll('tbody tr');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    
+                    if (searchTerm === '') {
+                        // Se busca vazia, mostra todos os grupos e esconde produtos
+                        allRows.forEach(row => {
+                            if (row.classList.contains('grupo-row')) {
+                                row.style.display = '';
+                            } else if (row.classList.contains('dre-sub')) {
+                                row.style.display = '';
+                                row.classList.add('dre-hide'); // Esconde produtos por padrão
+                            }
+                        });
+                    } else {
+                        let hasVisibleProducts = {};
+                        
+                        // Primeiro, processa todos os produtos
+                        allRows.forEach(row => {
+                            if (row.classList.contains('dre-sub')) {
+                                const productName = row.querySelector('td:first-child').textContent.toLowerCase();
+                                const groupKey = Array.from(row.classList).find(cls => cls !== 'dre-sub');
+                                
+                                if (productName.includes(searchTerm)) {
+                                    row.style.display = '';
+                                    row.classList.remove('dre-hide'); // Mostra produto que match
+                                    hasVisibleProducts[groupKey] = true;
+                                } else {
+                                    row.style.display = 'none'; // Esconde produto que não match
+                                }
+                            }
+                        });
+                        
+                        // Depois, processa os grupos
+                        allRows.forEach(row => {
+                            if (row.classList.contains('grupo-row')) {
+                                const groupName = row.querySelector('td').textContent.toLowerCase();
+                                const groupKey = row.getAttribute('onclick').match(/'([^']+)'/)[1];
+                                
+                                // Mostra grupo se o nome do grupo match OU se tem produtos visíveis
+                                if (groupName.includes(searchTerm) || hasVisibleProducts[groupKey]) {
+                                    row.style.display = '';
+                                    
+                                    // Se o grupo match mas não tem produtos visíveis, mostra todos os produtos do grupo
+                                    if (groupName.includes(searchTerm) && !hasVisibleProducts[groupKey]) {
+                                        document.querySelectorAll(`.dre-sub.${groupKey}`).forEach(productRow => {
+                                            productRow.style.display = '';
+                                            productRow.classList.remove('dre-hide');
+                                        });
+                                    }
+                                } else {
+                                    row.style.display = 'none'; // Esconde grupo se não match e não tem produtos visíveis
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         });
         $(document).ready(function() {
             $('.select2').select2({
