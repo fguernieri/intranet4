@@ -8,6 +8,9 @@ $pdoMain = $pdo; // conexão principal (intranet)
 // 2) Conexão DW — para dados de pedidos
 require_once '../../config/db_dw.php';
 
+require_once __DIR__ . '/../../config/db.php'; // conexão de metas
+
+
 // 3) Permissões de vendedores vindas da sessão
 $permissoes = $_SESSION['vendedores_permitidos'] ?? [];
 
@@ -119,10 +122,10 @@ $stmtCadastro->execute([$startDate, $endDate]);
 $cadRows    = $stmtCadastro->fetchAll(PDO::FETCH_ASSOC);
 $cadLabels  = array_column($cadRows, 'vendedor_nome');
 $cadValues  = array_map('intval', array_column($cadRows, 'total_cadastros'));
+$totalCadGeral = array_sum($cadValues);
 
 
 // Buscar metas de faturamento
-require_once __DIR__ . '/../../config/db.php'; // conexão de metas
 $pdoMetas = $pdo;
 
 $anoMeta = date('Y', strtotime($startDate));
@@ -257,7 +260,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </form>
       
       <!-- Cards de resumo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
         <div class="card1"><p>💵 Total Faturado</p><p>R$ <?= number_format($totalFaturado,2,',','.') ?></p></div>
         <div class="card1">
           <p>🎯 Meta de Faturamento</p>
@@ -269,6 +272,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
         <div class="card1"><p>📦 Total de Pedidos</p><p><?= $totalPedidos ?></p></div>
         <div class="card1"><p>🏪 Clientes Únicos</p><p><?= $totalClientes ?></p></div>
         <div class="card1"><p>🌎 Estados com Pedido</p><p><?= $totalEstados ?></p></div>
+        <div class="card1"><p>🆕 Novos Cadastros</p><p><?= $totalCadGeral ?></p></div>
       </div>      
       
       <!-- Charts -->
