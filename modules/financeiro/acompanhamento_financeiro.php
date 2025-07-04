@@ -136,16 +136,31 @@ $meses = [
     7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'
 ];
 
-// Receita operacional do mês atual
-$atualRec = 0;
-$resRec = $conn->query("
+// Receita operacional do mês atual - Valores já pagos
+$atualRecPago = 0;
+$resRecPago = $conn->query("
     SELECT SUM(VALOR_PAGO) AS TOTAL
     FROM fContasAReceberDetalhes
     WHERE STATUS = 'Pago' AND YEAR(DATA_PAGAMENTO) = $anoAtual AND MONTH(DATA_PAGAMENTO) = $mesAtual
 ");
-if ($row = $resRec->fetch_assoc()) {
-    $atualRec = floatval($row['TOTAL'] ?? 0);
+if ($row = $resRecPago->fetch_assoc()) {
+    $atualRecPago = floatval($row['TOTAL'] ?? 0);
 }
+
+// Contas a receber que ainda não venceram (considerando o mês atual)
+$atualRecAReceber = 0;
+$resRecAReceber = $conn->query("
+    SELECT SUM(VALOR) AS TOTAL
+    FROM fContasAReceberDetalhes
+    WHERE STATUS != 'Pago' AND DATE(DATA_VENCIMENTO) >= CURDATE() 
+    AND YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
+");
+if ($row = $resRecAReceber->fetch_assoc()) {
+    $atualRecAReceber = floatval($row['TOTAL'] ?? 0);
+}
+
+// Receita bruta total (pago + a receber)
+$atualRec = $atualRecPago + $atualRecAReceber;
 
 // Ordena as categorias para exibição
 $categoriasDRE = [
@@ -519,7 +534,7 @@ foreach ($periodChart as $dt) {
     ];
 }
 
-// 1. Buscar Receitas Operacionais (Contas a Receber Pagas)
+// 1. Buscar Receitas Operacionais (Contas a Receber Pagas + A Receber)
 $sqlReceitas = "
     SELECT 
         YEAR(DATA_PAGAMENTO) AS ano, 
@@ -535,6 +550,27 @@ if($resReceitas) {
         $monthKey = $row['ano'] . '-' . str_pad($row['mes'], 2, '0', STR_PAD_LEFT);
         if (isset($monthlyData[$monthKey])) {
             $monthlyData[$monthKey]['receita'] = (float)$row['total'];
+        }
+    }
+}
+
+// 1.1 Buscar Contas a Receber não vencidas por mês de vencimento
+$sqlReceitasAReceber = "
+    SELECT 
+        YEAR(DATA_VENCIMENTO) AS ano, 
+        MONTH(DATA_VENCIMENTO) AS mes, 
+        SUM(VALOR) AS total
+    FROM fContasAReceberDetalhes
+    WHERE STATUS != 'Pago' AND DATE(DATA_VENCIMENTO) >= CURDATE() 
+    AND DATA_VENCIMENTO >= '$startDateStringChart' AND DATA_VENCIMENTO < '$endDateStringChart'
+    GROUP BY ano, mes
+";
+$resReceitasAReceber = $conn->query($sqlReceitasAReceber);
+if($resReceitasAReceber) {
+    while ($row = $resReceitasAReceber->fetch_assoc()) {
+        $monthKey = $row['ano'] . '-' . str_pad($row['mes'], 2, '0', STR_PAD_LEFT);
+        if (isset($monthlyData[$monthKey])) {
+            $monthlyData[$monthKey]['receita'] += (float)$row['total'];
         }
     }
 }
@@ -718,8 +754,11 @@ $jsonChartData = json_encode($chartData);
     </thead>
     <tbody>
       <!-- RECEITA BRUTA -->
-      <tr class="dre-cat" style="background:#1a4c2b;">
-        <td class="p-2 text-left">RECEITA BRUTA</td>
+      <tr class="dre-cat" style="background:#1a4c2b; cursor:pointer;" onclick="toggleCategory('receita_bruta')">
+        <td class="p-2 text-left">
+          <span class="toggle-icon" id="icon_receita_bruta">▶</span>
+          RECEITA BRUTA
+        </td>
         <td class="p-2 text-right"><?= isset($metasArray['RECEITA BRUTA']['']) ? 'R$ '.number_format($metasArray['RECEITA BRUTA'][''],2,',','.') : '-' ?></td>
         <td class="p-2 text-center">
           <?= ($metaReceita > 0 && isset($metasArray['RECEITA BRUTA'][''])) ? number_format(($metasArray['RECEITA BRUTA']['']/$metaReceita)*100,2,',','.') .'%' : '-' ?>
@@ -744,6 +783,37 @@ $jsonChartData = json_encode($chartData);
             } else { echo '-'; }
           ?>
         </td>
+      </tr>
+      
+      <!-- Detalhamento da Receita Bruta -->
+      <tr class="dre-sub receita_bruta dre-hide" style="background:#2d5a3d;">
+        <td class="p-2 text-left" style="padding-left:2em;">Já Recebido</td>
+        <td class="p-2 text-right">-</td>
+        <td class="p-2 text-center">-</td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($atualRecPago,2,',','.') ?></td>
+        <td class="p-2 text-center">
+          <?php
+            if ($atualRec > 0) {
+              echo number_format(($atualRecPago / $atualRec) * 100, 2, ',', '.') . '%';
+            } else { echo '-'; }
+          ?>
+        </td>
+        <td class="p-2 text-center">-</td>
+      </tr>
+      
+      <tr class="dre-sub receita_bruta dre-hide" style="background:#2d5a3d;">
+        <td class="p-2 text-left" style="padding-left:2em;">A Receber (Não Vencido)</td>
+        <td class="p-2 text-right">-</td>
+        <td class="p-2 text-center">-</td>
+        <td class="p-2 text-right"><?= 'R$ '.number_format($atualRecAReceber,2,',','.') ?></td>
+        <td class="p-2 text-center">
+          <?php
+            if ($atualRec > 0) {
+              echo number_format(($atualRecAReceber / $atualRec) * 100, 2, ',', '.') . '%';
+            } else { echo '-'; }
+          ?>
+        </td>
+        <td class="p-2 text-center">-</td>
       </tr>
 
     <!-- TRIBUTOS -->
