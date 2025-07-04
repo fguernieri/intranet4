@@ -147,12 +147,12 @@ if ($row = $resRecPago->fetch_assoc()) {
     $atualRecPago = floatval($row['TOTAL'] ?? 0);
 }
 
-// Contas a receber que ainda não venceram (considerando o mês atual)
+// Contas a receber do mês atual (vencidas + ainda não vencidas)
 $atualRecAReceber = 0;
 $resRecAReceber = $conn->query("
     SELECT SUM(VALOR) AS TOTAL
     FROM fContasAReceberDetalhes
-    WHERE STATUS != 'Pago' AND DATE(DATA_VENCIMENTO) >= CURDATE() 
+    WHERE STATUS != 'Pago' 
     AND YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
 ");
 if ($row = $resRecAReceber->fetch_assoc()) {
@@ -534,7 +534,7 @@ foreach ($periodChart as $dt) {
     ];
 }
 
-// 1. Buscar Receitas Operacionais (Contas a Receber Pagas + A Receber)
+// 1. Buscar Receitas Operacionais (Contas a Receber Pagas + A Receber Atrasadas)
 $sqlReceitas = "
     SELECT 
         YEAR(DATA_PAGAMENTO) AS ano, 
@@ -554,14 +554,14 @@ if($resReceitas) {
     }
 }
 
-// 1.1 Buscar Contas a Receber não vencidas por mês de vencimento
+// 1.1 Buscar Contas a Receber do mês (vencidas + ainda não vencidas)
 $sqlReceitasAReceber = "
     SELECT 
         YEAR(DATA_VENCIMENTO) AS ano, 
         MONTH(DATA_VENCIMENTO) AS mes, 
         SUM(VALOR) AS total
     FROM fContasAReceberDetalhes
-    WHERE STATUS != 'Pago' AND DATE(DATA_VENCIMENTO) >= CURDATE() 
+    WHERE STATUS != 'Pago' 
     AND DATA_VENCIMENTO >= '$startDateStringChart' AND DATA_VENCIMENTO < '$endDateStringChart'
     GROUP BY ano, mes
 ";
@@ -787,7 +787,7 @@ $jsonChartData = json_encode($chartData);
       
       <!-- Detalhamento da Receita Bruta -->
       <tr class="dre-sub receita_bruta dre-hide" style="background:#2d5a3d;">
-        <td class="p-2 text-left" style="padding-left:2em;">Já Recebido</td>
+        <td class="p-2 text-left" style="padding-left:2em;">RECEBIDO</td>
         <td class="p-2 text-right">-</td>
         <td class="p-2 text-center">-</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualRecPago,2,',','.') ?></td>
@@ -802,7 +802,7 @@ $jsonChartData = json_encode($chartData);
       </tr>
       
       <tr class="dre-sub receita_bruta dre-hide" style="background:#2d5a3d;">
-        <td class="p-2 text-left" style="padding-left:2em;">A Receber (Não Vencido)</td>
+        <td class="p-2 text-left" style="padding-left:2em;">A RECEBER</td>
         <td class="p-2 text-right">-</td>
         <td class="p-2 text-center">-</td>
         <td class="p-2 text-right"><?= 'R$ '.number_format($atualRecAReceber,2,',','.') ?></td>
