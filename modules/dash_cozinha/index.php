@@ -67,8 +67,17 @@ include __DIR__ . '/../../sidebar.php';
 
   <!-- Tabela Detalhamento -->
   <div class="mt-6">
-    <h2 class="text-xl font-semibold mb-2">Detalhamento</h2>
-    <div class="overflow-x-auto">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-semibold">Detalhamento</h2>
+      <button
+        id="toggle-detalhamento"
+        class="btn-acao px-2 py-1 text-sm"
+        type="button"
+      >Ocultar</button>
+    </div>
+    <div
+      id="detalhamento-container"
+      class="overflow-x-auto">      
       <table id="tabela-sortable" class="min-w-full text-xs text-left">
         <thead>
           <tr class="bg-yellow-600 text-white text-sm">
@@ -185,6 +194,17 @@ include __DIR__ . '/../../sidebar.php';
     }
     table.tBodies[0].setAttribute('data-sort-dir', dir);
   }
+  
+  // Oculta a tabela
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('toggle-detalhamento');
+    const container = document.getElementById('detalhamento-container');
+
+    btn.addEventListener('click', () => {
+      const hidden = container.classList.toggle('hidden');
+      btn.textContent = hidden ? 'Mostrar' : 'Ocultar';
+    });
+  });
 </script>
 </body>
 </html>
