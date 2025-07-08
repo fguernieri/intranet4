@@ -370,6 +370,9 @@ if (
     </div>
   </main>
 
+  <!-- Certifique-se de incluir a biblioteca SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <script>
     // BLOQUEIO DE CAMPOS (front-end)
     const bloqueado = <?php echo $bloqueado ? 'true' : 'false'; ?>;
@@ -410,7 +413,8 @@ if (
       const term = document.getElementById('search-input').value.trim().toLowerCase();
       rows.forEach(r=>{
         const catOK = !cats.length || cats.includes(r.dataset.cat);
-        const txtOK = !term || r.children[0].textContent.toLowerCase().includes(term);
+        // Pesquisar pelo campo 'Insumo' que está na segunda coluna (índice 1)
+        const txtOK = !term || r.children[1].textContent.toLowerCase().includes(term);
         r.style.display = (catOK && txtOK) ? '' : 'none';
       });
     }
@@ -579,33 +583,27 @@ if (
 
     // Exportar lista para Excel
     document.getElementById('export-list').addEventListener('click', () => {
+      // Seleciona a tabela de insumos
       const table = document.querySelector('.overflow-x-auto table');
       if (!table) return;
-      
-      let csv = "";
-      // Captura os headers (incluindo Código)
-      const headerCells = Array.from(table.querySelectorAll('thead th'))
-        .map(th => th.innerText.trim());
-      csv += headerCells.join(";") + "\r\n";
-      
-      // Captura as linhas da tabela
-      table.querySelectorAll('tbody tr').forEach(row => {
-        // Se a linha estiver visível (após os filtros)
-        if (row.style.display === 'none') return;
-        const cells = Array.from(row.querySelectorAll('td'))
-          .map(td => td.innerText.trim());
-        csv += cells.join(";") + "\r\n";
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.style.visibility = 'hidden';
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'lista_insumos_wearebastards.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Converte a tabela para um workbook usando os valores brutos (raw:true)
+      const wb = XLSX.utils.table_to_book(table, { sheet: "Insumos", raw: true });
+      const ws = wb.Sheets["Insumos"];
+      // Percorre as células e força a conversão de números com vírgula para ponto
+      for (const cell in ws) {
+        if (cell[0] === '!') continue;
+        const cellValue = ws[cell].v;
+        if (typeof cellValue === 'string') {
+          // Remove pontos de milhar e substitui a vírgula decimal por ponto
+          const cleaned = cellValue.replace(/\./g, '').replace(/,/g, '.');
+          const num = parseFloat(cleaned);
+          if (!isNaN(num)) {
+            ws[cell].v = num;
+            ws[cell].t = 'n';
+          }
+        }
+      }
+      XLSX.writeFile(wb, 'lista_insumos_wearebastards.xlsx');
     });
 
     // Scroll flutuante
