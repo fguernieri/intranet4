@@ -42,7 +42,7 @@ SQL;
         $rawCodigo   = trim((string)$sheet->getCell("A{$r}")->getValue());
         $rawNome     = trim((string)$sheet->getCell("C{$r}")->getValue());
         $rawVendedor= trim((string)$sheet->getCell("T{$r}")->getValue());
-        $cellDate    = $sheet->getCell("X{$r}");
+        $cellDate    = $sheet->getCell("Z{$r}");
         $rawData     = $cellDate->getValue();
 
         // pula vazios
