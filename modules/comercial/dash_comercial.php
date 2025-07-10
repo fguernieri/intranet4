@@ -77,6 +77,50 @@ $stmt  = $pdo_dw->prepare($sql);
 $stmt->execute($queryParams);
 $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Montar agregação mês a mês em PHP
+$mensal = [];
+foreach ($pedidos as $p) {
+    // extrai “YYYY-MM” de DataPedido
+    $key = date('Y-m', strtotime($p['DataPedido']));
+    if (!isset($mensal[$key])) {
+        $mensal[$key] = [
+            'ano'             => date('Y', strtotime($p['DataPedido'])),
+            'mes'             => date('m', strtotime($p['DataPedido'])),
+            'faturado'        => 0.0,
+            'total_pedidos'   => 0,
+            'total_clientes'  => [],
+            'total_estados'   => [],
+        ];
+    }
+    // acumula faturamento e contagem
+    $mensal[$key]['faturado']      += (float)$p['ValorFaturado'];
+    $mensal[$key]['total_pedidos'] += 1;
+    // para clientes/estados únicos, guardamos num array como chave
+    $mensal[$key]['total_clientes'][$p['CodCliente']]    = true;
+    $mensal[$key]['total_estados'][$p['Estado']]         = true;
+}
+
+// agora converte o array para índices numéricos e contas finais
+$mensal = array_map(
+    fn($r) => [
+        'ano'             => $r['ano'],
+        'mes'             => $r['mes'],
+        'faturado'        => $r['faturado'],
+        'total_pedidos'   => $r['total_pedidos'],
+        'total_clientes'  => count($r['total_clientes']),
+        'total_estados'   => count($r['total_estados']),
+    ],
+    $mensal
+);
+
+// ordena cronologicamente (por chave YYYY-MM)
+uksort($mensal, fn($a, $b) => strcmp($a, $b));
+$mensal = array_values($mensal);
+
+// Exemplo de uso para o gráfico consolidado:
+$labelsFatMensal = array_map(fn($r) => "{$r['mes']}/{$r['ano']}", $mensal);
+$seriesFatMensal = array_map(fn($r) => $r['faturado'], $mensal);
+
 // 9) Totais para cards
 $totalPedidos  = count($pedidos);
 $totalFaturado = array_sum(array_column($pedidos, 'ValorFaturado'));
@@ -224,6 +268,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
   <link rel="stylesheet" href="../../assets/css/style.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="body bg-gray-900 text-white">
   <div class="flex h-screen">
@@ -259,6 +304,30 @@ $UltimaAtualizacao = $stmt->fetchColumn();
         </div>
       </form>
       
+    <div x-data="dashboard()">
+          <!-- Nav de Tabs -->
+      <nav class="flex space-x-4 border-b mb-6">
+        <button
+          @click="tab = 'vendedor'"
+          :class="tab === 'vendedor'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-600 hover:text-yellow-600'"
+          class="px-3 py-2 font-medium border-b-2 transition-colors"
+        >
+          Por Vendedor
+        </button>
+      
+        <button
+          @click="tab = 'mensal'"
+          :class="tab === 'mensal'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-600 hover:text-yellow-600'"
+          class="px-3 py-2 font-medium border-b-2 transition-colors"
+        >
+          Mensal
+        </button>
+      </nav>
+      <div x-show="tab === 'vendedor'" x-cloak>
       <!-- Cards de resumo -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
         <div class="card1"><p>💵 Total Faturado</p><p>R$ <?= number_format($totalFaturado,2,',','.') ?></p></div>
@@ -320,44 +389,50 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </div>
       
           <!-- Tabela de Pedidos com Ordenação e Seção Retrátil -->
-    <section class="mt-10">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-2xl font-semibold text-yellow-400 text-center w-full">📦 Tabela de Pedidos</h3>
-        <button onclick="toggleTabelaPedidos()" class="ml-4 text-sm bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded">
-          Mostrar/Ocultar
-        </button>
-      </div>
+      <section class="mt-10">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-2xl font-semibold text-yellow-400 text-center w-full">📦 Tabela de Pedidos</h3>
+          <button onclick="toggleTabelaPedidos()" class="ml-4 text-sm bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded">
+            Mostrar/Ocultar
+          </button>
+        </div>
 
-      <div id="tabelaPedidosWrapper" class="overflow-auto rounded-lg shadow">
-        <table class="sortable min-w-full divide-y divide-gray-700 bg-gray-800 text-white text-sm">
-          <thead class="bg-gray-700">
-            <tr>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(0)">📦 Pedido</th>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(1)">👤 Cliente</th>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(2)">🗺 Estado</th>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(3)">🧑‍💼 Vendedor</th>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(4)">📅 Data Faturamento</th>
-              <th class="px-4 py-2 cursor-pointer" onclick="sortTable(5)">💰 Valor</th>
-            </tr>
-          </thead>
-          <tbody data-sort-dir="asc">
-            <?php foreach ($pedidos as $row): ?>
-            <tr class="hover:bg-gray-700">
-              <td class="px-4 py-2"><?= $row['NumeroPedido'] ?? '' ?></td>
-              <td class="px-4 py-2"><?= $row['Cliente'] ?? '' ?></td>
-              <td class="px-4 py-2"><?= htmlspecialchars($row['Estado'] ?? '') ?></td>
-              <td class="px-4 py-2"><?= htmlspecialchars($row['Vendedor'] ?? '') ?></td>
-              <td class="px-4 py-2">
-                <?= $row['DataFaturamento'] ? htmlspecialchars(date('d/m/Y', strtotime($row['DataFaturamento']))) : '' ?>
-              </td>
-              <td class="px-4 py-2">R$ <?= isset($row['ValorFaturado']) ? number_format((float)$row['ValorFaturado'], 2, ',', '.') : '0,00' ?></td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+        <div id="tabelaPedidosWrapper" class="overflow-auto rounded-lg shadow">
+          <table class="sortable min-w-full divide-y divide-gray-700 bg-gray-800 text-white text-sm">
+            <thead class="bg-gray-700">
+              <tr>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(0)">📦 Pedido</th>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(1)">👤 Cliente</th>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(2)">🗺 Estado</th>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(3)">🧑‍💼 Vendedor</th>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(4)">📅 Data Faturamento</th>
+                <th class="px-4 py-2 cursor-pointer" onclick="sortTable(5)">💰 Valor</th>
+              </tr>
+            </thead>
+            <tbody data-sort-dir="asc">
+              <?php foreach ($pedidos as $row): ?>
+              <tr class="hover:bg-gray-700">
+                <td class="px-4 py-2"><?= $row['NumeroPedido'] ?? '' ?></td>
+                <td class="px-4 py-2"><?= $row['Cliente'] ?? '' ?></td>
+                <td class="px-4 py-2"><?= htmlspecialchars($row['Estado'] ?? '') ?></td>
+                <td class="px-4 py-2"><?= htmlspecialchars($row['Vendedor'] ?? '') ?></td>
+                <td class="px-4 py-2">
+                  <?= $row['DataFaturamento'] ? htmlspecialchars(date('d/m/Y', strtotime($row['DataFaturamento']))) : '' ?>
+                </td>
+                <td class="px-4 py-2">R$ <?= isset($row['ValorFaturado']) ? number_format((float)$row['ValorFaturado'], 2, ',', '.') : '0,00' ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </section>
       </div>
-    </section>
+      <div x-show="tab === 'mensal'" x-cloak>
+        <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO</h1>
+        <div x-ref="chartMensal" class="h-64">Faturamento Mensal</div>
 
+      </div>
+    </div>
       
       <script>
         // 💸 Arredondamento para valores inteiros
@@ -625,6 +700,55 @@ $UltimaAtualizacao = $stmt->fetchColumn();
   // Atrela clique do botão de abertura
   document.getElementById('btnCarregarMetas')
           .addEventListener('click', () => toggleModal(true));
+</script>
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('dashboard', () => ({
+    tab: 'vendedor',                                // aba padrão
+    labelsMensal: <?= json_encode($labelsFatMensal) ?>,
+    seriesMensal: <?= json_encode($seriesFatMensal) ?>,
+    mensalChart: null,                              // guardaremos aqui a instância
+
+    init() {
+      // observa mudanças na aba
+      this.$watch('tab', (novo) => {
+        if (novo === 'mensal') {
+          // espera o DOM refletir o x-show e só então desenha
+          this.$nextTick(() => {
+            if (!this.mensalChart) {
+              this.mensalChart = new ApexCharts(this.$refs.chartMensal, {
+                chart:    { type: 'bar', height: 350, background: 'transparent' },
+                series:   [{ name: 'Faturamento', data: this.seriesMensal.map(v => Math.round(v)) }],
+                xaxis:    { categories: this.labelsMensal }, tooltip: {enabled: false},
+                yaxis:    {
+                  labels: {
+                    show: false 
+                  }},
+                
+               dataLabels: {
+                  enabled: true,
+                  formatter: v => new Intl.NumberFormat('pt-BR',
+                      { style:'currency', currency:'BRL', maximumFractionDigits: 0 }
+                    ).format(v)
+               },
+              });
+              this.mensalChart.render();
+            } else {
+              // se já existia, só atualiza os dados
+              this.mensalChart.updateSeries([{
+                name: 'Faturamento',
+                data: this.seriesMensal
+              }]);
+              this.mensalChart.updateOptions({
+                xaxis: { categories: this.labelsMensal }
+              });
+            }
+          });
+        }
+      });
+    }
+  }));
+});
 </script>
 
 
