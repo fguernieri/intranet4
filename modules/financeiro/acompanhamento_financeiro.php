@@ -34,21 +34,50 @@ if ($resUltimaAtualizacao && $row = $resUltimaAtualizacao->fetch_assoc()) {
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
 
+// ==================== [VERIFICAR SE O MÊS ESTÁ FECHADO AUTOMATICAMENTE] ====================
+// Um mês é considerado fechado se não for o mês atual
+$anoCorrente = (int)date('Y');
+$mesCorrente = (int)date('n');
+
+// Se estamos visualizando um mês anterior ao atual, considera fechado
+$mesFechado = ($anoAtual < $anoCorrente) || ($anoAtual == $anoCorrente && $mesAtual < $mesCorrente);
+
 // Carregue todas as parcelas do ano para totais do mês atual
-$sql = "
-    SELECT 
-        c.ID_CONTA,
-        c.CATEGORIA,
-        c.SUBCATEGORIA,
-        c.DESCRICAO_CONTA,
-        d.PARCELA,
-        d.VALOR,
-        d.DATA_PAGAMENTO
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual AND MONTH(d.DATA_PAGAMENTO) = $mesAtual
-    ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
-";
+// Se o mês estiver fechado, considera apenas as contas pagas
+if ($mesFechado) {
+    // Mês fechado: considera apenas contas pagas
+    $sql = "
+        SELECT 
+            c.ID_CONTA,
+            c.CATEGORIA,
+            c.SUBCATEGORIA,
+            c.DESCRICAO_CONTA,
+            d.PARCELA,
+            d.VALOR,
+            d.DATA_PAGAMENTO
+        FROM fContasAPagar AS c
+        INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
+        WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual AND MONTH(d.DATA_PAGAMENTO) = $mesAtual
+        AND d.STATUS = 'Pago'
+        ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
+    ";
+} else {
+    // Mês aberto: considera todas as contas (comportamento original)
+    $sql = "
+        SELECT 
+            c.ID_CONTA,
+            c.CATEGORIA,
+            c.SUBCATEGORIA,
+            c.DESCRICAO_CONTA,
+            d.PARCELA,
+            d.VALOR,
+            d.DATA_PAGAMENTO
+        FROM fContasAPagar AS c
+        INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
+        WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual AND MONTH(d.DATA_PAGAMENTO) = $mesAtual
+        ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
+    ";
+}
 $res = $conn->query($sql);
 $linhasMesAtual = [];
 while ($f = $res->fetch_assoc()) {
@@ -148,16 +177,21 @@ if ($row = $resRecPago->fetch_assoc()) {
 }
 
 // Contas a receber do mês atual (vencidas + ainda não vencidas)
+// Se o mês estiver fechado, não considera contas vencidas
 $atualRecAReceber = 0;
-$resRecAReceber = $conn->query("
-    SELECT SUM(VALOR) AS TOTAL
-    FROM fContasAReceberDetalhes
-    WHERE STATUS != 'Pago' 
-    AND YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
-");
-if ($row = $resRecAReceber->fetch_assoc()) {
-    $atualRecAReceber = floatval($row['TOTAL'] ?? 0);
+if (!$mesFechado) {
+    // Mês aberto: considera contas vencidas e não vencidas
+    $resRecAReceber = $conn->query("
+        SELECT SUM(VALOR) AS TOTAL
+        FROM fContasAReceberDetalhes
+        WHERE STATUS != 'Pago' 
+        AND YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
+    ");
+    if ($row = $resRecAReceber->fetch_assoc()) {
+        $atualRecAReceber = floatval($row['TOTAL'] ?? 0);
+    }
 }
+// Se o mês estiver fechado, $atualRecAReceber permanece 0 (não considera vencidas)
 
 // Receita bruta total (pago + a receber)
 $atualRec = $atualRecPago + $atualRecAReceber;
@@ -712,6 +746,17 @@ $jsonChartData = json_encode($chartData);
     </div>
   <?php endif; ?>
 
+  <!-- Indicador de Status do Mês -->
+  <?php if ($mesFechado): ?>
+    <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#ff6b6b;font-weight:bold;background:#dc2626;padding:0.25rem 0.75rem;border-radius:0.25rem;">
+      📌 MÊS FECHADO - Considerando apenas contas pagas
+    </div>
+  <?php else: ?>
+    <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#10b981;font-weight:bold;background:#059669;padding:0.25rem 0.75rem;border-radius:0.25rem;">
+      🔓 MÊS ABERTO - Considerando contas pagas e vencidas
+    </div>
+  <?php endif; ?>
+
   <!-- Filtro de Ano/Mês -->
   <form method="get" class="mb-4 flex gap-2 items-end">
     <label>
@@ -1161,7 +1206,7 @@ $jsonChartData = json_encode($chartData);
                     <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
                     <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
                   </td>
-                  <td class="p-2 text-right">-</td>
+                                   <td class="p-2 text-right">-</td>
                   <td class="p-2 text-center">-</td>
                   <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
                   <td class="p-2 text-center">-</td>
