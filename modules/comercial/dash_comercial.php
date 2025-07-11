@@ -450,9 +450,9 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </section>
       </div>
       <div x-show="tab === 'mensal'" x-cloak>
-        <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO</h1>
-        <div x-ref="chartMensal" class="h-64 mb-6">Faturamento Mensal</div>
-        <div x-ref="chartMensalCad" class="rounded-xl bg-white/5 p-4 shadow-md h-64 mb-6">Abertura de Cliente</div>
+        <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO MENSAL</h1>
+        <div x-ref="chartMensal" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6">Faturamento Mensal</div>
+        <div x-ref="chartMensalCad" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6"></div>
         
       </div>
     </div>
