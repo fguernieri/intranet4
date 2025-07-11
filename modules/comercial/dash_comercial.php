@@ -765,18 +765,12 @@ document.addEventListener('alpine:init', () => {
         labelKey: 'labelsCad',
         // options específicas para o gráfico de linha
         baseOptions: {
-          chart: { type: 'area', height: 350, background: 'transparent' },
+          chart: { type: 'area', height: 350, background: 'transparent', zoom: { enabled: false }, toolbar: { show: false } },
           stroke: { curve: 'smooth', width: 3 },
           yaxis: { min: 0 },
           dataLabels: { enabled: false },
           markers: { size: 3 },
           tooltip: { enabled: true },
-          zoom: {
-            enabled: false
-          },
-          toolbar: {
-            show: false
-          },
           title: {
             text: 'Abertura de Clientes',
             align: 'left',
