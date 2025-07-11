@@ -770,7 +770,18 @@ document.addEventListener('alpine:init', () => {
           yaxis: { min: 0 },
           dataLabels: { enabled: false },
           markers: { size: 3 },
-          tooltip: { enabled: true }
+          tooltip: { enabled: true },
+          zoom: {
+            enabled: false
+          },
+          toolbar: {
+            show: false
+          },
+          title: {
+            text: 'Abertura de Clientes',
+            align: 'left',
+            color: '#e7e7e7',
+          },          
         }
       },
       // ... novos configs aqui
