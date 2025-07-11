@@ -765,11 +765,11 @@ document.addEventListener('alpine:init', () => {
         labelKey: 'labelsCad',
         // options específicas para o gráfico de linha
         baseOptions: {
-          chart: { type: 'line', height: 350, background: 'transparent' },
+          chart: { type: 'area', height: 350, background: 'transparent' },
           stroke: { curve: 'smooth', width: 3 },
-          yaxis: { min: 0, forceNiceScale: false },
+          yaxis: { min: 0 },
           dataLabels: { enabled: false },
-          markers: { size: 4 },
+          markers: { size: 3 },
           tooltip: { enabled: true }
         }
       },
