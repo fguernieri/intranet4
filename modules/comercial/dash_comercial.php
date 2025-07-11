@@ -121,6 +121,7 @@ $mensal = array_values($mensal);
 $labelsFatMensal = array_map(fn($r) => "{$r['mes']}/{$r['ano']}", $mensal);
 $seriesFatMensal = array_map(fn($r) => $r['faturado'], $mensal);
 
+
 // 9) Totais para cards
 $totalPedidos  = count($pedidos);
 $totalFaturado = array_sum(array_column($pedidos, 'ValorFaturado'));
@@ -167,6 +168,27 @@ $cadRows    = $stmtCadastro->fetchAll(PDO::FETCH_ASSOC);
 $cadLabels  = array_column($cadRows, 'vendedor_nome');
 $cadValues  = array_map('intval', array_column($cadRows, 'total_cadastros'));
 $totalCadGeral = array_sum($cadValues);
+
+// 11.2 - Cadastro Mensal
+$stmtMensalCad = $pdo->prepare("
+  SELECT
+    DATE_FORMAT(data_cadastro, '%Y-%m') AS mes,
+    COUNT(*) AS total_cad_mes
+  FROM cadastro_clientes
+  WHERE DATE(data_cadastro) BETWEEN ? AND ?
+  GROUP BY mes
+  ORDER BY mes
+");
+$stmtMensalCad->execute([$startDate, $endDate]);
+$mensalCadRows = $stmtMensalCad->fetchAll(PDO::FETCH_ASSOC);
+
+// Labels no formato “MM/YYYY”
+$labelsCad = array_map(
+  fn($r) => date('m/Y', strtotime($r['mes'].'-01')),
+  $mensalCadRows
+);
+$seriesCad = array_column($mensalCadRows, 'total_cad_mes');
+
 
 
 // Buscar metas de faturamento
@@ -429,8 +451,9 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </div>
       <div x-show="tab === 'mensal'" x-cloak>
         <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO</h1>
-        <div x-ref="chartMensal" class="h-64">Faturamento Mensal</div>
-
+        <div x-ref="chartMensal" class="h-64 mb-6">Faturamento Mensal</div>
+        <div x-ref="chartMensalCad" class="h-64 mb-6">Abertura de Cliente</div>
+        
       </div>
     </div>
       
@@ -704,47 +727,82 @@ $UltimaAtualizacao = $stmt->fetchColumn();
 <script>
 document.addEventListener('alpine:init', () => {
   Alpine.data('dashboard', () => ({
-    tab: 'vendedor',                                // aba padrão
+    tab: 'vendedor',
     labelsMensal: <?= json_encode($labelsFatMensal) ?>,
     seriesMensal: <?= json_encode($seriesFatMensal) ?>,
-    mensalChart: null,                              // guardaremos aqui a instância
+    labelsCad:    <?= json_encode($labelsCad) ?>,
+    seriesCad:    <?= json_encode($seriesCad) ?>,
+
+    chartConfigs: [
+      {
+        key: 'barChart',
+        ref: 'chartMensal',
+        title: 'Faturamento Mensal',
+        dataKey: 'seriesMensal',
+        labelKey: 'labelsMensal',
+        // options específicas para o gráfico de barras
+        baseOptions: {
+          chart: { type: 'bar', height: 350, background: 'transparent' },
+          dataLabels: { 
+            enabled: true,
+            formatter: v => new Intl.NumberFormat('pt-BR',{ style:'currency',currency:'BRL',maximumFractionDigits:0 }).format(v)
+          },
+          plotOptions: {
+            bar: { columnWidth: '50%', horizontal: false }
+          },
+          tooltip: {
+            y: {
+              formatter: v => new Intl.NumberFormat('pt-BR',{ style:'currency',currency:'BRL' }).format(v)
+            }
+          }
+        }
+      },
+      {
+        key: 'cadMensal',
+        ref: 'chartMensalCad',
+        title: 'Cadastros Mensais',
+        dataKey: 'seriesCad',
+        labelKey: 'labelsCad',
+        // options específicas para o gráfico de linha
+        baseOptions: {
+          chart: { type: 'line', height: 350, background: 'transparent' },
+          stroke: { curve: 'smooth', width: 3 },
+          dataLabels: { enabled: false },
+          markers: { size: 4 },
+          tooltip: { enabled: true }
+        }
+      },
+      // ... novos configs aqui
+    ],
+
+    chartInstances: {},
 
     init() {
-      // observa mudanças na aba
-      this.$watch('tab', (novo) => {
-        if (novo === 'mensal') {
-          // espera o DOM refletir o x-show e só então desenha
+      this.$watch('tab', tab => {
+        if (tab !== 'mensal') return;
+
+        this.chartConfigs.forEach(cfg => {
           this.$nextTick(() => {
-            if (!this.mensalChart) {
-              this.mensalChart = new ApexCharts(this.$refs.chartMensal, {
-                chart:    { type: 'bar', height: 350, background: 'transparent' },
-                series:   [{ name: 'Faturamento', data: this.seriesMensal.map(v => Math.round(v)) }],
-                xaxis:    { categories: this.labelsMensal }, tooltip: {enabled: false},
-                yaxis:    {
-                  labels: {
-                    show: false 
-                  }},
-                
-               dataLabels: {
-                  enabled: true,
-                  formatter: v => new Intl.NumberFormat('pt-BR',
-                      { style:'currency', currency:'BRL', maximumFractionDigits: 0 }
-                    ).format(v)
-               },
-              });
-              this.mensalChart.render();
+            const container = this.$refs[cfg.ref];
+            const inst      = this.chartInstances[cfg.key];
+            const data      = this[cfg.dataKey].map(v => Math.round(v));
+            const labels    = this[cfg.labelKey];
+
+            // mergia baseOptions + série + categorias
+            const options = {
+              ...cfg.baseOptions,
+              series: [{ name: cfg.title, data }],
+              xaxis: { categories: labels }
+            };
+
+            if (!inst) {
+              this.chartInstances[cfg.key] = new ApexCharts(container, options);
+              this.chartInstances[cfg.key].render();
             } else {
-              // se já existia, só atualiza os dados
-              this.mensalChart.updateSeries([{
-                name: 'Faturamento',
-                data: this.seriesMensal
-              }]);
-              this.mensalChart.updateOptions({
-                xaxis: { categories: this.labelsMensal }
-              });
+              inst.updateOptions(options);
             }
           });
-        }
+        });
       });
     }
   }));
