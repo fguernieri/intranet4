@@ -451,7 +451,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </div>
       <div x-show="tab === 'mensal'" x-cloak>
         <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO MENSAL</h1>
-        <div x-ref="chartMensal" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6">Faturamento Mensal</div>
+        <div x-ref="chartMensal" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6"></div>
         <div x-ref="chartMensalCad" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6"></div>
         
       </div>
@@ -742,10 +742,16 @@ document.addEventListener('alpine:init', () => {
         labelKey: 'labelsMensal',
         // options específicas para o gráfico de barras
         baseOptions: {
-          chart: { type: 'bar', height: 350, background: 'transparent' },
+          chart: { type: 'bar', height: 350, background: 'transparent', zoom: { enabled: false }, toolbar: { show: false } },
+          theme: { mode: 'dark' },
           dataLabels: { 
             enabled: true,
-            formatter: v => new Intl.NumberFormat('pt-BR',{ style:'currency',currency:'BRL',maximumFractionDigits:0 }).format(v)
+            formatter: v => new Intl.NumberFormat('pt-BR',{ style:'currency',currency:'BRL',maximumFractionDigits:0 }).format(v),
+            title: {
+            text: 'Abertura de Clientes',
+            align: 'left',
+            color: '#e7e7e7',
+            },          
           },
           plotOptions: {
             bar: { columnWidth: '50%', horizontal: false }
