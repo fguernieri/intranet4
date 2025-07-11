@@ -452,7 +452,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       <div x-show="tab === 'mensal'" x-cloak>
         <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO</h1>
         <div x-ref="chartMensal" class="h-64 mb-6">Faturamento Mensal</div>
-        <div x-ref="chartMensalCad" class="h-64 mb-6">Abertura de Cliente</div>
+        <div x-ref="chartMensalCad" class="rounded-xl bg-white/5 p-4 shadow-md h-64 mb-6">Abertura de Cliente</div>
         
       </div>
     </div>
@@ -766,6 +766,7 @@ document.addEventListener('alpine:init', () => {
         // options específicas para o gráfico de linha
         baseOptions: {
           chart: { type: 'area', height: 350, background: 'transparent', zoom: { enabled: false }, toolbar: { show: false } },
+          theme: { mode: 'dark' },
           stroke: { curve: 'smooth', width: 3 },
           yaxis: { min: 0 },
           dataLabels: { enabled: false },
