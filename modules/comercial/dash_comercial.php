@@ -767,6 +767,7 @@ document.addEventListener('alpine:init', () => {
         baseOptions: {
           chart: { type: 'line', height: 350, background: 'transparent' },
           stroke: { curve: 'smooth', width: 3 },
+          yaxis: { min: 0, forceNiceScale: false },
           dataLabels: { enabled: false },
           markers: { size: 4 },
           tooltip: { enabled: true }
