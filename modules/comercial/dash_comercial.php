@@ -450,7 +450,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       </section>
       </div>
       <div x-show="tab === 'mensal'" x-cloak>
-        <h1 class="text-3xl font-bold mb-2 text-yellow-400 text-center">CONSOLIDADO MENSAL</h1>
+        <h1 class="text-3xl font-bold mb-6 text-yellow-400 text-center">CONSOLIDADO MENSAL</h1>
         <div x-ref="chartMensal" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6"></div>
         <div x-ref="chartMensalCad" class="rounded-xl bg-white/5 p-4 shadow-md flex items-center mb-6"></div>
         
@@ -747,12 +747,12 @@ document.addEventListener('alpine:init', () => {
           dataLabels: { 
             enabled: true,
             formatter: v => new Intl.NumberFormat('pt-BR',{ style:'currency',currency:'BRL',maximumFractionDigits:0 }).format(v),
-            title: {
-            text: 'Abertura de Clientes',
+          },
+          title: {
+            text: 'Faturamento Mensal',
             align: 'left',
             color: '#e7e7e7',
             },          
-          },
           plotOptions: {
             bar: { columnWidth: '50%', horizontal: false }
           },
