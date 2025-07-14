@@ -69,6 +69,12 @@ include __DIR__ . '/../../sidebar.php';
   <div class="mt-6">
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-xl font-semibold">Detalhamento</h2>
+      <input
+        type="text"
+        id="filtro-tabela"
+        placeholder="🔍 Filtrar pratos, grupos, custos..."
+        class="w-full sm:w-1/2 px-3 py-2 rounded bg-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      >
       <button
         id="toggle-detalhamento"
         class="btn-acao px-2 py-1 text-sm"
@@ -194,6 +200,17 @@ include __DIR__ . '/../../sidebar.php';
     }
     table.tBodies[0].setAttribute('data-sort-dir', dir);
   }
+  
+  // Filtro em tempo real da tabela
+document.getElementById('filtro-tabela').addEventListener('input', function () {
+  const termo = this.value.toLowerCase();
+  const linhas = document.querySelectorAll('#tabela-pratos tr');
+
+  linhas.forEach(linha => {
+    const textoLinha = linha.textContent.toLowerCase();
+    linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+  });
+});
   
   // Oculta a tabela
   document.addEventListener('DOMContentLoaded', () => {
