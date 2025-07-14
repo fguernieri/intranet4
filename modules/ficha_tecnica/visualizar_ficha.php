@@ -119,6 +119,9 @@ if ($codigos) {
         </a>
       </div>
       <div class="text-right">
+        <a href="compara_ficha.php?cod=<?= $ficha['id'] ?>" class="btn-acao">
+          Comparar
+        </a>
         <a href="editar_ficha_form.php?id=<?= $ficha['id'] ?>" class="btn-acao">
           Editar
         </a>
