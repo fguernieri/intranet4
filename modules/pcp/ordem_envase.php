@@ -207,6 +207,26 @@ if ($response_latas !== false) {
     <!-- Conteúdo Principal -->
     <main class="flex-1 pt-4 px-6 pb-6 overflow-auto">
         <div class="max-w-screen-xl mx-auto w-full">
+            <!-- Bloco de Bem-vindo -->
+<header class="mb-6 sm:mb-8">
+    <h1 class="text-2xl sm:text-3xl font-bold">
+        Bem-vindo, <?= htmlspecialchars($usuario); ?>
+    </h1>
+    <p class="text-gray-400 text-sm">
+        <?php
+          $hoje = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+          $fmt = new IntlDateFormatter(
+            'pt_BR',
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::NONE,
+            'America/Sao_Paulo',
+            IntlDateFormatter::GREGORIAN
+          );
+          echo $fmt->format($hoje);
+        ?>
+    </p>
+</header>
+
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Ordem de Envase
             </h1>
@@ -319,8 +339,6 @@ if ($response_latas !== false) {
                 </div>
             </div>
 
-           
-
             <!-- TABELA LATAS DE LINHA -->
             <div class="table-container mt-8">
                 <h2 class="text-lg md:text-xl font-bold text-yellow-600 mb-2 text-center">
@@ -331,46 +349,48 @@ if ($response_latas !== false) {
                         <thead>
                             <tr class="table-header">
                                 <th class="px-4 py-3 text-left text-xs">CERVEJA</th>
+                                <th class="px-4 py-3 text-center text-xs">ORDEM DE ENVASE</th>
                                 <th class="px-4 py-3 text-center text-xs">MEDIA DIARIA</th>
                                 <th class="px-4 py-3 text-center text-xs">ESTOQUE ATUAL</th>
                                 <th class="px-4 py-3 text-center text-xs">ESTOQUE IDEAL 45 DIAS</th>
-                                <th class="px-4 py-3 text-center text-xs">ORDEM DE ENVASE</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            // Filtra apenas as latas de linha
-                            $dados_latas_linha = array_filter($dados_latas, function($linha) use ($cervejas_permitidas) {
-                                return in_array($linha['CERVEJA'], $cervejas_permitidas);
-                            });
-                            ?>
-                            <?php if (empty($dados_latas_linha)): ?>
-                                <tr class="table-row">
-                                    <td colspan="5" class="px-4 py-6 text-center text-gray-600">
-                                        Nenhuma cerveja encontrada para latas de linha
-                                    </td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($dados_latas_linha as $linha): ?>
-                                    <tr class="table-row">
-                                        <td class="px-4 py-3 font-semibold text-gray-800">
-                                            <?php echo htmlspecialchars($linha['CERVEJA']); ?>
-                                        </td>
-                                        <td class="px-4 py-3 text-center text-gray-700">
-                                            <?php echo number_format($linha['MEDIA_DIARIA'], 2, ',', '.'); ?>
-                                        </td>
-                                        <td class="px-4 py-3 text-center text-gray-700">
-                                            <?php echo number_format($linha['ESTOQUE_ATUAL'], 2, ',', '.'); ?>
-                                        </td>
-                                        <td class="px-4 py-3 text-center text-gray-700">
-                                            <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 2, ',', '.'); ?>
-                                        </td>
-                                        <td class="px-4 py-3 text-center valor-positivo">
-                                            <?php echo number_format($linha['ORDEM_DE_ENVASE'], 2, ',', '.'); ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+$dados_latas_linha = array_filter($dados_latas, function($linha) use ($cervejas_permitidas) {
+    return in_array($linha['CERVEJA'], $cervejas_permitidas);
+});
+usort($dados_latas_linha, function($a, $b) {
+    return ((float)$b['ORDEM_DE_ENVASE']) <=> ((float)$a['ORDEM_DE_ENVASE']);
+});
+?>
+<?php if (empty($dados_latas_linha)): ?>
+    <tr class="table-row">
+        <td colspan="5" class="px-4 py-6 text-center text-gray-600">
+            Nenhuma cerveja encontrada para latas de linha
+        </td>
+    </tr>
+<?php else: ?>
+    <?php foreach ($dados_latas_linha as $linha): ?>
+        <tr class="table-row">
+            <td class="px-4 py-3 font-semibold text-gray-800">
+                <?php echo htmlspecialchars($linha['CERVEJA']); ?>
+            </td>
+            <td class="px-4 py-3 text-center valor-positivo">
+                <?php echo number_format($linha['ORDEM_DE_ENVASE'], 2, ',', '.'); ?>
+            </td>
+            <td class="px-4 py-3 text-center text-gray-700">
+                <?php echo number_format($linha['MEDIA_DIARIA'], 2, ',', '.'); ?>
+            </td>
+            <td class="px-4 py-3 text-center text-gray-700">
+                <?php echo number_format($linha['ESTOQUE_ATUAL'], 2, ',', '.'); ?>
+            </td>
+            <td class="px-4 py-3 text-center text-gray-700">
+                <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 2, ',', '.'); ?>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+<?php endif; ?>
                         </tbody>
                     </table>
                 </div>
