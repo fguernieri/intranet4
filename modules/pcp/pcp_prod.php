@@ -18,7 +18,8 @@ $cervejas_permitidas = [
     'JEAN LE BLANC',
     'MARK THE SHADOW',
     'CRIATURA DO PANTANO',
-    'XP 094 HOP HEADS'
+    'XP 094 HOP HEADS',
+    'WELT RED ALE'
 ];
 
 // Classe para conectar via API REST do Supabase
