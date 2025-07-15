@@ -309,10 +309,10 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
                             <?php echo htmlspecialchars($cerveja); ?><br>
                             <small class="<?php echo $tem_dados ? 'text-gray-600' : 'text-red-600'; ?>">
                                 <?php if ($tem_dados): ?>
-                                    Estoque mínimo: <span class="font-bold"><?php echo number_format($estoque_minimo, 2); ?> litros</span>
+                                    Estoque mínimo para 15 dias: <span class="font-bold"><?php echo number_format($estoque_minimo, 2); ?> litros</span>
                                 <?php else: ?>
                                     ⚠️ Sem dados disponíveis
-                                    <br>Estoque mínimo: <?php echo number_format($estoque_minimo, 2); ?> litros
+                                    <br>Estoque mínimo para 15 dias: <?php echo number_format($estoque_minimo, 2); ?> litros
                                 <?php endif; ?>
                             </small>
                         </h3>
@@ -335,7 +335,7 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
         </div>
     </main>
 
-    <!-- Scripts dos gráficos -->
+   
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const dadosCervejas = {
@@ -405,7 +405,7 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
                             order: 3
                         },
                         {
-                            label: 'Estoque Mínimo',
+                            label: 'Estoque mínimo para 15 dias',
                             data: estoqueMinimo,
                             borderColor: '#000000',
                             backgroundColor: 'transparent',
