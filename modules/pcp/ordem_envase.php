@@ -208,24 +208,6 @@ if ($response_latas !== false) {
     <main class="flex-1 pt-4 px-6 pb-6 overflow-auto">
         <div class="max-w-screen-xl mx-auto w-full">
             <!-- Bloco de Bem-vindo -->
-<header class="mb-6 sm:mb-8">
-    <h1 class="text-2xl sm:text-3xl font-bold">
-        Bem-vindo, <?= htmlspecialchars($usuario); ?>
-    </h1>
-    <p class="text-gray-400 text-sm">
-        <?php
-          $hoje = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-          $fmt = new IntlDateFormatter(
-            'pt_BR',
-            IntlDateFormatter::FULL,
-            IntlDateFormatter::NONE,
-            'America/Sao_Paulo',
-            IntlDateFormatter::GREGORIAN
-          );
-          echo $fmt->format($hoje);
-        ?>
-    </p>
-</header>
 
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Ordem de Envase
