@@ -11,8 +11,8 @@ $cervejas_permitidas = [
     'ZE DO MORRO',
     'HECTOR 5 ROUNDS',
     'HERMES E RENATO',
+   
     'WILLIE THE BITTER',
-    'JUICY JILL',
     'RANNA RIDER',
     'PINA A VIVA',
     'JEAN LE BLANC',
@@ -29,7 +29,7 @@ class SupabaseApiClient {
     
     public function __construct() {
         $this->url = 'https://naigkvzwdboarvzcoebs.supabase.co/rest/v1/';
-        $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5haWdrdnp3ZGJvYXJ2emNvZWJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzgxMzgsImV4cCI6MjA2NzY1NDEzOH0.0c2YJu8-HtK683L6KHA7w8AD9nebb8Y1pMAuiVLENco';
+        $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5haWdrdnp3ZGJvYXJ2emNvZWJzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjA3ODEzOCwiZXhwIjoyMDY3NjU0MTM4fQ.jOR9l_5Q4l0ACBbssLbwYlrscm96kcv1YJi-NL0oAkQ';
     }
     
     public function query($table, $select = '*', $order = null) {
@@ -62,10 +62,10 @@ class SupabaseApiClient {
     // NOVA FUNÇÃO: Busca dados de uma cerveja específica
     public function getDadosCerveja($nome_cerveja) {
         try {
-            $select = 'data,cerveja,estoque_inicial,media_diaria,producao_futura,prod_sem_tanque,producao_atrasada,estoque_acumulado,projecao_com_e_sem_tanque,projecao_com_producao_atrasada';
+            $select = 'DATA,CERVEJA,ESTOQUE_INICIAL,MEDIA_DIARIA,PRODUCAO_FUTURA,PROD_SEM_TANQUE,PRODUCAO_ATRASADA,ESTOQUE_ACUMULADO,PROJECAO_COM_E_SEM_TANQUE,PROJECAO_COM_PRODUCAO_ATRASADA';
             
             // URL com filtro específico para a cerveja
-            $url = $this->url . 'vw_projecao_estoque?select=' . urlencode($select) . '&cerveja=eq.' . urlencode($nome_cerveja) . '&order=data.asc&limit=100';
+            $url = $this->url . 'vw_projecao_estoque?select=' . urlencode($select) . '&CERVEJA=eq.' . urlencode($nome_cerveja) . '&order=DATA.asc&limit=100';
             
             $context = stream_context_create([
                 'http' => [
@@ -126,7 +126,8 @@ class SupabaseApiClient {
 // Conecta via API do Supabase
 try {
     $supabase = new SupabaseApiClient();
-    $test = $supabase->query('vw_projecao_estoque', 'count', null);
+    // Testa conexão apenas buscando 1 registro
+    
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
 }
