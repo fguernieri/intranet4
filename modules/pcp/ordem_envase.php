@@ -7,67 +7,73 @@ require_once __DIR__ . '/../../config/db.php';
 class SupabaseApiClient {
     public $url;
     public $key;
-    
+
     public function __construct() {
         $this->url = 'https://naigkvzwdboarvzcoebs.supabase.co/rest/v1/';
         $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5haWdrdnp3ZGJvYXJ2emNvZWJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzgxMzgsImV4cCI6MjA2NzY1NDEzOH0.0c2YJu8-HtK683L6KHA7w8AD9nebb8Y1pMAuiVLENco';
     }
-    
-    public function getOrdemEnvase() {
-        try {
-            $select = '"CERVEJA","DIFERENCA_INOX","ENVASE_NECESSARIO_INOX","ESTOQUE_ATUAL_INOX","DIFERENCA_PET","ENVASE_NECESSARIO_PET","ESTOQUE_ATUAL_PET"';
-            $url = $this->url . 'vw_ordem_envase_barris?select=' . urlencode($select) . '&order="DIFERENCA_INOX".desc';
 
-            $context = stream_context_create([
-                'http' => [
-                    'method' => 'GET',
-                    'header' => [
-                        'apikey: ' . $this->key,
-                        'Authorization: Bearer ' . $this->key,
-                        'Content-Type: application/json'
-                    ]
-                ]
-            ]);
-
-            $response = file_get_contents($url, false, $context);
-
-            if ($response === false) {
-                throw new Exception('Erro ao fazer requisição para Supabase');
-            }
-
-            $data = json_decode($response, true);
-
-            $dados_normalizados = [];
-            foreach ($data as $row) {
-                $linha_normalizada = [];
-                foreach ($row as $chave => $valor) {
-                    $linha_normalizada[strtoupper($chave)] = $valor;
-                }
-                $dados_normalizados[] = $linha_normalizada;
-            }
-
-            return $dados_normalizados;
-        } catch (Exception $e) {
-            error_log("Erro ao buscar dados de ordem de envase: " . $e->getMessage());
-            return false;
+    public function query($table, $select = '*', $order = null) {
+        $url = $this->url . $table . '?select=' . urlencode($select);
+        if ($order) {
+            $url .= '&order=' . urlencode($order);
         }
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => [
+                    'apikey: ' . $this->key,
+                    'Authorization: Bearer ' . $this->key,
+                    'Content-Type: application/json'
+                ]
+            ]
+        ]);
+        $response = file_get_contents($url, false, $context);
+        if ($response === false) {
+            throw new Exception('Erro ao fazer requisição para Supabase');
+        }
+        $data = json_decode($response, true);
+        $dados_normalizados = [];
+        foreach ($data as $row) {
+            $linha_normalizada = [];
+            foreach ($row as $chave => $valor) {
+                $linha_normalizada[strtoupper($chave)] = $valor;
+            }
+            $dados_normalizados[] = $linha_normalizada;
+        }
+        return $dados_normalizados;
     }
 }
 
 // Conecta via API do Supabase
 try {
     $supabase = new SupabaseApiClient();
-    $dados_ordem_envase = $supabase->getOrdemEnvase();
+
+    // Barris INOX
+    $dados_ordem_envase = $supabase->query(
+        'vw_ordem_envase_barris',
+        'CERVEJA,diferenca_inox,envase_necessario_inox,estoque_atual_inox,diferenca_pet,envase_necessario_pet,estoque_atual_pet',
+        'diferenca_inox.desc'
+    );
+
+    // Barris PET
+    $dados_ordem_envase_pet = $supabase->query(
+        'vw_ordem_envase_barris',
+        'CERVEJA,diferenca_pet,envase_necessario_pet,estoque_atual_pet',
+        'diferenca_pet.desc'
+    );
+
+    // Latas
+    $dados_latas = $supabase->query(
+        'vw_ordem_envase_latas',
+        'CERVEJA,EMBALAGEM,SOMA_QUANTIDADE,MEDIA_DIARIA,ESTOQUE_ATUAL'
+    );
+
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
 }
 
-if ($dados_ordem_envase === false) {
-    die("❌ Erro ao obter dados de ordem de envase");
-}
-
-echo "<!-- Total de registros encontrados: " . count($dados_ordem_envase) . " -->\n";
-
+// Filtragem e ordenação igual ao seu código atual...
 $cervejas_permitidas = [
     'WELT PILSEN',
     'DOG SAVE THE BEER',
@@ -85,83 +91,39 @@ $cervejas_permitidas = [
     'WELT RED ALE'
 ];
 
-// Filtra apenas as cervejas permitidas e DIFERENCA_INOX > 0
 $dados_filtrados = array_filter($dados_ordem_envase, function($linha) use ($cervejas_permitidas) {
     return in_array($linha['CERVEJA'], $cervejas_permitidas) && ((float)$linha['DIFERENCA_INOX'] > 0);
 });
-
-// Ordena do maior para o menor DIFERENCA_INOX
 usort($dados_filtrados, function($a, $b) {
     return ((float)$b['DIFERENCA_INOX']) <=> ((float)$a['DIFERENCA_INOX']);
 });
 
-// Busca a data/hora mais recente da tabela fatualizacoes
-$atualizacao_recente = '';
-try {
-    $url_fatualizacoes = 'https://naigkvzwdboarvzcoebs.supabase.co/rest/v1/fatualizacoes?select=data_hora&order=data_hora.desc&limit=1';
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'header' => [
-                'apikey: ' . $supabase->key,
-                'Authorization: Bearer ' . $supabase->key,
-                'Content-Type: application/json'
-            ]
-        ]
-    ]);
-    $response = file_get_contents($url_fatualizacoes, false, $context);
-    if ($response !== false) {
-        $data = json_decode($response, true);
-        if (!empty($data[0]['data_hora'])) {
-            $atualizacao_recente = date('d/m/Y H:i:s', strtotime($data[0]['data_hora']));
-        }
-    }
-} catch (Exception $e) {
-    $atualizacao_recente = '';
-}
-
-// Busca dados das latas
-$select_latas = '"CERVEJA","MEDIA_DIARIA","ESTOQUE_ATUAL"';
-$url_latas = $supabase->url . 'vw_ordem_envase_latas?select=' . urlencode($select_latas);
-
-$context_latas = stream_context_create([
-    'http' => [
-        'method' => 'GET',
-        'header' => [
-            'apikey: ' . $supabase->key,
-            'Authorization: Bearer ' . $supabase->key,
-            'Content-Type: application/json'
-        ]
-    ]
-]);
-$response_latas = file_get_contents($url_latas, false, $context_latas);
-$dados_latas = [];
-if ($response_latas !== false) {
-    $data_latas = json_decode($response_latas, true);
-    foreach ($data_latas as $row) {
-        $cerveja = $row['CERVEJA'];
-        $media_diaria = (float)$row['MEDIA_DIARIA'];
-        $estoque_atual = (float)$row['ESTOQUE_ATUAL'];
-        $estoque_ideal_45 = $media_diaria * 45;
-        $ordem_envase = ($estoque_ideal_45 - $estoque_atual) < 0 ? 0 : ($estoque_ideal_45 - $estoque_atual);
-
-        $dados_latas[] = [
-            'CERVEJA' => $cerveja,
-            'MEDIA_DIARIA' => $media_diaria,
-            'ESTOQUE_ATUAL' => $estoque_atual,
-            'ESTOQUE_IDEAL_45_DIAS' => $estoque_ideal_45,
-            'ORDEM_DE_ENVASE' => $ordem_envase
-        ];
-    }
-}
-
-// Filtra e ordena dados para tabela PET
-$dados_filtrados_pet = array_filter($dados_ordem_envase, function($linha) use ($cervejas_permitidas) {
+$dados_filtrados_pet = array_filter($dados_ordem_envase_pet, function($linha) use ($cervejas_permitidas) {
     return in_array($linha['CERVEJA'], $cervejas_permitidas) && ((float)$linha['DIFERENCA_PET'] > 0);
 });
 usort($dados_filtrados_pet, function($a, $b) {
     return ((float)$b['DIFERENCA_PET']) <=> ((float)$a['DIFERENCA_PET']);
 });
+
+$dados_latas_linha = array_filter($dados_latas, function($linha) use ($cervejas_permitidas) {
+    return in_array($linha['CERVEJA'], $cervejas_permitidas);
+});
+usort($dados_latas_linha, function($a, $b) {
+    return ((float)$b['MEDIA_DIARIA']) <=> ((float)$a['MEDIA_DIARIA']);
+});
+
+// Calcule os campos ANTES de ordenar e exibir
+foreach ($dados_latas_linha as &$linha) {
+    $linha['ESTOQUE_IDEAL_45_DIAS'] = $linha['MEDIA_DIARIA'] * 45;
+    $linha['ORDEM_DE_ENVASE'] = $linha['ESTOQUE_IDEAL_45_DIAS'] - $linha['ESTOQUE_ATUAL'];
+}
+unset($linha);
+
+// Agora sim, ordene pelo campo calculado
+usort($dados_latas_linha, function($a, $b) {
+    return ((float)$b['ORDEM_DE_ENVASE']) <=> ((float)$a['ORDEM_DE_ENVASE']);
+});
+$atualizacao_recente = $atualizacao_recente ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -320,58 +282,55 @@ usort($dados_filtrados_pet, function($a, $b) {
                 </div>
             </div>
 
-            <!-- TABELA LATAS DE LINHA -->
+            <!-- TABELA LATAS DE LINHA COMPACTA -->
             <div class="table-container mt-8">
-                <h2 class="text-lg md:text-xl font-bold text-yellow-600 mb-2 text-center">
-                    ORDEM DE ENVASE - LATAS
-                </h2>
+                <h2 class="text-lg font-bold text-yellow-600 mb-2 text-center">ORDEM DE ENVASE - LATAS</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs">
                         <thead>
-                            <tr class="table-header">
-                                <th class="px-4 py-3 text-left text-xs">CERVEJA</th>
-                                <th class="px-4 py-3 text-center text-xs">ESTOQUE_ATUAL</th>
-                                <th class="px-4 py-3 text-center text-xs">ESTOQUE_IDEAL_45_DIAS</th>
-                                <th class="px-4 py-3 text-center text-xs">ORDEM_DE_ENVASE</th>
-                                <th class="px-4 py-3 text-center text-xs">MEDIA_DIARIA</th>
+                            <tr class="bg-yellow-500 text-gray-900 font-bold">
+                                <th class="px-1 py-1 text-left">CERVEJA</th>
+                                <th class="px-1 py-1 text-center">ESTOQUE_ATUAL</th>
+                                <th class="px-1 py-1 text-center">ESTOQUE_IDEAL_45_DIAS</th>
+                                <th class="px-1 py-1 text-center">ORDEM_DE_ENVASE</th>
+                                <th class="px-1 py-1 text-center">MEDIA_DIARIA</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            $dados_latas_linha = array_filter($dados_latas, function($linha) use ($cervejas_permitidas) {
-                                return in_array($linha['CERVEJA'], $cervejas_permitidas);
-                            });
+                            // Calcule os campos ANTES de exibir
+                            foreach ($dados_latas_linha as &$linha) {
+                                $linha['ESTOQUE_IDEAL_45_DIAS'] = $linha['MEDIA_DIARIA'] * 45;
+                                $linha['ORDEM_DE_ENVASE'] = $linha['ESTOQUE_IDEAL_45_DIAS'] - $linha['ESTOQUE_ATUAL'];
+                            }
+                            unset($linha);
+                            // Ordene pelo campo calculado
                             usort($dados_latas_linha, function($a, $b) {
                                 return ((float)$b['ORDEM_DE_ENVASE']) <=> ((float)$a['ORDEM_DE_ENVASE']);
                             });
                             ?>
                             <?php if (empty($dados_latas_linha)): ?>
-                                <tr class="table-row">
-                                    <td colspan="5" class="px-4 py-6 text-center text-gray-600">
-                                        Nenhuma cerveja encontrada para latas de linha
-                                    </td>
+                                <tr>
+                                    <td colspan="5" class="px-1 py-2 text-center text-gray-600">Nenhuma cerveja encontrada</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($dados_latas_linha as $linha): ?>
-    <tr class="table-row">
-        <td class="px-4 py-3 font-semibold text-gray-800">
-            <?php echo htmlspecialchars($linha['CERVEJA']); ?>
-        </td>
-        <td class="px-4 py-3 text-center <?php echo ($linha['ESTOQUE_ATUAL'] < 200) ? 'valor-negativo' : 'text-gray-700'; ?>">
-            <?php echo number_format($linha['ESTOQUE_ATUAL'], 2, ',', '.'); ?>
-           
-        </td>
-        <td class="px-4 py-3 text-center text-gray-700">
-            <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 2, ',', '.'); ?>
-        </td>
-        <td class="px-4 py-3 text-center valor-positivo">
-            <?php echo number_format($linha['ORDEM_DE_ENVASE'], 2, ',', '.'); ?>
-        </td>
-        <td class="px-4 py-3 text-center text-gray-700">
-            <?php echo number_format($linha['MEDIA_DIARIA'], 2, ',', '.'); ?>
-        </td>
-    </tr>
-<?php endforeach; ?>
+                                    <tr>
+                                        <td class="px-1 py-1 font-semibold text-gray-800"><?php echo htmlspecialchars($linha['CERVEJA']); ?></td>
+                                        <td class="px-1 py-1 text-center <?php echo ($linha['ESTOQUE_ATUAL'] < 200) ? 'valor-negativo' : 'text-gray-700'; ?>">
+                                            <?php echo number_format($linha['ESTOQUE_ATUAL'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td class="px-1 py-1 text-center text-gray-700">
+                                            <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td class="px-1 py-1 text-center valor-positivo">
+                                            <?php echo number_format($linha['ORDEM_DE_ENVASE'], 0, ',', '.'); ?>
+                                        </td>
+                                        <td class="px-1 py-1 text-center text-gray-700">
+                                            <?php echo number_format($linha['MEDIA_DIARIA'], 1, ',', '.'); ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
