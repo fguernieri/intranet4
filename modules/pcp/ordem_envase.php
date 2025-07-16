@@ -69,6 +69,9 @@ try {
         'CERVEJA,EMBALAGEM,SOMA_QUANTIDADE,MEDIA_DIARIA,ESTOQUE_ATUAL'
     );
 
+    // Puxa a data/hora mais recente da tabela fatualizacoes
+    $fatualizacoes = $supabase->query('fatualizacoes', 'data_hora', 'data_hora.desc');
+    $atualizacao_recente = isset($fatualizacoes[0]['DATA_HORA']) ? $fatualizacoes[0]['DATA_HORA'] : null;
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
 }
@@ -182,9 +185,12 @@ $atualizacao_recente = $atualizacao_recente ?? null;
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Ordem de Envase
             </h1>
+            <!-- Data de atualização no topo -->
             <?php if ($atualizacao_recente): ?>
-                <div class="text-center text-xs text-gray-400 mb-2">
-                    Atualizado em: <span class="font-semibold"><?php echo $atualizacao_recente; ?></span>
+                <div class="w-full text-center text-xs text-gray-400 mb-2 mt-2">
+                    Atualizado em: <span class="font-semibold">
+                        <?php echo date('d/m/Y H:i', strtotime($atualizacao_recente)); ?>
+                    </span>
                 </div>
             <?php endif; ?>
             <hr class="divider_yellow mt-4 mb-4">
