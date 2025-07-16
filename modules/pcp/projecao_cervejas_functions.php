@@ -10,7 +10,7 @@ function getCervejasDisponiveis($conn) {
         $sql = "SELECT DISTINCT cerveja FROM vw_projecao_estoque ORDER BY cerveja";
     } else {
         // Query para MySQL (usando nomes em minúscula)
-        $sql = "SELECT DISTINCT cerveja FROM vw_projecao_estoque ORDER BY cerveja";
+        $sql = "SELECT DISTINCT CERVEJA FROM VW_PROJECAO_ESTOQUE ORDER BY CERVEJA";
     }
     
     $result = $conn->query($sql);
@@ -48,18 +48,18 @@ function getDadosProjecaoCervejas($conn) {
         // Query para MySQL (usando nomes em minúscula da view)
         $sql = "
             SELECT 
-                data,
-                cerveja,
-                estoque_inicial,
-                media_diaria,
-                producao_futura,
-                prod_sem_tanque,
-                producao_atrasada,
-                estoque_acumulado,
-                projecao_com_e_sem_tanque,
-                projecao_com_producao_atrasada
-            FROM vw_projecao_estoque 
-            ORDER BY cerveja, data
+                DATA,
+                CERVEJA,
+                ESTOQUE_INICIAL,
+                MEDIA_DIARIA,
+                PRODUCAO_FUTURA,
+                PROD_SEM_TANQUE,
+                PRODUCAO_ATRASADA,
+                ESTOQUE_ACUMULADO,
+                PROJECAO_COM_E_SEM_TANQUE,
+                PROJECAO_COM_PRODUCAO_ATRASADA
+            FROM VW_PROJECAO_ESTOQUE
+            ORDER BY CERVEJA, DATA
         ";
     }
     

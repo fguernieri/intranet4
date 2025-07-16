@@ -11,7 +11,6 @@ $cervejas_permitidas = [
     'ZE DO MORRO',
     'HECTOR 5 ROUNDS',
     'HERMES E RENATO',
-   
     'WILLIE THE BITTER',
     'RANNA RIDER',
     'PINA A VIVA',
@@ -242,6 +241,14 @@ foreach ($cervejas_permitidas_ordenadas as $index => $cerveja) {
 
 // Substitui a lista original pela ordenada
 $cervejas_permitidas = $cervejas_permitidas_ordenadas;
+
+// Busca a data/hora mais recente da tabela fatualizacoes
+try {
+    $fatualizacoes = $supabase->query('fatualizacoes', 'data_hora', 'data_hora.desc');
+    $atualizacao_recente = isset($fatualizacoes[0]['data_hora']) ? $fatualizacoes[0]['data_hora'] : null;
+} catch (Exception $e) {
+    $atualizacao_recente = null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -333,6 +340,13 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
                 <?php endforeach; ?>
             </div>
             
+            <?php if ($atualizacao_recente): ?>
+                <div class="text-center text-xs text-gray-400 mb-2">
+                    Atualizado em: <span class="font-semibold">
+                        <?php echo date('d/m/Y H:i', strtotime($atualizacao_recente)); ?>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 
@@ -444,7 +458,8 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
                             ticks: {
                                 maxTicksLimit: 12,
                                 font: { size: 10 }
-                            }
+                            },
+                            min: 0 // <-- força o eixo X a começar do zero
                         },
                         y: {
                             title: {
@@ -452,7 +467,8 @@ $cervejas_permitidas = $cervejas_permitidas_ordenadas;
                                 text: 'Litros',
                                 font: { size: 12 }
                             },
-                            beginAtZero: false,
+                            beginAtZero: true,
+                            min: 0, // <-- força o eixo Y a começar do zero
                             ticks: {
                                 font: { size: 10 }
                             }
