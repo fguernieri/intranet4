@@ -1800,5 +1800,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 </script>
+<!-- Botão flutuante para abrir o chat n8n em popup -->
+<style>
+#n8n-chat-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  background: #ffe066;
+  color: #222;
+  padding: 14px 18px;
+  border-radius: 50px;
+  border: none;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  font-weight: bold;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+#n8n-chat-btn:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  background: #ffd700;
+}
+</style>
+<button id="n8n-chat-btn" title="Abrir Chat">
+  💬 Bastardinho
+</button>
+<script>
+document.getElementById('n8n-chat-btn').onclick = function() {
+  window.open(
+    'https://bastardsbrewery.app.n8n.cloud/webhook/ada7d3af-8f99-4706-a7a0-13eb592911e2/chat',
+    'n8nChat',
+    'width=400,height=600,top=100,left='+(window.screen.width-420)+',resizable=yes'
+  );
+};
+</script>
+<!-- /Botão flutuante para abrir o chat n8n em popup -->
 </body>
 </html>
