@@ -38,11 +38,11 @@ try {
         INSERT INTO pedidos (
           numero_pedido, INSUMO_CLOUDFY, INSUMO, CODIGO,
           CATEGORIA, UNIDADE, FILIAL, QUANTIDADE,
-          OBSERVACAO, USUARIO, DATA_HORA
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          OBSERVACAO, USUARIO, DATA_HORA, SETOR
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmtInsert->bind_param(
-        'issssssdsss',
+        'issssssdssss',
         $numeroPedido,
         $insumoCloudfy,
         $insumoNome,
@@ -53,7 +53,8 @@ try {
         $quantidade,
         $observacao,
         $usuario,
-        $dataHora
+        $dataHora,
+        $setor // novo campo
     );
 
     // 3) Lê e decodifica o JSON
@@ -70,6 +71,14 @@ try {
         // Se o JS já valida isso, talvez não seja estritamente necessário, mas é uma boa defesa.
         header('Location: insumos_cross.php?status=noitems'); // Exemplo de status
         exit;
+    }
+
+    $setor = $_POST['setor'] ?? '';
+
+    // Validação do setor
+    $setoresValidos = ['COZINHA', 'BAR', 'GERENCIA'];
+    if (!in_array($setor, $setoresValidos)) {
+        die('Setor inválido.');
     }
 
     // loop existentes

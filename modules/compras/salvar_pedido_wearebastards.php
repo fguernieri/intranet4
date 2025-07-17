@@ -34,11 +34,11 @@ try {
     $stmtInsert = $conn->prepare("
         INSERT INTO pedidos (
           INSUMO, CODIGO, CATEGORIA, UNIDADE, FILIAL,
-          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA, SETOR
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmtInsert->bind_param(
-        'sssssdsss',
+        'sssssdssss',
         $insumoNome,
         $insumoCodigo,
         $categoria,
@@ -47,7 +47,8 @@ try {
         $quantidade,
         $observacao,
         $usuario,
-        $dataHora
+        $dataHora,
+        $setor // novo campo
     );
 
     // Lê e decodifica o JSON de itens
@@ -63,6 +64,14 @@ try {
         // Nenhum item para processar
         header('Location: insumos_wearebastards.php?status=noitems'); // Exemplo de status
         exit;
+    }
+
+    $setor = $_POST['setor'] ?? '';
+
+    // Validação do setor
+    $setoresValidos = ['COZINHA', 'BAR', 'GERENCIA'];
+    if (!in_array($setor, $setoresValidos)) {
+        die('Setor inválido.');
     }
 
     // loop e inserção

@@ -32,11 +32,11 @@ try {
     $stmtInsert = $conn->prepare("
         INSERT INTO pedidos (
           INSUMO, CODIGO, CATEGORIA, UNIDADE, FILIAL,
-          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA, SETOR
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmtInsert->bind_param(
-        'sssssdsss',
+        'sssssdssss',
         $insumoNome,
         $insumoCodigo,
         $categoria,
@@ -45,7 +45,8 @@ try {
         $quantidade,
         $observacao,
         $usuario,
-        $dataHora
+        $dataHora,
+        $setor // <-- aqui salva o setor
     );
 
     // 3) Lê e decodifica o JSON
@@ -54,13 +55,20 @@ try {
 
     if (!is_array($itens)) {
         http_response_code(400);
-        error_log("salvar_pedido_bardafabrica.php erro: JSON inválido ou ausente. Recebido: " . $jsonInput);
         exit('JSON inválido ou ausente');
     }
     if (empty($itens)) {
         // Nenhum item para processar
         header('Location: insumos_bardafabrica.php?status=noitems'); // Exemplo de status
         exit;
+    }
+
+    $setor = $_POST['setor'] ?? '';
+
+    // Validação do setor
+    $setoresValidos = ['COZINHA', 'BAR', 'GERENCIA'];
+    if (!in_array($setor, $setoresValidos)) {
+        die('Setor inválido.');
     }
 
     foreach ($itens as $item) {
