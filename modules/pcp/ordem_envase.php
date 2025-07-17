@@ -52,15 +52,15 @@ try {
     // Barris INOX
     $dados_ordem_envase = $supabase->query(
         'vw_ordem_envase_barris',
-        'CERVEJA,diferenca_inox,envase_necessario_inox,estoque_atual_inox,diferenca_pet,envase_necessario_pet,estoque_atual_pet',
-        'diferenca_inox.desc'
+        '"CERVEJA","DIFERENCA_INOX","ENVASE_NECESSARIO_INOX","ESTOQUE_ATUAL_INOX","DIFERENCA_PET","ENVASE_NECESSARIO_PET","ESTOQUE_ATUAL_PET"',
+        '"DIFERENCA_INOX".desc'
     );
 
     // Barris PET
     $dados_ordem_envase_pet = $supabase->query(
         'vw_ordem_envase_barris',
-        'CERVEJA,diferenca_pet,envase_necessario_pet,estoque_atual_pet',
-        'diferenca_pet.desc'
+        '"CERVEJA","DIFERENCA_PET","ENVASE_NECESSARIO_PET","ESTOQUE_ATUAL_PET"',
+        '"DIFERENCA_PET".desc'
     );
 
     // Latas
@@ -72,6 +72,8 @@ try {
     // Puxa a data/hora mais recente da tabela fatualizacoes
     $fatualizacoes = $supabase->query('fatualizacoes', 'data_hora', 'data_hora.desc');
     $atualizacao_recente = isset($fatualizacoes[0]['DATA_HORA']) ? $fatualizacoes[0]['DATA_HORA'] : null;
+
+    
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
 }
@@ -226,13 +228,13 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                                 <?php echo htmlspecialchars($linha['CERVEJA']); ?>
                                             </td>
                                             <td class="px-4 py-3 text-center text-gray-700">
-                                                <?php echo number_format((float)$linha['ESTOQUE_ATUAL_INOX'], 2, ',', '.'); ?>
+                                                <?php echo number_format((float)$linha['ESTOQUE_ATUAL_INOX'], 0, ',', '.'); ?>
                                             </td>
                                             <td class="px-4 py-3 text-center text-gray-700">
-                                                <?php echo number_format((float)$linha['ENVASE_NECESSARIO_INOX'], 2, ',', '.'); ?>
+                                                <?php echo number_format((float)$linha['ENVASE_NECESSARIO_INOX'], 0, ',', '.'); ?>
                                             </td>
                                             <td class="px-4 py-3 text-center valor-positivo">
-                                                <?php echo number_format((float)$linha['DIFERENCA_INOX'], 2, ',', '.'); ?>
+                                                <?php echo number_format((float)$linha['DIFERENCA_INOX'], 0, ',', '.'); ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -271,13 +273,13 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                     <?php echo htmlspecialchars($linha['CERVEJA']); ?>
                 </td>
                 <td class="px-4 py-3 text-center text-gray-700">
-                    <?php echo number_format((float)$linha['ESTOQUE_ATUAL_PET'], 2, ',', '.'); ?>
+                    <?php echo number_format((float)$linha['ESTOQUE_ATUAL_PET'], 0, ',', '.'); ?>
                 </td>
                 <td class="px-4 py-3 text-center text-gray-700">
-                    <?php echo number_format((float)$linha['ENVASE_NECESSARIO_PET'], 2, ',', '.'); ?>
+                    <?php echo number_format((float)$linha['ENVASE_NECESSARIO_PET'], 0, ',', '.'); ?>
                 </td>
                 <td class="px-4 py-3 text-center valor-positivo">
-                    <?php echo number_format((float)$linha['DIFERENCA_PET'], 2, ',', '.'); ?>
+                    <?php echo number_format((float)$linha['DIFERENCA_PET'], 0, ',', '.'); ?>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -333,7 +335,7 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                             <?php echo number_format($linha['ORDEM_DE_ENVASE'], 0, ',', '.'); ?>
                                         </td>
                                         <td class="px-1 py-1 text-center text-gray-700">
-                                            <?php echo number_format($linha['MEDIA_DIARIA'], 1, ',', '.'); ?>
+                                            <?php echo number_format($linha['MEDIA_DIARIA'], 0, ',', '.'); ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
