@@ -96,7 +96,7 @@ $map = [
       } elseif ($norm === 'CROSS') {
           $cls = 'bg-black hover:bg-gray-800 text-white';
       } elseif ($norm === 'WE ARE BASTARDS') {
-          $cls = 'bg-red-800 hover:bg-red-900 text-black';
+          $cls = 'bg-red-800 hover:bg-red-900 text-white';
       } else {
           $cls = 'bg-yellow-500 hover:bg-yellow-600 text-gray-900';
       }
@@ -120,7 +120,7 @@ $map = [
     </div>
     <div class="max-w-md mx-auto flex justify-center">
       <a href="insumoswab_htf.php"
-         class="text-sm font-semibold py-2 px-4 bg-red-800 hover:bg-red-900 text-black rounded shadow whitespace-nowrap"
+         class="text-sm font-semibold py-2 px-4 bg-red-800 hover:bg-red-900 text-white rounded shadow whitespace-nowrap"
          title="Acesso exclusivo para Gerência/Chefe de Bar do WE ARE BASTARDS"
       >WE ARE BASTARDS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
     </div>
