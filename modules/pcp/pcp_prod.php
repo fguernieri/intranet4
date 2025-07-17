@@ -7,6 +7,7 @@ require_once __DIR__ . '/projecao_cervejas_functions.php';
 // Lista das cervejas que devem ser exibidas
 $cervejas_permitidas = [
     'WELT PILSEN',
+    "JUICY JILL",
     'DOG SAVE THE BEER', 
     'ZE DO MORRO',
     'HECTOR 5 ROUNDS',
