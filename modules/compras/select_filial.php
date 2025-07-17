@@ -80,7 +80,7 @@ $map = [
   </header>
 
   <h3 class="text-xl font-bold text-yellow-400 text-center mb-8">
-    PEDIDOS POR MÉDIA
+    PEDIDOS POR MÉDIA - EXCLUSIVO COMPRADOR
   </h3>
 
   <div class="max-w-md mx-auto flex flex-wrap gap-2 justify-center">
@@ -109,7 +109,7 @@ $map = [
 
   <hr class="my-8 border-yellow-400">
 
-  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">PEDIDOS MANUAIS</h3>
+  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">PEDIDOS MANUAIS - APENAS HORTIFRUTI/LIMPEZA/DESCARTÁVEIS</h3>
 
   <div class="space-y-2">
     <div class="max-w-md mx-auto flex justify-center">
