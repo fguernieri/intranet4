@@ -60,42 +60,33 @@ $map = [
 
   <main class="flex-1 p-6 bg-gray-900">
 
-  <header class="mb-8">
-    <h1 class="text-2xl sm:text-3xl font-bold">
-      Bem-vindo, <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Usuário'); ?>
-    </h1>
-    <p class="text-gray-400 text-sm">
-      <?php
-        $hoje = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-        $fmt = new IntlDateFormatter(
-          'pt_BR',
-          IntlDateFormatter::FULL,
-          IntlDateFormatter::NONE,
-          'America/Sao_Paulo',
-          IntlDateFormatter::GREGORIAN
-        );
-        echo $fmt->format($hoje);
-      ?>
-    </p>
-  </header>
+  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">SELECIONE A FILIAL E REALIZE SEU PEDIDO - APENAS HORTIFRUTI | LIMPEZA | DESCARTÁVEIS</h3>
 
-  <h3 class="text-xl font-bold text-yellow-400 text-center mb-8">
-    PEDIDOS POR MÉDIA - EXCLUSIVO COMPRADOR
-  </h3>
-
-  <div class="max-w-md mx-auto flex flex-wrap gap-2 justify-center">
-    <a href="insumos_7tragos.php"
-       class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow"
-    >7TRAGOS</a>
-    <a href="insumos_bardafabrica.php"
-       class="text-sm font-semibold py-2 px-4 bg-blue-800 hover:bg-blue-900 text-white rounded shadow"
-    >BAR DA FABRICA</a>
-    <a href="insumos_cross.php"
-       class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow"
-    >CROSS</a>
-    <a href="insumos_wearebastards.php"
-       class="text-sm font-semibold py-2 px-4 bg-red-800 hover:bg-red-900 text-white rounded shadow"
-    >WE ARE BASTARDS</a>
+  <div class="space-y-2">
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumosbdf_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-blue-800 hover:bg-blue-900 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar da Fábrica"
+      >BAR DA FÁBRICA | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumoswab_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-red-800 hover:bg-red-900 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do WE ARE BASTARDS"
+      >WE ARE BASTARDS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumoscross_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do CROSS"
+      >CROSS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumos7tragos_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do 7TRAGOS"
+      >7TRAGOS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
   </div>
 
 </main>
