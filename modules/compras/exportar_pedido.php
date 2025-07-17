@@ -40,7 +40,8 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
         main.INSUMO,
         main.UNIDADE,
         main.QUANTIDADE_TOTAL,
-        main.OBSERVACAO
+        main.OBSERVACAO,
+        main.SETOR
       FROM (
         SELECT
             t.CODIGO,
@@ -48,17 +49,18 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
             t.INSUMO,
             t.UNIDADE,
             SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
-            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACAO
+            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACAO,
+            t.SETOR
         FROM (
-            SELECT p.CODIGO, p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
+            SELECT p.CODIGO, p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA, p.SETOR
             FROM pedidos p
             WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
             UNION ALL
-            SELECT '' AS CODIGO, ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA
+            SELECT '' AS CODIGO, ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA, ni.SETOR
             FROM novos_insumos ni
             WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
         ) AS t
-        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO
+        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO, t.SETOR
       ) AS main
       ORDER BY main.INSUMO
     ";
@@ -89,7 +91,7 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
 
     $out = fopen('php://output', 'w');
     // Cabeçalho com a nova ordem e inclusão de "Código"
-    fputcsv($out, ['Código', 'Categoria', 'Produto', 'Unidade', 'QTDE', 'Observação'], ';');
+    fputcsv($out, ['Código', 'Categoria', 'Produto', 'Unidade', 'QTDE', 'Observação', 'Setor'], ';');
     
     while ($row = $res2->fetch_assoc()) {
         $qPedido = number_format((float)$row['QUANTIDADE_TOTAL'], 2, ',', '.');
@@ -99,7 +101,8 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
             $row['INSUMO'],
             $row['UNIDADE'],
             $qPedido,
-            $row['OBSERVACAO'] ?? ''
+            $row['OBSERVACAO'] ?? '',
+            $row['SETOR'] ?? ''
         ], ';');
     }
 
@@ -126,7 +129,8 @@ if ($selFilial && $dataInicio && $dataFim) {
         main.INSUMO,
         main.UNIDADE,
         main.QUANTIDADE_TOTAL,
-        main.OBSERVACOES
+        main.OBSERVACOES,
+        main.SETOR
       FROM (
         SELECT
             t.CODIGO,
@@ -134,17 +138,18 @@ if ($selFilial && $dataInicio && $dataFim) {
             t.INSUMO,
             t.UNIDADE,
             SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
-            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACOES
+            GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACOES,
+            t.SETOR
         FROM (
-            SELECT p.CODIGO, p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA
+            SELECT p.CODIGO, p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA, p.SETOR
             FROM pedidos p
             WHERE p.FILIAL = ? AND p.DATA_HORA BETWEEN ? AND ?
             UNION ALL
-            SELECT '' AS CODIGO, ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA
+            SELECT '' AS CODIGO, ni.INSUMO, ni.CATEGORIA, ni.UNIDADE, ni.QUANTIDADE, ni.observacao AS OBSERVACAO, ni.FILIAL, ni.DATA_HORA, ni.SETOR
             FROM novos_insumos ni
             WHERE ni.FILIAL = ? AND ni.DATA_HORA BETWEEN ? AND ?
         ) AS t
-        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO
+        GROUP BY t.INSUMO, t.CATEGORIA, t.UNIDADE, t.CODIGO, t.SETOR
       ) AS main
       ORDER BY main.INSUMO
     ";
@@ -247,6 +252,7 @@ require_once __DIR__ . '/../../sidebar.php';
               <th class="p-2 text-left">Unidade</th>
               <th class="p-2 text-center">QTDE</th>
               <th class="p-2 text-left">Observação</th>
+              <th class="p-2 text-left">Setor</th>
             </tr>
           </thead>
           <tbody>
@@ -260,6 +266,7 @@ require_once __DIR__ . '/../../sidebar.php';
               <td class="p-2"><?= htmlspecialchars($row['UNIDADE'], ENT_QUOTES) ?></td>
               <td class="p-2 text-center"><?= $qtdePedidaHtml ?></td>
               <td class="p-2"><?= htmlspecialchars($row['OBSERVACOES'] ?? '', ENT_QUOTES) ?></td>
+              <td class="p-2"><?= htmlspecialchars($row['SETOR'] ?? '', ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>
