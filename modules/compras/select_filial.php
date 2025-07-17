@@ -80,7 +80,7 @@ $map = [
   </header>
 
   <h3 class="text-xl font-bold text-yellow-400 text-center mb-8">
-    Selecione a Filial
+    PEDIDOS POR MÉDIA
   </h3>
 
   <div class="max-w-md mx-auto flex flex-wrap gap-2 justify-center">
@@ -93,6 +93,10 @@ $map = [
           $cls = 'bg-black hover:bg-gray-800 text-white';
       } elseif ($norm === 'BAR DA FABRICA') {
           $cls = 'bg-blue-800 hover:bg-blue-900 text-white';
+      } elseif ($norm === 'CROSS') {
+          $cls = 'bg-black hover:bg-gray-800 text-white';
+      } elseif ($norm === 'WE ARE BASTARDS') {
+          $cls = 'bg-red-800 hover:bg-red-900 text-black';
       } else {
           $cls = 'bg-yellow-500 hover:bg-yellow-600 text-gray-900';
       }
@@ -101,6 +105,37 @@ $map = [
          class="<?= "$cls $base" ?>"
       ><?= htmlspecialchars($f) ?></a>
     <?php endforeach; ?>
+  </div>
+
+  <hr class="my-8 border-yellow-400">
+
+  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">PEDIDOS MANUAIS</h3>
+
+  <div class="space-y-2">
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumosbdf_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-blue-800 hover:bg-blue-900 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar da Fábrica"
+      >BAR DA FÁBRICA | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumoswab_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-red-800 hover:bg-red-900 text-black rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do WE ARE BASTARDS"
+      >WE ARE BASTARDS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumoscross_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do CROSS"
+      >CROSS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
+    <div class="max-w-md mx-auto flex justify-center">
+      <a href="insumos7tragos_htf.php"
+         class="text-sm font-semibold py-2 px-4 bg-black hover:bg-gray-800 text-white rounded shadow whitespace-nowrap"
+         title="Acesso exclusivo para Gerência/Chefe de Bar do 7TRAGOS"
+      >7TRAGOS | COZINHA - BAR - GERÊNCIA - EVENTOS</a>
+    </div>
   </div>
 
 </main>

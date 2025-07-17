@@ -1,19 +1,16 @@
 <?php
 // === modules/compras/salvar_pedido_7tragos.php ===
-// Salva o pedido só para 7TRAGOS (removido INSUMO_CLOUDFY e número manual).
+// Recebe JSON único em itensJson e insere no BD.
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 session_start();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: insumos_7tragos.php');
-    exit;
+    http_response_code(405); exit;
 }
 
-// fixa a filial
 $filial  = '7TRAGOS';
 $usuario = $_SESSION['usuario_nome'] ?? '';
 
-// conexão + transação
 require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -23,7 +20,7 @@ $conn->begin_transaction();
 try {
     $dataHora = date('Y-m-d H:i:s');
 
-    // prepara statements
+    // 1) Prepara SELECT de código
     $stmtInfo = $conn->prepare("
         SELECT CODIGO
           FROM insumos
@@ -31,14 +28,15 @@ try {
     ");
     $stmtInfo->bind_param('ss', $insumoNome, $filial);
 
+    // 2) Prepara INSERT em pedidos
     $stmtInsert = $conn->prepare("
         INSERT INTO pedidos (
-          INSUMO, CODIGO, CATEGORIA, UNIDADE, FILIAL, 
-          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSUMO, CODIGO, CATEGORIA, UNIDADE, FILIAL,
+          QUANTIDADE, OBSERVACAO, USUARIO, DATA_HORA, SETOR
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmtInsert->bind_param(
-        'sssssdsss',
+        'sssssdssss',
         $insumoNome,
         $insumoCodigo,
         $categoria,
@@ -47,16 +45,16 @@ try {
         $quantidade,
         $observacao,
         $usuario,
-        $dataHora
+        $dataHora,
+        $setor // novo campo
     );
 
-    // lê o JSON de itens
+    // 3) Lê e decodifica o JSON
     $jsonInput = $_POST['itensJson'] ?? '';
     $itens = json_decode($jsonInput, true);
 
     if (!is_array($itens)) {
         http_response_code(400);
-        error_log("salvar_pedido_7tragos.php erro: JSON inválido ou ausente. Recebido: " . $jsonInput);
         exit('JSON inválido ou ausente');
     }
     if (empty($itens)) {
@@ -65,12 +63,20 @@ try {
         exit;
     }
 
+    $setor = $_POST['setor'] ?? '';
+
+    // Validação do setor
+    $setoresValidos = ['COZINHA', 'BAR', 'GERENCIA'];
+    if (!in_array($setor, $setoresValidos)) {
+        die('Setor inválido.');
+    }
+
     foreach ($itens as $item) {
         $insumoNomeRaw = $item['insumo'] ?? '';
         $quantidadeRaw = $item['quantidade'] ?? '0';
 
         $insumoNome  = trim($insumoNomeRaw);
-        $quantidade  = floatval($quantidadeRaw);
+        $quantidade  = floatval($quantidadeRaw); // Convertido para float para validação e bind 'd'
 
         if ($insumoNome === '' || $quantidade <= 0) {
             continue; // Pula itens inválidos
@@ -80,7 +86,7 @@ try {
         $unidade     = substr(trim($item['unidade']   ?? ''), 0, 20);
         $observacao  = substr(trim($item['observacao']?? ''), 0, 200);
 
-        // busca o código no insumos
+        // busca código no catálogo
         $stmtInfo->execute();
         $stmtInfo->bind_result($insumoCodigo);
         if (! $stmtInfo->fetch()) {
@@ -88,7 +94,7 @@ try {
         }
         $stmtInfo->free_result();
 
-        // insere o item de pedido
+        // insere no pedido
         $stmtInsert->execute();
     }
 
@@ -98,6 +104,6 @@ try {
 
 } catch (mysqli_sql_exception $e) {
     $conn->rollback();
-    error_log("salvar_pedido_7tragos.php erro: ".$e->getMessage());
+    error_log("salvar_pedido_7tragos.php erro: " . $e->getMessage());
     die("Erro ao salvar o pedido. Consulte o administrador.");
 }
