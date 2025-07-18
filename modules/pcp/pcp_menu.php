@@ -43,7 +43,7 @@ $usuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         </div>
         <div class="w-full max-w-5xl mx-auto py-4 px-4">
             <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 text-center mb-8">
-                Menu de Acesso - Planejamento de Produções & Ordens de Envase
+            Planejamento de Produções & Ordens de Envase
             </h1>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Card Planejamento de Produções -->
