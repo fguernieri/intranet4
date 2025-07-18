@@ -294,6 +294,13 @@ try {
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Painel de planejamento de produções
             </h1>
+            <?php if ($atualizacao_recente): ?>
+                <div class="text-center text-xs text-gray-400 mb-2">
+                    Atualizado em: <span class="font-semibold">
+                        <?php echo date('d/m/Y H:i', strtotime($atualizacao_recente)); ?>
+                    </span>
+                </div>
+            <?php endif; ?>
             <hr class="divider_yellow mt-4 mb-4">
             
             <!-- Informações gerais -->
@@ -340,14 +347,6 @@ try {
                     </div>
                 <?php endforeach; ?>
             </div>
-            
-            <?php if ($atualizacao_recente): ?>
-                <div class="text-center text-xs text-gray-400 mb-2">
-                    Atualizado em: <span class="font-semibold">
-                        <?php echo date('d/m/Y H:i', strtotime($atualizacao_recente)); ?>
-                    </span>
-                </div>
-            <?php endif; ?>
         </div>
     </main>
 
