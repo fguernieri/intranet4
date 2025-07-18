@@ -183,7 +183,14 @@ $atualizacao_recente = $atualizacao_recente ?? null;
     <main class="flex-1 pt-4 px-6 pb-6 overflow-auto">
         <div class="max-w-screen-xl mx-auto w-full">
             <!-- Bloco de Bem-vindo -->
-
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                <div></div>
+                <a href="pcp_prod.php"
+                   class="mt-2 md:mt-0 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded shadow transition-all text-sm"
+                   style="margin-left: 8px;">
+                    Ir para Painel de Planejamento de Produções - PCP
+                </a>
+            </div>
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Ordem de Envase
             </h1>

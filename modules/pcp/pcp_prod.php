@@ -290,10 +290,15 @@ try {
 
     <!-- Conteúdo Principal -->
     <main class="flex-1 pt-4 px-6 pb-6 overflow-auto flex flex-col items-center">
-        <div class="max-w-screen-xl mx-auto w-full">
+        <div class="max-w-screen-xl mx-auto w-full relative">
             <h1 class="text-center text-yellow-500 mt-0 mb-0 text-xl md:text-2xl font-bold">
                 Painel de planejamento de produções
             </h1>
+            <a href="ordem_envase.php"
+               class="absolute right-0 top-0 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded shadow transition-all text-sm"
+               style="margin-top: 4px; margin-right: 2px;">
+                Ir para Ordem de Envase
+            </a>
             <?php if ($atualizacao_recente): ?>
                 <div class="text-center text-xs text-gray-400 mb-2">
                     Atualizado em: <span class="font-semibold">
