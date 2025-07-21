@@ -79,16 +79,45 @@ if ($mesFechado) {
     ";
 }
 $res = $conn->query($sql);
-$linhasMesAtual = [];
-while ($f = $res->fetch_assoc()) {
-    $linhasMesAtual[] = [
-        'ID_CONTA'        => $f['ID_CONTA'],
-        'CATEGORIA'       => $f['CATEGORIA'],
-        'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
-        'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
-        'PARCELA'         => $f['PARCELA'],
-        'VALOR_EXIBIDO'   => $f['VALOR'],
-    ];
+if ($res) {
+    while ($f = $res->fetch_assoc()) {
+        $linhasMesAtual[] = [
+            'ID_CONTA'        => $f['ID_CONTA'],
+            'CATEGORIA'       => $f['CATEGORIA'],
+            'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+            'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+            'PARCELA'         => $f['PARCELA'],
+            'VALOR_EXIBIDO'   => $f['VALOR'],
+        ];
+    }
+}
+
+// Adiciona contas com vencimento no mês e ainda pendentes
+$sqlPendentesNoMes = "
+    SELECT 
+        c.ID_CONTA,
+        c.CATEGORIA,
+        c.SUBCATEGORIA,
+        c.DESCRICAO_CONTA,
+        d.PARCELA,
+        d.VALOR
+    FROM fContasAPagar AS c
+    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
+    WHERE YEAR(d.DATA_VENCIMENTO) = $anoAtual AND MONTH(d.DATA_VENCIMENTO) = $mesAtual
+    AND d.STATUS != 'Pago'
+";
+$resPendentes = $conn->query($sqlPendentesNoMes);
+if ($resPendentes) {
+    while ($f = $resPendentes->fetch_assoc()) {
+        $linhasMesAtual[] = [
+            'ID_CONTA'        => $f['ID_CONTA'],
+            'CATEGORIA'       => $f['CATEGORIA'],
+            'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+            'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+            'PARCELA'         => $f['PARCELA'],
+            'VALOR_EXIBIDO'   => $f['VALOR'],
+        ];
+    }
 }
 
 // Organiza em matriz hierárquica: categoria > subcategoria > descrição > parcela
@@ -1206,7 +1235,7 @@ $jsonChartData = json_encode($chartData);
                     <span class="text-gray-400">Parcela:</span> <?= htmlspecialchars($parcela['parcela']) ?>
                     <span class="text-xs text-gray-500 ml-2">(ID: <?= $idConta ?>)</span>
                   </td>
-                                   <td class="p-2 text-right">-</td>
+                  <td class="p-2 text-right">-</td>
                   <td class="p-2 text-center">-</td>
                   <td class="p-2 text-right"><?= 'R$ '.number_format($parcela['valor'],2,',','.') ?></td>
                   <td class="p-2 text-center">-</td>
