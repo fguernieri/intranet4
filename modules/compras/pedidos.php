@@ -60,7 +60,7 @@ $map = [
 
   <main class="flex-1 p-6 bg-gray-900">
 
-  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">SELECIONE A FILIAL E REALIZE SEU PEDIDO - APENAS HORTIFRUTI | LIMPEZA | DESCARTÁVEIS</h3>
+  <h3 class="text-lg font-bold text-yellow-400 text-center mb-4">SELECIONE A FILIAL E REALIZE SEU PEDIDO</h3>
 
   <div class="space-y-2">
     <div class="max-w-md mx-auto flex justify-center">
