@@ -67,12 +67,6 @@ if (empty($insumos)) {
     echo '<div style="color:orange;font-weight:bold">Aviso: Nenhum insumo retornado pela consulta SQL.</div>';
 }
 
-// Filtra para exibir somente as categorias desejadas
-$allowedCategories = ['HORTIFRUTI', 'EMBALAGENS/CONSUMIVEIS', 'LIMPEZA/DESCARTAVEIS', 'UTENSILIOS'];
-$insumos = array_filter($insumos, function($row) use ($allowedCategories) {
-    return in_array($row['CATEGORIA'], $allowedCategories);
-});
-
 // Define a SUGESTAO_COMPRA como zero para todos os insumos
 foreach ($insumos as &$row) {
     $row['SUGESTAO_COMPRA'] = 0;
@@ -341,6 +335,10 @@ if (
           </button>
           <button type="button" class="setor-btn w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="GERENCIA">
             👔 GERÊNCIA
+          </button>
+          <!-- Adicione este botão para EVENTO -->
+          <button type="button" class="setor-btn w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="EVENTO">
+            🎉 EVENTO
           </button>
         </div>
         
