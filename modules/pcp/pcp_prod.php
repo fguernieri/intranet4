@@ -259,6 +259,7 @@ try {
     <title>Painel de planejamento de produções</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@4.0.0"></script>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -357,6 +358,32 @@ try {
 
    
     <script>
+    const diasTanquePorCerveja = {
+        'ACID BLOOD': 30,
+        'COLAB FERMI IPA DAY': 21,
+        'COLAB TURBINADA 2XIPA': 30,
+        'CRIATURA DO PANTANO': 21,
+        'DOG SAVE THE BEER': 21,
+        'HECTOR 5 ROUNDS': 21,
+        'HERMES E RENATO': 21,
+        'JEAN LE BLANC': 21,
+        'JUICY JILL': 30,
+        'LATIDO DA SEREIA': 21,
+        'MARK THE SHADOW': 21,
+        'OLD BUT GOLD': 30,
+        'PINA A VIVA': 30,
+        'RANNA RIDER': 21,
+        'WELT PILSEN': 21,
+        'WELT RED ALE': 21,
+        'WILLIE THE BITTER': 21,
+        'XP 086 WEST COAST': 21,
+        'XP 094 HOP HEADS': 21,
+        'XP GOLDEN FLAMINGO': 21,
+        'ZE DO MORRO': 21
+    };
+    </script>
+
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
         const dadosCervejas = {
             <?php foreach ($dados_por_cerveja as $cerveja => $dados_cerveja): ?>
@@ -375,9 +402,8 @@ try {
         Object.keys(dadosCervejas).forEach(function(chartId) {
             const cervejaInfo = dadosCervejas[chartId];
             const ctx = document.getElementById(chartId);
-            
             if (!ctx) return;
-            
+
             const datas = [];
             const estoqueAcumulado = [];
             const projecaoAgendada = [];
@@ -396,6 +422,23 @@ try {
                 estoqueMinimo.push(cervejaInfo.estoqueMinimo);
             });
             
+            // Descobre quantos dias de tanque para esta cerveja
+            const diasTanque = diasTanquePorCerveja[cervejaInfo.cerveja.toUpperCase()] || 21;
+            const faixaFinalIndex = Math.min(diasTanque - 1, datas.length - 1);
+            let limiteLabel = datas[faixaFinalIndex];
+            if (!datas.includes(limiteLabel)) {
+                limiteLabel = datas[datas.length - 1];
+            }
+
+            // Ponto preto no limite de reação
+            const pontosLimite = [];
+            if (faixaFinalIndex >= 0 && faixaFinalIndex < datas.length) {
+                pontosLimite.push({
+                    x: limiteLabel,
+                    y: estoqueAcumulado[faixaFinalIndex]
+                });
+            }
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -446,6 +489,22 @@ try {
                             tension: 0.1,
                             pointRadius: 0,
                             order: 1
+                        },
+                        // Ponto preto no limite de reação
+                        {
+                            label: 'Limite reação',
+                            data: [
+                                { x: limiteLabel, y: 0 },
+                                { x: limiteLabel, y: Math.max(...estoqueAcumulado, ...projecaoAgendada, ...projecaoAtrasada, ...estoqueMinimo) * 1.0 }
+                            ],
+                            borderColor: 'red',
+                            borderWidth: 3,
+                            borderDash: [4, 4], // pontilhado
+                            pointRadius: 0,
+                            fill: false,
+                            showLine: true,
+                            type: 'line',
+                            order: 10
                         }
                     ]
                 },
@@ -464,7 +523,7 @@ try {
                                 maxTicksLimit: 12,
                                 font: { size: 10 }
                             },
-                            min: 0 // <-- força o eixo X a começar do zero
+                            min: 0
                         },
                         y: {
                             title: {
@@ -473,7 +532,7 @@ try {
                                 font: { size: 12 }
                             },
                             beginAtZero: true,
-                            min: 0, // <-- força o eixo Y a começar do zero
+                            min: 0,
                             ticks: {
                                 font: { size: 10 }
                             }
@@ -486,6 +545,27 @@ try {
                                 boxWidth: 12,
                                 font: { size: 9 },
                                 padding: 8
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                tempoReacao: {
+                                    type: 'box',
+                                    xMin: datas[0],
+                                    xMax: limiteLabel,
+                                    yMin: 0,
+                                    yMax: 'max',
+                                    backgroundColor: 'rgba(234, 179, 8, 0.10)',
+                                    borderWidth: 0,
+                                    label: {
+                                        display: true,
+                                        content: 'Tempo de reação',
+                                        position: 'start',
+                                        color: '#eab308',
+                                        font: { size: 10 }
+                                    }
+                                }
+                                // Removido limiteReacao
                             }
                         }
                     },
