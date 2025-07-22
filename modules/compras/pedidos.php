@@ -101,5 +101,31 @@ $map = [
     >Exportar Pedidos</a>
   </div>
 
+  <!-- Modal de Seleção de Setor -->
+  <div id="setor-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-lg p-6 w-96 max-w-md">
+      <h2 class="text-2xl font-bold text-yellow-400 mb-4 text-center">Selecione o Setor</h2>
+      <p class="text-gray-300 mb-6 text-center">Qual setor está fazendo este pedido?</p>
+      
+      <div class="space-y-3">
+        <button type="button" class="setor-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="COZINHA">
+          🍳 COZINHA
+        </button>
+        <button type="button" class="setor-btn w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="BAR">
+          🍹 BAR
+        </button>
+        <button type="button" class="setor-btn w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="GERENCIA">
+          👔 GERÊNCIA
+        </button>
+        <!-- Adicione este botão -->
+        <button type="button" class="setor-btn w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition-colors" data-setor="EVENTO">
+          🎉 EVENTO
+        </button>
+      </div>
+      
+      <p class="text-xs text-gray-400 mt-4 text-center">Esta seleção é obrigatória para prosseguir</p>
+    </div>
+  </div>
+
 </body>
 </html>
