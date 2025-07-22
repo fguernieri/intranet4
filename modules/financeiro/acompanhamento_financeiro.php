@@ -1866,12 +1866,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 document.getElementById('n8n-chat-btn').onclick = function() {
   window.open(
-    'https://bastardsbrewery.app.n8n.cloud/webhook/ada7d3af-8f99-4706-a7a0-13eb592911e2/chat',
+    'https://bastardsbrewery.app.n8n.cloud/webhook/3615579e-447a-4e48-989d-b67cce78b2a0/chat',
     'n8nChat',
     'width=400,height=600,top=100,left='+(window.screen.width-420)+',resizable=yes'
   );
 };
 </script>
-<!-- /Botão flutuante para abrir o chat n8n em popup -->
+
 </body>
 </html>
