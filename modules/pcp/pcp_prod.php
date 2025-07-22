@@ -28,8 +28,8 @@ class SupabaseApiClient {
     private $key;
     
     public function __construct() {
-        $this->url = 'https://naigkvzwdboarvzcoebs.supabase.co/rest/v1/';
-        $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5haWdrdnp3ZGJvYXJ2emNvZWJzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjA3ODEzOCwiZXhwIjoyMDY3NjU0MTM4fQ.jOR9l_5Q4l0ACBbssLbwYlrscm96kcv1YJi-NL0oAkQ';
+        $this->url = 'https://gybhszcefuxsdhpvxbnk.supabase.co/rest/v1/'; // NOVA URL
+        $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5YmhzemNlZnV4c2RocHZ4Ym5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMTYwOTYsImV4cCI6MjA2ODU5MjA5Nn0.i3sOjUvpsimEvtO0uDGFNK92IZjcy1VIva_KEBdlZI8'; // NOVA CHAVE
     }
     
     public function query($table, $select = '*', $order = null) {
