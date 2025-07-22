@@ -79,16 +79,22 @@ if ($mesFechado) {
     ";
 }
 $res = $conn->query($sql);
+$linhasMesAtual = [];
+$chavesUnicas = []; // NOVO: array para controlar duplicidade
 if ($res) {
     while ($f = $res->fetch_assoc()) {
-        $linhasMesAtual[] = [
-            'ID_CONTA'        => $f['ID_CONTA'],
-            'CATEGORIA'       => $f['CATEGORIA'],
-            'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
-            'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
-            'PARCELA'         => $f['PARCELA'],
-            'VALOR_EXIBIDO'   => $f['VALOR'],
-        ];
+        $chave = $f['ID_CONTA'] . '_' . $f['PARCELA'];
+        if (!isset($chavesUnicas[$chave])) {
+            $linhasMesAtual[] = [
+                'ID_CONTA'        => $f['ID_CONTA'],
+                'CATEGORIA'       => $f['CATEGORIA'],
+                'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+                'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+                'PARCELA'         => $f['PARCELA'],
+                'VALOR_EXIBIDO'   => $f['VALOR'],
+            ];
+            $chavesUnicas[$chave] = true;
+        }
     }
 }
 
@@ -109,14 +115,18 @@ $sqlPendentesNoMes = "
 $resPendentes = $conn->query($sqlPendentesNoMes);
 if ($resPendentes) {
     while ($f = $resPendentes->fetch_assoc()) {
-        $linhasMesAtual[] = [
-            'ID_CONTA'        => $f['ID_CONTA'],
-            'CATEGORIA'       => $f['CATEGORIA'],
-            'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
-            'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
-            'PARCELA'         => $f['PARCELA'],
-            'VALOR_EXIBIDO'   => $f['VALOR'],
-        ];
+        $chave = $f['ID_CONTA'] . '_' . $f['PARCELA'];
+        if (!isset($chavesUnicas[$chave])) {
+            $linhasMesAtual[] = [
+                'ID_CONTA'        => $f['ID_CONTA'],
+                'CATEGORIA'       => $f['CATEGORIA'],
+                'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+                'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+                'PARCELA'         => $f['PARCELA'],
+                'VALOR_EXIBIDO'   => $f['VALOR'],
+            ];
+            $chavesUnicas[$chave] = true;
+        }
     }
 }
 
@@ -581,7 +591,6 @@ foreach ($dadosReaisMensais as $mesKey => $gastosDoMes) {
 }
 
 
-// ==================== [DADOS PARA GRÁFICO DE FLUXO DE CAIXA] ====================
 $chartData = [];
 $chartLabels = [];
 $mesesAbreviados = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
