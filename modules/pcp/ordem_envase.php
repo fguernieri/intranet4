@@ -73,6 +73,18 @@ try {
     $fatualizacoes = $supabase->query('fatualizacoes', 'data_hora', 'data_hora.desc');
     $atualizacao_recente = isset($fatualizacoes[0]['DATA_HORA']) ? $fatualizacoes[0]['DATA_HORA'] : null;
 
+    // Busca as cervejas disponíveis em tanque (volume > 0)
+    $cervejas_em_tanque = $supabase->query(
+        'fvolumeatualtanques',
+        'CERVEJA,VOLUME_RESTANTE'
+    );
+    $cervejas_disponiveis = [];
+    foreach ($cervejas_em_tanque as $linha) {
+        if ((float)$linha['VOLUME_RESTANTE'] > 0) {
+            $cervejas_disponiveis[] = $linha['CERVEJA'];
+        }
+    }
+
     
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
@@ -96,20 +108,26 @@ $cervejas_permitidas = [
     'WELT RED ALE'
 ];
 
-$dados_filtrados = array_filter($dados_ordem_envase, function($linha) use ($cervejas_permitidas) {
-    return in_array($linha['CERVEJA'], $cervejas_permitidas) && ((float)$linha['DIFERENCA_INOX'] > 0);
+// Filtra INOX e PET só para cervejas disponíveis em tanque
+$dados_filtrados = array_filter($dados_ordem_envase, function($linha) use ($cervejas_permitidas, $cervejas_disponiveis) {
+    return in_array($linha['CERVEJA'], $cervejas_permitidas)
+        && in_array($linha['CERVEJA'], $cervejas_disponiveis)
+        && ((float)$linha['DIFERENCA_INOX'] > 0);
 });
 usort($dados_filtrados, function($a, $b) {
     return ((float)$b['DIFERENCA_INOX']) <=> ((float)$a['DIFERENCA_INOX']);
 });
 
-$dados_filtrados_pet = array_filter($dados_ordem_envase_pet, function($linha) use ($cervejas_permitidas) {
-    return in_array($linha['CERVEJA'], $cervejas_permitidas) && ((float)$linha['DIFERENCA_PET'] > 0);
+$dados_filtrados_pet = array_filter($dados_ordem_envase_pet, function($linha) use ($cervejas_permitidas, $cervejas_disponiveis) {
+    return in_array($linha['CERVEJA'], $cervejas_permitidas)
+        && in_array($linha['CERVEJA'], $cervejas_disponiveis)
+        && ((float)$linha['DIFERENCA_PET'] > 0);
 });
 usort($dados_filtrados_pet, function($a, $b) {
     return ((float)$b['DIFERENCA_PET']) <=> ((float)$a['DIFERENCA_PET']);
 });
 
+// Latas continuam mostrando todas as permitidas
 $dados_latas_linha = array_filter($dados_latas, function($linha) use ($cervejas_permitidas) {
     return in_array($linha['CERVEJA'], $cervejas_permitidas);
 });
