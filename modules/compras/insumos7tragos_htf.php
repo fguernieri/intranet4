@@ -67,11 +67,7 @@ if (empty($insumos)) {
     echo '<div style="color:orange;font-weight:bold">Aviso: Nenhum insumo retornado pela consulta SQL.</div>';
 }
 
-// Filtra para exibir somente as categorias desejadas
-$allowedCategories = ['HORTIFRUTI', 'EMBALAGENS/CONSUMIVEIS', 'LIMPEZA/DESCARTAVEIS', 'UTENSILIOS'];
-$insumos = array_filter($insumos, function($row) use ($allowedCategories) {
-    return in_array($row['CATEGORIA'], $allowedCategories);
-});
+
 
 // Define a SUGESTAO_COMPRA como zero para todos os insumos
 foreach ($insumos as &$row) {
@@ -645,7 +641,7 @@ if (
             body: formData
           });
           if (response.ok) {
-            window.location.href = 'insumos7tragos_htf.php?status=ok';
+            window.location.href = 'insumos7TRAGOS_htf.php?status=ok';
           } else {
             const errorText = await response.text();
             alert(`Erro ao enviar o pedido: ${response.status} ${response.statusText}\n${errorText}`);
@@ -680,7 +676,7 @@ if (
               }
             }
           }
-          XLSX.writeFile(wb, 'lista_insumos7tragos_htf.xlsx');
+          XLSX.writeFile(wb, 'lista_insumosbdf_htf.xlsx');
         });
       }
     });
