@@ -56,12 +56,16 @@ $msg = $_GET['msg'] ?? null;
       </button>
     </form>
     <div class="mt-3 sm:mt-4 text-center">
-      <a href="#" class="text-gray-400 hover:text-yellow-400 transition text-sm sm:text-base">Esqueceu a senha?.w</a>
+      <a href="recuperar_senha.php" class="text-gray-400 hover:text-yellow-400 transition text-sm sm:text-base">Esqueceu a senha?</a>
     </div>
   </div>
-    <?php if ($msg === 'sessao_expirada'): ?>
+    <?php if ($msg === 'sessao_expirada' || $msg === 'senha_redefinida'): ?>
     <div id="toast-msg" class="fixed top-4 right-4 bg-yellow-500 text-gray-900 px-4 py-3 rounded shadow-lg z-50 transition-opacity duration-300 opacity-0">
-      Sua sessão expirou por inatividade.
+      <?php if ($msg === 'sessao_expirada'): ?>
+        Sua sessão expirou por inatividade.
+      <?php else: ?>
+        Senha atualizada com sucesso.
+      <?php endif; ?>
     </div>
     <script>
       const toast = document.getElementById('toast-msg');
