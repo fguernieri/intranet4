@@ -3,6 +3,13 @@ declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/PHPMAILER-MASTER/src/PHPMailer.php';
+require_once __DIR__ . '/PHPMAILER-MASTER/src/SMTP.php';
+require_once __DIR__ . '/PHPMAILER-MASTER/src/Exception.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 
 $sucesso = isset($_GET['ok']);
 
@@ -27,7 +34,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "Clique no link abaixo para redefinir sua senha:\n" .
                         "$link\n\n" .
                         "Se você não solicitou, ignore este e-mail.";
-            @mail($email, $assunto, $mensagem);
+
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isMail();
+                $mail->setFrom('nao-responda@bastardsbrewery.com.br', 'Bastards Brewery');
+                $mail->addAddress($email, $user['nome']);
+                $mail->Subject = $assunto;
+                $mail->Body    = $mensagem;
+                $mail->send();
+            } catch (Exception $e) {
+                // Falha ao enviar email; prossegue silenciosamente
+            }
+
         }
     }
     header('Location: recuperar_senha.php?ok=1');
