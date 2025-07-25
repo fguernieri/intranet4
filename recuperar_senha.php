@@ -10,6 +10,7 @@ require_once __DIR__ . '/PHPMAILER-MASTER/src/Exception.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+
 $sucesso = isset($_GET['ok']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 // Falha ao enviar email; prossegue silenciosamente
             }
+
         }
     }
     header('Location: recuperar_senha.php?ok=1');
