@@ -43,7 +43,7 @@ $usuario = $_SESSION['usuario_nome'] ?? 'Usuário';
         </div>
         <div class="w-full max-w-5xl mx-auto py-4 px-4">
             <h1 class="text-2xl md:text-3xl font-bold text-yellow-500 text-center mb-8">
-            Planejamento de Produções & Ordens de Envase
+                Menu de Acesso - PCP
             </h1>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Card Planejamento de Produções -->
@@ -78,7 +78,32 @@ $usuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                     </p>
                     <span class="block mx-auto mt-2 px-4 py-2 bg-yellow-500 text-slate-900 font-semibold rounded shadow text-xs w-max">Acessar</span>
                 </a>
+                <!-- Card Chopeiras/Consumo Cliente -->
+                <a href="chopeiras.php" class="block bg-slate-800 rounded-lg shadow-lg hover:shadow-2xl hover:bg-slate-700 transition-all border-2 border-yellow-500 hover:border-yellow-400 p-6">
+                    <div class="flex justify-center mb-3">
+                        <!-- Ícone de Chopeira/Torneira -->
+                        <svg class="icon" viewBox="0 0 24 24" fill="none">
+                            <rect x="7" y="14" width="10" height="6" rx="2" fill="#fde047"/>
+                            <rect x="10" y="4" width="4" height="10" rx="1.5" fill="#fbbf24"/>
+                            <circle cx="12" cy="3" r="2" fill="#a16207"/>
+                            <rect x="11" y="20" width="2" height="2" rx="1" fill="#a16207"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-yellow-400 mb-2 text-center">Análise de Consumo por Cliente</h2>
+                    <p class="text-gray-300 mb-4 text-sm text-center">
+                        Compare o consumo de clientes com a quantidade de bicos de chopeira fornecidos.
+                    </p>
+                    <span class="block mx-auto mt-2 px-4 py-2 bg-yellow-500 text-slate-900 font-semibold rounded shadow text-xs w-max">Acessar</span>
+                </a>
             </div>
+            <!-- Informação de atualização dos dados -->
+            <?php if (isset($atualizacao_recente) && $atualizacao_recente): ?>
+                <div class="text-center text-xs text-gray-400 mb-2 mt-8">
+                    Atualizado em: <span class="font-semibold">
+                        <?= date('d/m/Y H:i', strtotime($atualizacao_recente)); ?>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 </body>
