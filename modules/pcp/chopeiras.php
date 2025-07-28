@@ -81,7 +81,7 @@ try {
     <main class="flex-1 pt-4 px-6 pb-6 overflow-auto">
         <div class="max-w-screen-xl mx-auto w-full">
             <h1 class="text-center text-yellow-500 mt-0 mb-6 text-xl md:text-2xl font-bold">
-                Bem-vindo!
+                Análise de consumo - Cliente com chopeiras fixas
             </h1>
             <div class="flex justify-center gap-4 mb-6">
                 <a href="ordem_envase.php" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded transition">Ir para Ordem de Envase</a>
