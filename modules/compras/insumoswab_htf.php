@@ -641,7 +641,7 @@ if (
             body: formData
           });
           if (response.ok) {
-            window.location.href = 'insumosbdf_htf.php?status=ok';
+            window.location.href = 'insumoswab_htf.php?status=ok';
           } else {
             const errorText = await response.text();
             alert(`Erro ao enviar o pedido: ${response.status} ${response.statusText}\n${errorText}`);
