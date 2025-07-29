@@ -820,6 +820,16 @@ $jsonChartData = json_encode($chartData);
     Acompanhamento DRE - <?=$anoAtual?> / <?=$meses[$mesAtual]?>
   </h1>
   
+<div class="mb-4 flex items-center gap-2">
+  <input 
+    type="text" 
+    id="dre-search" 
+    placeholder="🔍 Pesquisar Descrição da Conta..." 
+    class="rounded p-2 text-black w-72"
+    oninput="filtrarDescricaoConta()"
+  >
+</div>
+
   <table id="tabelaAcompanhamento" class="min-w-full text-xs mx-auto border border-gray-700 rounded">
     <thead>
       <tr>
@@ -1630,6 +1640,116 @@ $jsonChartData = json_encode($chartData);
 </html>
 
 <script>
+
+
+function filtrarDescricaoConta() {
+  const termo = document.getElementById('dre-search').value.trim().toLowerCase();
+  const linhas = Array.from(document.querySelectorAll('#tabelaAcompanhamento tbody tr'));
+
+  if (!termo) {
+    // Mostra todas as linhas e recolhe subcategorias/descrições/parcelas
+    linhas.forEach(linha => {
+      linha.style.display = '';
+      if (
+        linha.classList.contains('dre-sub') ||
+        linha.classList.contains('dre-desc') ||
+        linha.classList.contains('dre-parcela') ||
+        linha.classList.contains('dre-subcat-l1') ||
+        linha.classList.contains('dre-subcat-l2')
+      ) {
+        linha.classList.add('dre-hide');
+      } else {
+        linha.classList.remove('dre-hide');
+      }
+    });
+    return;
+  }
+
+  // Esconde tudo primeiro
+  linhas.forEach(linha => {
+    linha.style.display = 'none';
+    linha.classList.add('dre-hide');
+  });
+
+  // Exibe apenas os resultados e todos os pais até a categoria
+  linhas.forEach((linha, idx) => {
+    if (linha.classList.contains('dre-desc') || linha.classList.contains('dre-parcela')) {
+      const texto = linha.textContent.toLowerCase();
+      if (texto.includes(termo)) {
+        linha.style.display = '';
+        linha.classList.remove('dre-hide');
+        // Sobe exibindo todos os pais até a categoria
+        let i = idx - 1;
+        while (i >= 0) {
+          const pai = linhas[i];
+          if (
+            pai.classList.contains('dre-cat') ||
+            pai.classList.contains('dre-sub') ||
+            pai.classList.contains('dre-subcat-l1') ||
+            pai.classList.contains('dre-subcat-l2')
+          ) {
+            pai.style.display = '';
+            pai.classList.remove('dre-hide');
+          }
+          if (pai.classList.contains('dre-cat')) break; // Pare ao chegar na categoria
+          i--;
+        }
+      }
+    }
+  });
+
+  // Oculta subcategorias/categorias que não têm nenhum filho visível
+  // Repete o processo para garantir que só pais com filhos visíveis fiquem na tela
+  linhas.forEach((linha, idx) => {
+    if (
+      linha.classList.contains('dre-sub') ||
+      linha.classList.contains('dre-subcat-l1') ||
+      linha.classList.contains('dre-subcat-l2')
+    ) {
+      // Verifica se há algum filho visível abaixo
+      let temFilhoVisivel = false;
+      for (let j = idx + 1; j < linhas.length; j++) {
+        const filho = linhas[j];
+        // Se encontrar outra subcategoria/categoria, para de procurar
+        if (
+          filho.classList.contains('dre-cat') ||
+          filho.classList.contains('dre-sub') ||
+          filho.classList.contains('dre-subcat-l1') ||
+          filho.classList.contains('dre-subcat-l2')
+        ) break;
+        if (filho.style.display !== 'none') {
+          temFilhoVisivel = true;
+          break;
+        }
+      }
+      if (!temFilhoVisivel) {
+        linha.style.display = 'none';
+        linha.classList.add('dre-hide');
+      }
+    }
+  });
+
+  // Oculta categorias que não têm nenhum filho visível
+  linhas.forEach((linha, idx) => {
+    if (linha.classList.contains('dre-cat')) {
+      let temFilhoVisivel = false;
+      for (let j = idx + 1; j < linhas.length; j++) {
+        const filho = linhas[j];
+        if (filho.classList.contains('dre-cat')) break;
+        if (filho.style.display !== 'none') {
+          temFilhoVisivel = true;
+          break;
+        }
+      }
+      if (!temFilhoVisivel) {
+        linha.style.display = 'none';
+        linha.classList.add('dre-hide');
+      }
+    }
+  });
+}
+
+
 function initializeDREToggle() {
     // Inicializa todos os elementos como fechados (escondidos)
     document.querySelectorAll('tr.dre-sub, tr.dre-desc, tr.dre-parcela, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
