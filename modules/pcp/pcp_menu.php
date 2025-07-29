@@ -81,12 +81,17 @@ $usuario = $_SESSION['usuario_nome'] ?? 'Usuário';
                 <!-- Card Chopeiras/Consumo Cliente -->
                 <a href="chopeiras.php" class="block bg-slate-800 rounded-lg shadow-lg hover:shadow-2xl hover:bg-slate-700 transition-all border-2 border-yellow-500 hover:border-yellow-400 p-6">
                     <div class="flex justify-center mb-3">
-                        <!-- Ícone de Chopeira/Torneira -->
-                        <svg class="icon" viewBox="0 0 24 24" fill="none">
-                            <rect x="7" y="14" width="10" height="6" rx="2" fill="#fde047"/>
-                            <rect x="10" y="4" width="4" height="10" rx="1.5" fill="#fbbf24"/>
-                            <circle cx="12" cy="3" r="2" fill="#a16207"/>
-                            <rect x="11" y="20" width="2" height="2" rx="1" fill="#a16207"/>
+                        <!-- Ícone Barril de INOX -->
+                        <svg class="icon" viewBox="0 0 48 48" fill="none">
+                            <ellipse cx="24" cy="12" rx="12" ry="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+                            <rect x="12" y="12" width="24" height="24" rx="10" fill="#f3f4f6" stroke="#6b7280" stroke-width="2"/>
+                            <ellipse cx="24" cy="36" rx="12" ry="6" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+                            <rect x="16" y="20" width="16" height="8" rx="4" fill="#d1d5db" stroke="#6b7280" stroke-width="1"/>
+                            <!-- Aros do barril -->
+                            <rect x="12" y="18" width="24" height="2" rx="1" fill="#9ca3af"/>
+                            <rect x="12" y="28" width="24" height="2" rx="1" fill="#9ca3af"/>
+                            <!-- Detalhe superior -->
+                            <circle cx="24" cy="12" r="2" fill="#6b7280"/>
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold text-yellow-400 mb-2 text-center">Análise de Consumo por Cliente</h2>
