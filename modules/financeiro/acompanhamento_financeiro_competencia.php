@@ -710,7 +710,7 @@ if ($mesFechado): ?>
 <?php endif; ?>
 */ ?>
 
-// Filtro de Ano/Mês
+
 <form method="get" class="mb-4 flex gap-2 items-end">
     <label>
       Ano:
