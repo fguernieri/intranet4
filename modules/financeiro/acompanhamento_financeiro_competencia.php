@@ -46,107 +46,69 @@ $mesFechado = ($anoAtual < $anoCorrente) || ($anoAtual == $anoCorrente && $mesAt
 // Se o mês estiver fechado, considera apenas as contas pagas
 if ($mesFechado) {
     // Mês fechado: considera apenas contas pagas
-    $sql = "
-        SELECT 
-            c.ID_CONTA,
-            c.CATEGORIA,
-            c.SUBCATEGORIA,
-            c.DESCRICAO_CONTA,
-            d.PARCELA,
-            d.VALOR,
-            d.DATA_PAGAMENTO
-        FROM fContasAPagar AS c
-        INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-        WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual AND MONTH(d.DATA_PAGAMENTO) = $mesAtual
-        AND d.STATUS = 'Pago'
-        ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
-    ";
+$sql = "
+    SELECT 
+        ID_CONTA,
+        CATEGORIA,
+        SUBCATEGORIA,
+        DESCRICAO_CONTA,
+        VALOR,
+        DATA_VENCIMENTO
+    FROM fContasAPagar
+    WHERE YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
+    ORDER BY CATEGORIA, SUBCATEGORIA, DESCRICAO_CONTA
+";
 } else {
     // Mês aberto: considera todas as contas (comportamento original)
-    $sql = "
-        SELECT 
-            c.ID_CONTA,
-            c.CATEGORIA,
-            c.SUBCATEGORIA,
-            c.DESCRICAO_CONTA,
-            d.PARCELA,
-            d.VALOR,
-            d.DATA_PAGAMENTO
-        FROM fContasAPagar AS c
-        INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-        WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual AND MONTH(d.DATA_PAGAMENTO) = $mesAtual
-        ORDER BY c.CATEGORIA, c.SUBCATEGORIA, c.DESCRICAO_CONTA, d.PARCELA
-    ";
+$sql = "
+    SELECT 
+        ID_CONTA,
+        CATEGORIA,
+        SUBCATEGORIA,
+        DESCRICAO_CONTA,
+        VALOR,
+        DATA_VENCIMENTO
+    FROM fContasAPagar
+    WHERE YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
+    ORDER BY CATEGORIA, SUBCATEGORIA, DESCRICAO_CONTA
+";
 }
 $res = $conn->query($sql);
 $linhasMesAtual = [];
-$chavesUnicas = []; // NOVO: array para controlar duplicidade
-if ($res) {
-    while ($f = $res->fetch_assoc()) {
-        $chave = $f['ID_CONTA'] . '_' . $f['PARCELA'];
-        if (!isset($chavesUnicas[$chave])) {
-            $linhasMesAtual[] = [
-                'ID_CONTA'        => $f['ID_CONTA'],
-                'CATEGORIA'       => $f['CATEGORIA'],
-                'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
-                'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
-                'PARCELA'         => $f['PARCELA'],
-                'VALOR_EXIBIDO'   => $f['VALOR'],
-            ];
-            $chavesUnicas[$chave] = true;
-        }
-    }
+while ($f = $res->fetch_assoc()) {
+    $linhasMesAtual[] = [
+        'ID_CONTA'        => $f['ID_CONTA'],
+        'CATEGORIA'       => $f['CATEGORIA'],
+        'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
+        'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
+        'VALOR_EXIBIDO'   => $f['VALOR'],
+        'DATA_VENCIMENTO' => $f['DATA_VENCIMENTO'],
+    ];
 }
 
-// Adiciona contas com vencimento no mês e ainda pendentes
-$sqlPendentesNoMes = "
-    SELECT 
-        c.ID_CONTA,
-        c.CATEGORIA,
-        c.SUBCATEGORIA,
-        c.DESCRICAO_CONTA,
-        d.PARCELA,
-        d.VALOR
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE YEAR(d.DATA_VENCIMENTO) = $anoAtual AND MONTH(d.DATA_VENCIMENTO) = $mesAtual
-    AND d.STATUS != 'Pago'
-";
-$resPendentes = $conn->query($sqlPendentesNoMes);
-if ($resPendentes) {
-    while ($f = $resPendentes->fetch_assoc()) {
-        $chave = $f['ID_CONTA'] . '_' . $f['PARCELA'];
-        if (!isset($chavesUnicas[$chave])) {
-            $linhasMesAtual[] = [
-                'ID_CONTA'        => $f['ID_CONTA'],
-                'CATEGORIA'       => $f['CATEGORIA'],
-                'SUBCATEGORIA'    => $f['SUBCATEGORIA'],
-                'DESCRICAO_CONTA' => $f['DESCRICAO_CONTA'],
-                'PARCELA'         => $f['PARCELA'],
-                'VALOR_EXIBIDO'   => $f['VALOR'],
-            ];
-            $chavesUnicas[$chave] = true;
-        }
-    }
-}
+$endDateChart = new DateTime('first day of ' . date('Y-m'));
+$startDateChart = (clone $endDateChart)->modify('-12 months');
+$startDateStringChart = $startDateChart->format('Y-m-d');
+$endDateStringChart = $endDateChart->format('Y-m-d');
+$periodChart = new DatePeriod($startDateChart, new DateInterval('P1M'), $endDateChart);
 
-// Organiza em matriz hierárquica: categoria > subcategoria > descrição > parcela
+
+// Organiza em matriz hierárquica: categoria > subcategoria > descrição > conta
 $matrizAtual = [];
 $matrizHierarquica = [];
 foreach ($linhasMesAtual as $linha) {
     $cat = $linha['CATEGORIA'] ?? 'SEM CATEGORIA';
     $sub = $linha['SUBCATEGORIA'] ?? 'SEM SUBCATEGORIA';
     $desc = $linha['DESCRICAO_CONTA'] ?? 'SEM DESCRIÇÃO';
-    $parcela = $linha['PARCELA'];
     $idConta = $linha['ID_CONTA'];
     $valor = floatval($linha['VALOR_EXIBIDO']);
-    
+
     // Matriz original para manter compatibilidade
     $matrizAtual[$cat][$sub][] = $valor;
-    
+
     // Matriz hierárquica completa
     $matrizHierarquica[$cat][$sub][$desc][$idConta][] = [
-        'parcela' => $parcela,
+        'parcela' => 1, // Não há parcela, então sempre 1
         'valor' => $valor,
     ];
 }
@@ -207,9 +169,9 @@ $meses = [
 // Receita operacional do mês atual - Valores já pagos
 $atualRecPago = 0;
 $resRecPago = $conn->query("
-    SELECT SUM(VALOR_PAGO) AS TOTAL
-    FROM fContasAReceberDetalhes
-    WHERE STATUS = 'Pago' AND YEAR(DATA_PAGAMENTO) = $anoAtual AND MONTH(DATA_PAGAMENTO) = $mesAtual
+    SELECT SUM(VALOR_REAL) AS TOTAL
+    FROM vw_receita_competencia
+    WHERE YEAR(DATA_FATURAMENTO) = $anoAtual AND MONTH(DATA_FATURAMENTO) = $mesAtual
 ");
 if ($row = $resRecPago->fetch_assoc()) {
     $atualRecPago = floatval($row['TOTAL'] ?? 0);
@@ -218,22 +180,23 @@ if ($row = $resRecPago->fetch_assoc()) {
 // Contas a receber do mês atual (vencidas + ainda não vencidas)
 // Se o mês estiver fechado, não considera contas vencidas
 $atualRecAReceber = 0;
+// Se quiser separar o que está "a receber", ajuste a view ou lógica conforme necessário.
+// Aqui, considera tudo como receita do mês (pago + a receber) pela competência.
 if (!$mesFechado) {
-    // Mês aberto: considera contas vencidas e não vencidas
+    // Mês aberto: considera tudo da view
     $resRecAReceber = $conn->query("
-        SELECT SUM(VALOR) AS TOTAL
-        FROM fContasAReceberDetalhes
-        WHERE STATUS != 'Pago' 
-        AND YEAR(DATA_VENCIMENTO) = $anoAtual AND MONTH(DATA_VENCIMENTO) = $mesAtual
+        SELECT SUM(VALOR_REAL) AS TOTAL
+        FROM vw_receita_competencia
+        WHERE YEAR(DATA_FATURAMENTO) = $anoAtual AND MONTH(DATA_FATURAMENTO) = $mesAtual
     ");
     if ($row = $resRecAReceber->fetch_assoc()) {
-        $atualRecAReceber = floatval($row['TOTAL'] ?? 0);
+        $atualRecAReceber = 0; // Não soma nada, pois tudo já está em $atualRecPago
     }
 }
-// Se o mês estiver fechado, $atualRecAReceber permanece 0 (não considera vencidas)
+// Se o mês estiver fechado, $atualRecAReceber permanece 0
 
 // Receita bruta total (pago + a receber)
-$atualRec = $atualRecPago + $atualRecAReceber;
+$atualRec = $atualRecPago;
 
 // Ordena as categorias para exibição
 $categoriasDRE = [
@@ -491,72 +454,13 @@ $dadosReaisMensais = [];
 // 1. Buscar todos os gastos dos últimos 6 meses
 $sqlGastos6Meses = "
     SELECT 
-        YEAR(d.DATA_PAGAMENTO) AS ano, 
-        MONTH(d.DATA_PAGAMENTO) AS mes, 
-        c.CATEGORIA, 
-        SUM(d.VALOR) AS total
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE d.DATA_PAGAMENTO >= '$startDateStringAnalyse' AND d.DATA_PAGAMENTO < '$endDateStringAnalyse'
-    GROUP BY ano, mes, c.CATEGORIA
-";
-$resGastos6Meses = $conn->query($sqlGastos6Meses);
-if ($resGastos6Meses) {
-    while ($row = $resGastos6Meses->fetch_assoc()) {
-        $monthKey = $row['ano'] . '-' . str_pad($row['mes'], 2, '0', STR_PAD_LEFT);
-        $dadosReaisMensais[$monthKey][$row['CATEGORIA']] = (float)$row['total'];
-    }
-}
-
-// 2. Comparar os gastos mensais com a META ATUAL (já carregada em $metasArray)
-$metasExcedidas = [];
-$mesesAbreviadosAnalyse = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-foreach ($dadosReaisMensais as $mesKey => $gastosDoMes) {
-    list($ano, $mes) = explode('-', $mesKey);
-    $nomeMes = $mesesAbreviadosAnalyse[(int)$mes - 1] . '/' . substr($ano, -2);
-
-    foreach ($gastosDoMes as $categoria => $gastoReal) {
-        // Pega a meta ATUAL para a categoria (do array já carregado no início do script)
-        $metaGasto = $metasArray[$categoria][''] ?? 0;
-
-        if ($metaGasto > 0 && $gastoReal > $metaGasto) {
-            $metasExcedidas[] = [
-                'mes' => $nomeMes,
-                'categoria' => $categoria,
-                'meta' => $metaGasto,
-                'realizado' => $gastoReal,
-                'diferenca' => $gastoReal - $metaGasto
-            ];
-        }
-    }
-}
-
-
-// ==================== [DADOS PARA GRÁFICO DE FLUXO DE CAIXA] ====================
-// Período para gráfico de fluxo de caixa (últimos 12 meses)
-$endDateChart = new DateTime('first day of ' . date('Y-m'));
-$startDateChart = (clone $endDateChart)->modify('-12 months');
-$startDateStringChart = $startDateChart->format('Y-m-d');
-$endDateStringChart = $endDateChart->format('Y-m-d');
-$periodChart = new DatePeriod($startDateChart, new DateInterval('P1M'), $endDateChart);
-
-
-// ==================== [ANÁLISE DE METAS EXCEDIDAS - ÚLTIMOS 6 MESES] ====================
-$metasExcedidas = [];
-$dadosReaisMensais = [];
-
-// 1. Buscar todos os gastos dos últimos 6 meses
-$sqlGastos6Meses = "
-    SELECT 
-        YEAR(d.DATA_PAGAMENTO) AS ano, 
-        MONTH(d.DATA_PAGAMENTO) AS mes, 
-        c.CATEGORIA, 
-        SUM(d.VALOR) AS total
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE d.DATA_PAGAMENTO >= '$startDateStringAnalyse' AND d.DATA_PAGAMENTO < '$endDateStringAnalyse'
-    GROUP BY ano, mes, c.CATEGORIA
+        YEAR(DATA_VENCIMENTO) AS ano, 
+        MONTH(DATA_VENCIMENTO) AS mes, 
+        CATEGORIA, 
+        SUM(VALOR) AS total
+    FROM fContasAPagar
+    WHERE DATA_VENCIMENTO >= '$startDateStringAnalyse' AND DATA_VENCIMENTO < '$endDateStringAnalyse'
+    GROUP BY ano, mes, CATEGORIA
 ";
 $resGastos6Meses = $conn->query($sqlGastos6Meses);
 if ($resGastos6Meses) {
@@ -606,14 +510,14 @@ foreach ($periodChart as $dt) {
     ];
 }
 
-// 1. Buscar Receitas Operacionais (Contas a Receber Pagas + A Receber Atrasadas)
+// 1. Buscar Receitas Operacionais (exceto Outras Receitas) da view vw_receita_competencia
 $sqlReceitas = "
     SELECT 
-        YEAR(DATA_PAGAMENTO) AS ano, 
-        MONTH(DATA_PAGAMENTO) AS mes, 
-        SUM(VALOR_PAGO) AS total
-    FROM fContasAReceberDetalhes
-    WHERE STATUS = 'Pago' AND DATA_PAGAMENTO >= '$startDateStringChart' AND DATA_PAGAMENTO < '$endDateStringChart'
+        YEAR(DATA_FATURAMENTO) AS ano, 
+        MONTH(DATA_FATURAMENTO) AS mes, 
+        SUM(VALOR_REAL) AS total
+    FROM vw_receita_competencia
+    WHERE DATA_FATURAMENTO >= '$startDateStringChart' AND DATA_FATURAMENTO < '$endDateStringChart'
     GROUP BY ano, mes
 ";
 $resReceitas = $conn->query($sqlReceitas);
@@ -649,15 +553,14 @@ if($resReceitasAReceber) {
 
 // 2. Buscar Despesas e Outras Receitas (Contas a Pagar)
 $sqlDespesas = "
-    SELECT 
-        YEAR(d.DATA_PAGAMENTO) AS ano, 
-        MONTH(d.DATA_PAGAMENTO) AS mes, 
-        c.CATEGORIA, 
-        SUM(d.VALOR) AS total
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
-    WHERE d.DATA_PAGAMENTO >= '$startDateStringChart' AND d.DATA_PAGAMENTO < '$endDateStringChart'
-    GROUP BY ano, mes, c.CATEGORIA
+SELECT 
+        YEAR(DATA_VENCIMENTO) AS ano, 
+        MONTH(DATA_VENCIMENTO) AS mes, 
+        CATEGORIA, 
+        SUM(VALOR) AS total
+    FROM fContasAPagar
+    WHERE DATA_VENCIMENTO >= '$startDateStringChart' AND DATA_VENCIMENTO < '$endDateStringChart'
+    GROUP BY ano, mes, CATEGORIA
 ";
 $resDespesas = $conn->query($sqlDespesas);
 if($resDespesas) {
@@ -782,32 +685,33 @@ $jsonChartData = json_encode($chartData);
     <div style="position:absolute;top:1.5rem;right:2.5rem;z-index:10;font-size:0.95rem;color:#ffe066;">
       Data/hora atualização: <?= date('d/m/Y H:i', strtotime($ultimaAtualizacao)) ?>
     </div>
+
+<div style="position:absolute;top:7rem;right:2.5rem;z-index:10;">
+  <a href="/modules/financeiro/acompanhamento_fincanceiro.php" 
+     class="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-4 py-2 rounded shadow transition"
+     style="display:inline-block;">
+    Ir para Fluxo de Caixa
+  </a>
+</div>
+
+
   <?php endif; ?>
 
   <!-- Indicador de Status do Mês -->
-  <?php if ($mesFechado): ?>
-    <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#ff6b6b;font-weight:bold;background:#dc2626;padding:0.25rem 0.75rem;border-radius:0.25rem;">
-      📌 MÊS FECHADO - Considerando apenas contas pagas
-    </div>
+  <?php /* 
+if ($mesFechado): ?>
+  <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#ff6b6b;font-weight:bold;background:#dc2626;padding:0.25rem 0.75rem;border-radius:0.25rem;">
+    📌 MÊS FECHADO - Considerando apenas contas pagas
+  </div>
+<?php else: ?>
+  <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#10b981;font-weight:bold;background:#059669;padding:0.25rem 0.75rem;border-radius:0.25rem;">
+    🔓 MÊS ABERTO - Considerando contas pagas e vencidas
+  </div>
+<?php endif; ?>
+*/ ?>
 
-
-
-  <?php else: ?>
-    <div style="position:absolute;top:4rem;right:2.5rem;z-index:10;font-size:0.9rem;color:#10b981;font-weight:bold;background:#059669;padding:0.25rem 0.75rem;border-radius:0.25rem;">
-      🔓 MÊS ABERTO - Considerando contas pagas e vencidas
-    </div>
-
-    <div style="position:absolute;top:7rem;right:2.5rem;z-index:10;">
-  <a href="/modules/financeiro/acompanhamento_fincanceiro_competencia.php" 
-     class="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-4 py-2 rounded shadow transition"
-     style="display:inline-block;">
-    Ir para Visão Competência
-  </a>
-</div>
-  <?php endif; ?>
-
-  <!-- Filtro de Ano/Mês -->
-  <form method="get" class="mb-4 flex gap-2 items-end">
+// Filtro de Ano/Mês
+<form method="get" class="mb-4 flex gap-2 items-end">
     <label>
       Ano:
       <select name="ano" class="text-black rounded p-1">
@@ -827,26 +731,22 @@ $jsonChartData = json_encode($chartData);
     <button type="submit" class="bg-yellow-400 text-black px-3 py-1 rounded font-bold">Filtrar</button>
   </form>
 
-
-
-  
   <h1 class="text-2xl font-bold text-yellow-400 mb-6">
-    ACOMPANHAMENTO FLUXO DE CAIXA - <?=$anoAtual?> / <?=$meses[$mesAtual]?>
+    ACOMPANHAMENTO COMPETÊNCIA - <?=$anoAtual?> / <?=$meses[$mesAtual]?>
   </h1>
-  
-<div class="mb-4 flex items-center gap-2">
-  <input 
-    type="text" 
-    id="dre-search" 
-    placeholder="🔍 Pesquisar Descrição da Conta..." 
-    class="rounded p-2 text-black w-72"
-    oninput="filtrarDescricaoConta()"
-  >
-</div>
 
+  <!-- Adicione este bloco antes da tabela principal DRE -->
+  <div class="mb-4 flex items-center gap-2">
+    <input 
+      type="text" 
+      id="dre-search" 
+      placeholder="🔍 Pesquisar Descrição da Conta..." 
+      class="rounded p-2 text-black w-72"
+      oninput="filtrarDescricaoConta()"
+    >
+  </div>
+  
   <table id="tabelaAcompanhamento" class="min-w-full text-xs mx-auto border border-gray-700 rounded">
-
-  
     <thead>
       <tr>
         <th rowspan="2" class="p-2 text-center bg-gray-800">Categoria &gt; SubCategoria</th>
@@ -1244,7 +1144,6 @@ $jsonChartData = json_encode($chartData);
                 if (isset($meta_val)) {
                   $comparacao = $meta_val - $realizado_val;
                   $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
-                  echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
                 } else { echo '-'; }
               ?>
             </td>
@@ -1317,7 +1216,7 @@ $jsonChartData = json_encode($chartData);
     </tr>
 
     <!-- RECEITAS NAO OPERACIONAIS -->
-    <tr class="dre-cat-principal text-white font-bold" style="background:#1a4c2b;">
+       <tr class="dre-cat-principal text-white font-bold" style="background:#1a4c2b;">
       <td class="p-2 text-left">RECEITAS NAO OPERACIONAIS</td>
       <td class="p-2 text-right"><?= isset($metasArray['RECEITAS NAO OPERACIONAIS']['']) ? 'R$ '.number_format($metasArray['RECEITAS NAO OPERACIONAIS'][''],2,',','.') : '-' ?></td>
       <td class="p-2 text-center">
@@ -1656,116 +1555,6 @@ $jsonChartData = json_encode($chartData);
 </html>
 
 <script>
-
-
-function filtrarDescricaoConta() {
-  const termo = document.getElementById('dre-search').value.trim().toLowerCase();
-  const linhas = Array.from(document.querySelectorAll('#tabelaAcompanhamento tbody tr'));
-
-  if (!termo) {
-    // Mostra todas as linhas e recolhe subcategorias/descrições/parcelas
-    linhas.forEach(linha => {
-      linha.style.display = '';
-      if (
-        linha.classList.contains('dre-sub') ||
-        linha.classList.contains('dre-desc') ||
-        linha.classList.contains('dre-parcela') ||
-        linha.classList.contains('dre-subcat-l1') ||
-        linha.classList.contains('dre-subcat-l2')
-      ) {
-        linha.classList.add('dre-hide');
-      } else {
-        linha.classList.remove('dre-hide');
-      }
-    });
-    return;
-  }
-
-  // Esconde tudo primeiro
-  linhas.forEach(linha => {
-    linha.style.display = 'none';
-    linha.classList.add('dre-hide');
-  });
-
-  // Exibe apenas os resultados e todos os pais até a categoria
-  linhas.forEach((linha, idx) => {
-    if (linha.classList.contains('dre-desc') || linha.classList.contains('dre-parcela')) {
-      const texto = linha.textContent.toLowerCase();
-      if (texto.includes(termo)) {
-        linha.style.display = '';
-        linha.classList.remove('dre-hide');
-        // Sobe exibindo todos os pais até a categoria
-        let i = idx - 1;
-        while (i >= 0) {
-          const pai = linhas[i];
-          if (
-            pai.classList.contains('dre-cat') ||
-            pai.classList.contains('dre-sub') ||
-            pai.classList.contains('dre-subcat-l1') ||
-            pai.classList.contains('dre-subcat-l2')
-          ) {
-            pai.style.display = '';
-            pai.classList.remove('dre-hide');
-          }
-          if (pai.classList.contains('dre-cat')) break; // Pare ao chegar na categoria
-          i--;
-        }
-      }
-    }
-  });
-
-  // Oculta subcategorias/categorias que não têm nenhum filho visível
-  // Repete o processo para garantir que só pais com filhos visíveis fiquem na tela
-  linhas.forEach((linha, idx) => {
-    if (
-      linha.classList.contains('dre-sub') ||
-      linha.classList.contains('dre-subcat-l1') ||
-      linha.classList.contains('dre-subcat-l2')
-    ) {
-      // Verifica se há algum filho visível abaixo
-      let temFilhoVisivel = false;
-      for (let j = idx + 1; j < linhas.length; j++) {
-        const filho = linhas[j];
-        // Se encontrar outra subcategoria/categoria, para de procurar
-        if (
-          filho.classList.contains('dre-cat') ||
-          filho.classList.contains('dre-sub') ||
-          filho.classList.contains('dre-subcat-l1') ||
-          filho.classList.contains('dre-subcat-l2')
-        ) break;
-        if (filho.style.display !== 'none') {
-          temFilhoVisivel = true;
-          break;
-        }
-      }
-      if (!temFilhoVisivel) {
-        linha.style.display = 'none';
-        linha.classList.add('dre-hide');
-      }
-    }
-  });
-
-  // Oculta categorias que não têm nenhum filho visível
-  linhas.forEach((linha, idx) => {
-    if (linha.classList.contains('dre-cat')) {
-      let temFilhoVisivel = false;
-      for (let j = idx + 1; j < linhas.length; j++) {
-        const filho = linhas[j];
-        if (filho.classList.contains('dre-cat')) break;
-        if (filho.style.display !== 'none') {
-          temFilhoVisivel = true;
-          break;
-        }
-      }
-      if (!temFilhoVisivel) {
-        linha.style.display = 'none';
-        linha.classList.add('dre-hide');
-      }
-    }
-  });
-}
-
-
 function initializeDREToggle() {
     // Inicializa todos os elementos como fechados (escondidos)
     document.querySelectorAll('tr.dre-sub, tr.dre-desc, tr.dre-parcela, tr.dre-subcat-l1, tr.dre-subcat-l2').forEach(subRow => {
@@ -1889,9 +1678,107 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeDREToggle();
   console.log('Página DRE carregada com hierarquia completa: categoria > subcategoria > descrição > parcela');
 });
+
+function filtrarDescricaoConta() {
+  const termo = document.getElementById('dre-search').value.trim().toLowerCase();
+  const linhas = Array.from(document.querySelectorAll('#tabelaAcompanhamento tbody tr'));
+
+  if (!termo) {
+    linhas.forEach(linha => {
+      linha.style.display = '';
+      if (
+        linha.classList.contains('dre-sub') ||
+        linha.classList.contains('dre-desc') ||
+        linha.classList.contains('dre-parcela') ||
+        linha.classList.contains('dre-subcat-l1') ||
+        linha.classList.contains('dre-subcat-l2')
+      ) {
+        linha.classList.add('dre-hide');
+      } else {
+        linha.classList.remove('dre-hide');
+      }
+    });
+    return;
+  }
+
+  linhas.forEach(linha => {
+    linha.style.display = 'none';
+    linha.classList.add('dre-hide');
+  });
+
+  linhas.forEach((linha, idx) => {
+    if (linha.classList.contains('dre-desc') || linha.classList.contains('dre-parcela')) {
+      const texto = linha.textContent.toLowerCase();
+      if (texto.includes(termo)) {
+        linha.style.display = '';
+        linha.classList.remove('dre-hide');
+        let i = idx - 1;
+        while (i >= 0) {
+          const pai = linhas[i];
+          if (
+            pai.classList.contains('dre-cat') ||
+            pai.classList.contains('dre-sub') ||
+            pai.classList.contains('dre-subcat-l1') ||
+            pai.classList.contains('dre-subcat-l2')
+          ) {
+            pai.style.display = '';
+            pai.classList.remove('dre-hide');
+          }
+          if (pai.classList.contains('dre-cat')) break;
+          i--;
+        }
+      }
+    }
+  });
+
+  linhas.forEach((linha, idx) => {
+    if (
+      linha.classList.contains('dre-sub') ||
+      linha.classList.contains('dre-subcat-l1') ||
+      linha.classList.contains('dre-subcat-l2')
+    ) {
+      let temFilhoVisivel = false;
+      for (let j = idx + 1; j < linhas.length; j++) {
+        const filho = linhas[j];
+        if (
+          filho.classList.contains('dre-cat') ||
+          filho.classList.contains('dre-sub') ||
+          filho.classList.contains('dre-subcat-l1') ||
+          filho.classList.contains('dre-subcat-l2')
+        ) break;
+        if (filho.style.display !== 'none') {
+          temFilhoVisivel = true;
+          break;
+        }
+      }
+      if (!temFilhoVisivel) {
+        linha.style.display = 'none';
+        linha.classList.add('dre-hide');
+      }
+    }
+  });
+
+  linhas.forEach((linha, idx) => {
+    if (linha.classList.contains('dre-cat')) {
+      let temFilhoVisivel = false;
+      for (let j = idx + 1; j < linhas.length; j++) {
+        const filho = linhas[j];
+        if (filho.classList.contains('dre-cat')) break;
+        if (filho.style.display !== 'none') {
+          temFilhoVisivel = true;
+          break;
+        }
+      }
+      if (!temFilhoVisivel) {
+        linha.style.display = 'none';
+        linha.classList.add('dre-hide');
+      }
+    }
+  });
+}
 </script>
 
-
+<!-- Script para o gráfico de fluxo de caixa -->
 <script>
   const ctx = document.getElementById('fluxoCaixaChart').getContext('2d');
   const fluxoCaixaChart = new Chart(ctx, {
@@ -1923,8 +1810,6 @@ document.addEventListener('DOMContentLoaded', function() {
               label += 'R$ ' + tooltipItem.raw.toFixed(2).replace('.', ',');
               return label;
             }
-          }
-        }
       },
       scales: {
         x: {
@@ -1974,40 +1859,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 </script>
-
-<style>
-#n8n-chat-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  background: #ffe066;
-  color: #222;
-  padding: 14px 18px;
-  border-radius: 50px;
-  border: none;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
-  font-weight: bold;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-#n8n-chat-btn:hover {
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-  background: #ffd700;
-}
-</style>
-<button id="n8n-chat-btn" title="Abrir Chat">
-  💬 Bastardinho
-</button>
-<script>
-document.getElementById('n8n-chat-btn').onclick = function() {
-  window.open(
-    'https://bastardsbrewery.app.n8n.cloud/webhook/3615579e-447a-4e48-989d-b67cce78b2a0/chat',
-    'n8nChat',
-    'width=400,height=600,top=100,left='+(window.screen.width-420)+',resizable=yes'
-  );
-};
-</script>
-
 </body>
 </html>
