@@ -298,7 +298,7 @@ if (
               <td class="p-2">
                 <select name="new_categoria[]" required
                         class="w-full bg-gray-600 text-white text-xs p-2 rounded">
-                  <option value="">Selecione</option>
+                  <option value="" disabled selected>Selecione</option>
                   <?php foreach ($categorias as $cat): ?>
                     <option value="<?=htmlspecialchars($cat,ENT_QUOTES)?>"><?=htmlspecialchars($cat,ENT_QUOTES)?></option>
                   <?php endforeach; ?>

@@ -299,7 +299,7 @@ if (
               <td class="p-2">
                 <select name="new_categoria[]" required
                         class="w-full bg-gray-600 text-white text-xs p-2 rounded">
-                  <option value="">Selecione</option>
+                  <option value="" disabled selected>Selecione</option>
                   <?php foreach ($categorias as $cat): ?>
                     <option value="<?=htmlspecialchars($cat,ENT_QUOTES)?>"><?=htmlspecialchars($cat,ENT_QUOTES)?></option>
                   <?php endforeach; ?>
@@ -520,18 +520,28 @@ if (
       // Abre modal de preview
       document.getElementById('submit-all').onclick = e => {
         e.preventDefault();
-        
+
         // Verifica se o setor foi selecionado
         if (!setorSelecionado) {
           alert('Por favor, selecione o setor antes de enviar o pedido.');
           document.getElementById('setor-modal').style.display = 'flex';
           return;
         }
-        
+
+        // Verificação: Categoria obrigatória nos NOVOS ITENS
+        const selectsCategoria = document.querySelectorAll('#new-items-body select[name="new_categoria[]"]');
+        for (const sel of selectsCategoria) {
+          if (!sel.value) {
+            alert('Selecione a categoria para todos os novos itens antes de enviar o pedido.');
+            sel.focus();
+            return;
+          }
+        }
+
         const previewBody = document.getElementById('preview-body');
         previewBody.innerHTML = '';
         document.getElementById('preview-setor').textContent = setorSelecionado;
-        
+
         const lines = [];
         // Itens existentes
         document.querySelectorAll('#insumo-body tr').forEach(r=>{
