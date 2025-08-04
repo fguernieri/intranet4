@@ -298,7 +298,7 @@ if (
               <td class="p-2">
                 <select name="new_categoria[]" required
                         class="w-full bg-gray-600 text-white text-xs p-2 rounded">
-                  <option value="">Selecione</option>
+                  <option value="" disabled selected>Selecione</option>
                   <?php foreach ($categorias as $cat): ?>
                     <option value="<?=htmlspecialchars($cat,ENT_QUOTES)?>"><?=htmlspecialchars($cat,ENT_QUOTES)?></option>
                   <?php endforeach; ?>
@@ -641,7 +641,7 @@ if (
             body: formData
           });
           if (response.ok) {
-            window.location.href = 'insumos7TRAGOS_htf.php?status=ok';
+            window.location.href = 'insumos7tragos_htf.php?status=ok';
           } else {
             const errorText = await response.text();
             alert(`Erro ao enviar o pedido: ${response.status} ${response.statusText}\n${errorText}`);
