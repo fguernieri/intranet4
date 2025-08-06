@@ -412,9 +412,10 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       
           <!-- Tabela de Pedidos com Ordenação e Seção Retrátil -->
       <section class="mt-10">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-2xl font-semibold text-yellow-400 text-center w-full">📦 Tabela de Pedidos</h3>
-          <button onclick="toggleTabelaPedidos()" class="ml-4 text-sm bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded">
+        <div class="flex items-center gap-4 mb-4">
+          <h3 class="flex-grow text-2xl font-semibold text-yellow-400 text-center">📦 Tabela de Pedidos</h3>
+          <input id="filtroPedidos" type="text" placeholder="Filtrar..." class="px-2 py-1 rounded bg-gray-700 text-sm text-white" oninput="filtrarTabelaPedidos()" />
+          <button onclick="toggleTabelaPedidos()" class="text-sm bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-3 py-1 rounded">
             Mostrar/Ocultar
           </button>
         </div>
@@ -690,6 +691,15 @@ $UltimaAtualizacao = $stmt->fetchColumn();
       function toggleTabelaPedidos() {
         const el = document.getElementById("tabelaPedidosWrapper");
         el.classList.toggle("hidden");
+      }
+
+      function filtrarTabelaPedidos() {
+        const filtro = document.getElementById("filtroPedidos").value.toLowerCase();
+        const linhas = document.querySelectorAll("#tabelaPedidosWrapper tbody tr");
+        linhas.forEach(tr => {
+          const texto = tr.textContent.toLowerCase();
+          tr.style.display = texto.includes(filtro) ? "" : "none";
+        });
       }
 
   // Exibe ou oculta o modal
