@@ -6,7 +6,7 @@ require_once __DIR__ . '/projecao_cervejas_functions.php';
 
 // Lista das cervejas que devem ser exibidas
 $cervejas_permitidas = [
-    'WELT PILSEN',
+    'BASTARDS PILSEN',
     "JUICY JILL",
     'DOG SAVE THE BEER', 
     'ZE DO MORRO',
@@ -19,7 +19,7 @@ $cervejas_permitidas = [
     'MARK THE SHADOW',
     'CRIATURA DO PANTANO',
     'XP 094 HOP HEADS',
-    'WELT RED ALE'
+    'BASTARDS RED ALE'
 ];
 
 // Classe para conectar via API REST do Supabase
