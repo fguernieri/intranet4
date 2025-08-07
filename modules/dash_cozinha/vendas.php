@@ -1,4 +1,5 @@
 <?php
+
 require_once __DIR__ . '/../../config/db.php';
 
 $inicio = $_GET['inicio'] ?? date('Y-m-01');
