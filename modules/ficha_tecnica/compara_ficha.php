@@ -13,12 +13,15 @@ $ficha_cloudify = [];
 $nome_intranet = '-';
 $nome_cloudify = '-';
 $farol_status = 'gray';
+$id_ficha = null;
 
 if ($codigo_prato !== '') {
     // Intranet
-    $stmt = $pdo->prepare("SELECT nome_prato FROM ficha_tecnica WHERE codigo_cloudify = :codigo");
+    $stmt = $pdo->prepare("SELECT id, nome_prato FROM ficha_tecnica WHERE codigo_cloudify = :codigo");
     $stmt->execute([':codigo' => $codigo_prato]);
-    $nome_intranet = $stmt->fetchColumn() ?: '-';
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $nome_intranet = $row['nome_prato'] ?? '-';
+    $id_ficha = $row['id'] ?? null;
 
     // Cloudify
     $stmt2 = $pdo_dw->prepare("SELECT DISTINCT `Produto` FROM insumos_bastards WHERE `Cód. ref.` = :codigo");
@@ -112,6 +115,9 @@ if ($codigo_prato !== '') {
         <input type="text" name="cod" value="<?= htmlspecialchars($codigo_prato) ?>" placeholder="Digite o código do prato"
                class="w-full md:w-1/3 p-2 bg-gray-800 border border-gray-700 text-white rounded-md" required>
         <button type="submit" class="btn-acao mt-2 md:mt-0 md:ml-2">Comparar</button>
+        <?php if ($id_ficha): ?>
+          <a href="editar_ficha_form.php?id=<?= htmlspecialchars($id_ficha) ?>" class="btn-acao mt-2 md:mt-0 md:ml-2">Editar</a>
+        <?php endif; ?>
       </form>
 
       <?php if ($codigo_prato !== ''): ?>
