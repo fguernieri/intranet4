@@ -114,6 +114,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
                 <option value="ml">ml</option>
                 <option value="LT">LT</option>
                 <option value="UND">UND</option>
+                <option value="pct">pct</option>
               </select>
             </div>
           </div>
@@ -139,6 +140,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
                 <option value="ml">ml</option>
                 <option value="LT">LT</option>
                 <option value="UND">UND</option>
+                <option value="pct">pct</option>
               </select>
             </div>
           </template>
