@@ -518,14 +518,14 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
               <?php endforeach; ?>
               <tr class="border-t border-gray-600">
                 <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-                  TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = R$
-                  <span id="bonificacao-godsave-text"><?= number_format((float)$bonificacaoBastards, 2, ',', '.') ?></span>
+                  TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = 
+                  <span id="bonificacao-godsave-text"><?= number_format((float)$bonificacaoBastards, 2, ',', '.') ?></span> L
                 </td>
               </tr>
               <tr class="border-t border-gray-600">
                 <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-                  TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = R$
-                  <span id="bonificacao-especiais-text"><?= number_format((float)$bonificacaoEspeciais, 2, ',', '.') ?></span>
+                  TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = 
+                  <span id="bonificacao-especiais-text"><?= number_format((float)$bonificacaoEspeciais, 2, ',', '.') ?></span> L
                 </td>
               </tr>
             </tbody>
