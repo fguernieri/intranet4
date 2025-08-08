@@ -519,13 +519,13 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
               <tr class="border-t border-gray-600">
                 <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
                   TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = 
-                  <span id="bonificacao-godsave-text"><?= number_format((int)$bonificacaoBastards, 0, ',', '.') ?></span> L
+                  <span id="bonificacao-godsave-text"><?= (int)$bonificacaoBastards ?></span> L
                 </td>
               </tr>
               <tr class="border-t border-gray-600">
                 <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
                   TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = 
-                  <span id="bonificacao-especiais-text"><?= number_format((int)$bonificacaoEspeciais, 0, ',', '.') ?></span> L
+                  <span id="bonificacao-especiais-text"><?= (int)$bonificacaoEspeciais ?></span> L
                 </td>
               </tr>
             </tbody>
