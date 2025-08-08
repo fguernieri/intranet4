@@ -232,7 +232,7 @@ if (!empty($dadosChoripan)) {
     $quantOutros = 0;
     foreach ($totaisChoripan as $cli => $produtos) {
         foreach ($produtos as $prod => $qtde) {
-            if (strcasecmp((string)$prod, 'Welt Pilsen') === 0) {
+            if (strcasecmp((string)$prod, 'Bastards Pilsen') === 0) {
                 $quantWelt += (int)$qtde;
             } else {
                 $quantOutros += (int)$qtde;
