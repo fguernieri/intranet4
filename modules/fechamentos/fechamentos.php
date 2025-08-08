@@ -4,54 +4,59 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../auth.php';
-
-
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-if (isset($_GET['limpar']) && $_GET['limpar'] == '1') {
-    $tmpFile = __DIR__ . '/tmp_dados.json';
-    if (file_exists($tmpFile)) {
-        $tempo = filemtime($tmpFile);
-        if (time() - $tempo > 60) { // só apaga se tiver +60 segundos
-            unlink($tmpFile);
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
+// ====== util: limpar cache antigo ao sair ======
+if (isset($_GET['limpar']) && $_GET['limpar'] === '1') {
+    $tmpFiles = [
+        __DIR__ . '/tmp_dados.json',
+        __DIR__ . '/tmp_choripan.json',
+    ];
+    foreach ($tmpFiles as $tmpFile) {
+        if (file_exists($tmpFile)) {
+            $tempo = filemtime($tmpFile);
+            // só apaga se tiver +60 segundos
+            if (time() - $tempo > 60) {
+                @unlink($tmpFile);
+            }
         }
     }
     exit;
 }
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-
+// ====== estado ======
 $dados = [];
 $mesesDisponiveis = [];
 $dadosFiltrados = [];
 $mesSelecionado = $_GET['mes'] ?? null;
 $palavrasChave = isset($_GET['keywords']) ? explode(',', strtolower($_GET['keywords'])) : [];
 
+// ====== helpers ======
 function extrairMesesUnicos($colunaDatas) {
     $meses = [];
-
     foreach ($colunaDatas as $data) {
         if (!$data) continue;
-        $timestamp = strtotime(str_replace('/', '-', $data));
+        $timestamp = strtotime(str_replace('/', '-', (string)$data));
         if ($timestamp !== false) {
             $mesFormatado = date('m/Y', $timestamp);
             $meses[$mesFormatado] = true;
         }
     }
-
-    return array_keys($meses);
+    return array_values(array_keys($meses));
 }
 
 function filtrarPorMesEProduto($dados, $mesFiltro, $keywords, $cabecalho) {
     $filtrados = [];
-    $idxProduto = array_search('Produto', $cabecalho);
-    $idxData = 0;
+    $idxProduto = array_search('Produto', $cabecalho, true);
+    $idxData = 0; // primeira coluna é Data
 
     foreach (array_slice($dados, 1) as $linha) {
         $data = $linha[$idxData] ?? '';
-        $produto = strtolower($linha[$idxProduto] ?? '');
+        $produto = strtolower((string)($idxProduto !== false ? ($linha[$idxProduto] ?? '') : ''));
 
-        $timestamp = strtotime(str_replace('/', '-', $data));
+        $timestamp = strtotime(str_replace('/', '-', (string)$data));
         $mesLinha = $timestamp ? date('m/Y', $timestamp) : '';
 
         $matchMes = !$mesFiltro || $mesLinha === $mesFiltro;
@@ -65,63 +70,70 @@ function filtrarPorMesEProduto($dados, $mesFiltro, $keywords, $cabecalho) {
     return $filtrados;
 }
 
+// ====== upload principal (Bulldog) ======
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['arquivo'])) {
-    $arquivo = $_FILES['arquivo']['tmp_name'];
+    $arquivo = $_FILES['arquivo']['tmp_name'] ?? '';
 
-    try {
-        $reader = IOFactory::createReader('Xlsx');
-        $reader->setReadDataOnly(true);
-        $spreadsheet = $reader->load($arquivo);
-        $sheet = $spreadsheet->getActiveSheet();
+    if ($arquivo && is_uploaded_file($arquivo)) {
+        try {
+            $reader = IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($arquivo);
+            $sheet = $spreadsheet->getActiveSheet();
 
-        foreach ($sheet->getRowIterator() as $row) {
-            $linha = [];
-            foreach ($row->getCellIterator() as $cell) {
-                try {
-                    $valor = $cell->getFormattedValue();
-                } catch (Exception $e) {
-                    $valor = '[ERRO DE FÓRMULA]';
+            foreach ($sheet->getRowIterator() as $row) {
+                $linha = [];
+                foreach ($row->getCellIterator() as $cell) {
+                    try {
+                        $valor = $cell->getFormattedValue();
+                    } catch (Exception $e) {
+                        $valor = '[ERRO DE FÓRMULA]';
+                    }
+                    if (is_string($valor) && preg_match('/^="?(.*?)"?$/', $valor, $m)) {
+                        $valor = trim($m[1]);
+                    }
+                    $linha[] = $valor;
                 }
-
-                if (is_string($valor) && preg_match('/^="?(.*?)"?$/', $valor, $m)) {
-                    $valor = trim($m[1]);
-                }
-
-                $linha[] = $valor;
+                $dados[] = $linha;
             }
-            $dados[] = $linha;
+
+            if (!empty($dados)) {
+                $colunaDatas = array_column($dados, 0);
+                $mesesDisponiveis = extrairMesesUnicos($colunaDatas);
+                $cab = $dados[0] ?? [];
+                $dadosFiltrados = !empty($cab) ? filtrarPorMesEProduto($dados, $mesSelecionado, $palavrasChave, $cab) : [];
+                file_put_contents(__DIR__ . '/tmp_dados.json', json_encode($dados, JSON_UNESCAPED_UNICODE));
+            }
+        } catch (Exception $e) {
+            echo 'Erro ao processar arquivo: ' . htmlspecialchars($e->getMessage());
         }
-
-        $colunaDatas = array_column($dados, 0);
-        $mesesDisponiveis = extrairMesesUnicos($colunaDatas);
-        $dadosFiltrados = filtrarPorMesEProduto($dados, $mesSelecionado, $palavrasChave, $dados[0]);
-
-        file_put_contents(__DIR__ . '/tmp_dados.json', json_encode($dados));
-    } catch (Exception $e) {
-        echo 'Erro ao processar arquivo: ' . $e->getMessage();
     }
 } elseif (file_exists(__DIR__ . '/tmp_dados.json')) {
-    $dados = json_decode(file_get_contents(__DIR__ . '/tmp_dados.json'), true);
-    $colunaDatas = array_column($dados, 0);
-    $mesesDisponiveis = extrairMesesUnicos($colunaDatas);
-    $dadosFiltrados = filtrarPorMesEProduto($dados, $mesSelecionado, $palavrasChave, $dados[0]);
+    $dados = json_decode(file_get_contents(__DIR__ . '/tmp_dados.json'), true) ?: [];
+    if (!empty($dados)) {
+        $colunaDatas = array_column($dados, 0);
+        $mesesDisponiveis = extrairMesesUnicos($colunaDatas);
+        $cab = $dados[0] ?? [];
+        $dadosFiltrados = !empty($cab) ? filtrarPorMesEProduto($dados, $mesSelecionado, $palavrasChave, $cab) : [];
+    }
 }
 
-// === Início Fechamento Choripan ===
-// 1. Captura os rebates (aceita vírgula ou ponto)
+// ====== Fechamento Choripan: rebates ======
 $rawWelt      = str_replace(',', '.', $_POST['rebate_welt']      ?? '');
 $rawEspecial  = str_replace(',', '.', $_POST['rebate_especiais'] ?? '');
-$rebateWelt      = filter_var($rawWelt,     FILTER_VALIDATE_FLOAT) ?: 1.00;
-$rebateEspeciais = filter_var($rawEspecial, FILTER_VALIDATE_FLOAT) ?: 0.50;
+$rebateWelt      = filter_var($rawWelt,     FILTER_VALIDATE_FLOAT);
+$rebateEspeciais = filter_var($rawEspecial, FILTER_VALIDATE_FLOAT);
+$rebateWelt      = ($rebateWelt      !== false) ? (float)$rebateWelt      : 1.00;
+$rebateEspeciais = ($rebateEspeciais !== false) ? (float)$rebateEspeciais : 0.50;
 
-// 2. Carrega ou processa o arquivo
+// ====== Fechamento Choripan: ingestão / cache ======
 $dadosChoripan = [];
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
-    && ($_POST['formulario'] ?? '') === 'choripan'
+    && (($_POST['formulario'] ?? '') === 'choripan')
 ) {
-    // se veio upload novo, parseia e salva cache
-    if (!empty($_FILES['arquivoChoripan']['tmp_name'])) {
+    // upload novo
+    if (!empty($_FILES['arquivoChoripan']['tmp_name']) && is_uploaded_file($_FILES['arquivoChoripan']['tmp_name'])) {
         $tmpCh = $_FILES['arquivoChoripan']['tmp_name'];
         try {
             $readerCh = IOFactory::createReader('Xlsx');
@@ -159,9 +171,9 @@ if (
                     continue;
                 }
 
-                // filtra linha: pula se PRODUTO **ou** CLIENTE vazios
-                $produtoVazio = ($idxProdutoCh !== false && trim($linhaCh[$idxProdutoCh] ?? '') === '');
-                $clienteVazio = ($idxClienteCh !== false && trim($linhaCh[$idxClienteCh] ?? '') === '');
+                // filtra linha: pula se PRODUTO **ou** CLIENTE vazios (se existirem as colunas)
+                $produtoVazio = ($idxProdutoCh !== false && $idxProdutoCh !== null) ? (trim($linhaCh[$idxProdutoCh] ?? '') === '') : false;
+                $clienteVazio = ($idxClienteCh !== false && $idxClienteCh !== null) ? (trim($linhaCh[$idxClienteCh] ?? '') === '') : false;
                 if ($produtoVazio || $clienteVazio) {
                     continue;
                 }
@@ -169,46 +181,61 @@ if (
                 $dadosChoripan[] = $linhaCh;
             }
 
-            file_put_contents(__DIR__ . '/tmp_choripan.json', json_encode($dadosChoripan));
+            file_put_contents(__DIR__ . '/tmp_choripan.json', json_encode($dadosChoripan, JSON_UNESCAPED_UNICODE));
         } catch (Exception $eCh) {
-            echo 'Erro ao processar Fechamento Choripan: ' . $eCh->getMessage();
+            echo 'Erro ao processar Fechamento Choripan: ' . htmlspecialchars($eCh->getMessage());
         }
     }
-    // se não veio arquivo, carrega do cache
+    // sem upload: tenta cache
     else {
-        $dadosChoripan = json_decode(file_get_contents(__DIR__ . '/tmp_choripan.json'), true);
-    }
-
-    // 3. Totalizador por Cliente/Produto (só “choripan”)
-    $totaisChoripan = [];
-    if (!empty($dadosChoripan)) {
-        $cabCh      = $dadosChoripan[0];
-        $idxCli     = array_search('Cliente',           $cabCh, true);
-        $idxProd    = array_search('Produto',           $cabCh, true);
-        $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
-
-        foreach (array_slice($dadosChoripan, 1) as $linha) {
-            $cliente = $linha[$idxCli]  ?? '';
-            if (stripos($cliente, 'choripan') === false) {
-                continue;
-            }
-            $produto = $linha[$idxProd]  ?? '';
-            $quant   = intval($linha[$idxQuant] ?? 0);
-            $totaisChoripan[$cliente][$produto] = 
-                ($totaisChoripan[$cliente][$produto] ?? 0) + $quant;
+        $cache = __DIR__ . '/tmp_choripan.json';
+        if (is_file($cache)) {
+            $dadosChoripan = json_decode(file_get_contents($cache), true) ?: [];
+        } else {
+            $dadosChoripan = [];
         }
     }
+} else {
+    // fora do submit choripan, mantém vazio (ou carrega último cache se quiser)
+    $cache = __DIR__ . '/tmp_choripan.json';
+    if (is_file($cache)) {
+        $dadosChoripan = json_decode(file_get_contents($cache), true) ?: [];
+    }
+}
 
-    // 4. Cálculo de repasses
+// ====== Fechamento Choripan: totalização e repasses ======
+$totaisChoripan = [];
+$repasseWelt = $repasseEspeciais = $totalRepasse = 0.0;
+
+if (!empty($dadosChoripan)) {
+    $cabCh      = $dadosChoripan[0] ?? [];
+    $idxCli     = array_search('Cliente',            $cabCh, true);
+    $idxProd    = array_search('Produto',            $cabCh, true);
+    $idxQuant   = array_search('Quantidade Vendida', $cabCh, true);
+
+    foreach (array_slice($dadosChoripan, 1) as $linha) {
+        $cliente = ($idxCli   !== false && $idxCli   !== null) ? ($linha[$idxCli]   ?? '') : '';
+        if (stripos((string)$cliente, 'choripan') === false) {
+            continue;
+        }
+        $produto = ($idxProd  !== false && $idxProd  !== null) ? ($linha[$idxProd]  ?? '') : '';
+        $quant   = ($idxQuant !== false && $idxQuant !== null) ? (int)($linha[$idxQuant] ?? 0) : 0;
+
+        if ($cliente === '' || $produto === '') continue;
+
+        $totaisChoripan[$cliente][$produto] =
+            ($totaisChoripan[$cliente][$produto] ?? 0) + $quant;
+    }
+
+    // cálculo dos repasses
     $quantWelt   = 0;
     $quantOutros = 0;
     foreach ($totaisChoripan as $cli => $produtos) {
         foreach ($produtos as $prod => $qtde) {
-            // comparação case-insensitive
-            if (strcasecmp($prod, 'Welt Pilsen') === 0) {
-                $quantWelt += $qtde;
+            if (strcasecmp((string)$prod, 'Welt Pilsen') === 0) {
+                $quantWelt += (int)$qtde;
             } else {
-                $quantOutros += $qtde;
+                $quantOutros += (int)$qtde;
             }
         }
     }
@@ -216,43 +243,46 @@ if (
     $repasseEspeciais = $quantOutros * $rebateEspeciais;
     $totalRepasse     = $repasseWelt + $repasseEspeciais;
 }
-// === Fim Fechamento Choripan ===
 
-// === Início Fechamento GOD Save ===
+// ====== Fechamento GOD Save ======
 $totaisGodSave = [];
 $litrosBastards = 0;
-
 $litrosEspeciais = 0;
 $percentualBonificacao = 30;
-$percentualEspeciais = 25;
-$bonificacaoBastards = 0;
-$bonificacaoEspeciais = 0;
-
+$percentualEspeciais   = 25;
+$bonificacaoBastards   = 0;
+$bonificacaoEspeciais  = 0;
 
 if (!empty($dadosChoripan)) {
-    $cabCh      = $dadosChoripan[0];
-    $idxCli     = array_search('Cliente',           $cabCh, true);
-    $idxProd    = array_search('Produto',           $cabCh, true);
-    $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
-
+    $cabCh      = $dadosChoripan[0] ?? [];
+    $idxCli     = array_search('Cliente',            $cabCh, true);
+    $idxProd    = array_search('Produto',            $cabCh, true);
+    $idxQuant   = array_search('Quantidade Vendida', $cabCh, true);
+    $idxTipo    = array_search('Tipo',               $cabCh, true); // <-- agora definido
 
     foreach (array_slice($dadosChoripan, 1) as $linha) {
-        $cliente = $linha[$idxCli]  ?? '';
-        if (stripos($cliente, 'god save') === false) {
-            continue;
-        }
-        $tipo = $linha[$idxTipo]  ?? '';
-        if (strcasecmp($tipo, 'Chopp') !== 0) {
+        $cliente = ($idxCli   !== false && $idxCli   !== null) ? ($linha[$idxCli]   ?? '') : '';
+        if (stripos((string)$cliente, 'god save') === false) {
             continue;
         }
 
-        $produto = $linha[$idxProd]  ?? '';
-        $quant   = intval($linha[$idxQuant] ?? 0);
+        // filtra por Tipo=Chopp somente se a coluna existir
+        $tipo = ($idxTipo !== false && $idxTipo !== null) ? ($linha[$idxTipo] ?? '') : '';
+        if ($idxTipo !== false && $idxTipo !== null) {
+            if (strcasecmp((string)$tipo, 'Chopp') !== 0) {
+                continue;
+            }
+        }
+
+        $produto = ($idxProd  !== false && $idxProd  !== null) ? ($linha[$idxProd]  ?? '') : '';
+        $quant   = ($idxQuant !== false && $idxQuant !== null) ? (int)($linha[$idxQuant] ?? 0) : 0;
+
+        if ($cliente === '' || $produto === '') continue;
 
         $totaisGodSave[$cliente][$produto] =
             ($totaisGodSave[$cliente][$produto] ?? 0) + $quant;
 
-        if (strcasecmp($produto, 'Bastards Pilsen') === 0) {
+        if (strcasecmp((string)$produto, 'Bastards Pilsen') === 0) {
             $litrosBastards += $quant;
         } else {
             $litrosEspeciais += $quant;
@@ -260,10 +290,10 @@ if (!empty($dadosChoripan)) {
     }
 
     $bonificacaoBastards  = $litrosBastards  * ($percentualBonificacao / 100);
-    $bonificacaoEspeciais = $litrosEspeciais * ($percentualEspeciais / 100);
+    $bonificacaoEspeciais = $litrosEspeciais * ($percentualEspeciais   / 100);
 }
 
-// Expor variáveis
+// Expor variáveis (garantindo definidos)
 $totaisGodSave         = $totaisGodSave         ?? [];
 $litrosBastards        = $litrosBastards        ?? 0;
 $litrosEspeciais       = $litrosEspeciais       ?? 0;
@@ -272,11 +302,8 @@ $percentualEspeciais   = $percentualEspeciais   ?? 0;
 $bonificacaoBastards   = $bonificacaoBastards   ?? 0;
 $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
-// === Fim Fechamento GOD Save ===
-
 ?>
 <!DOCTYPE html>
-
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -290,7 +317,6 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <?php include __DIR__ . '/../../sidebar.php'; ?>
     </aside>
 
-
     <main class="flex-1 p-10 overflow-auto">
 
       <h1 class="text-2xl font-bold mb-6">Fechamento Bulldog</h1>
@@ -300,34 +326,34 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
           <button type="submit" class="btn-acao">Enviar</button>
       </form>
 
-    <!-- Novo Formulário com estilo padronizado -->
-    <?php if (!empty($mesesDisponiveis)): ?>
-    <form method="GET" class="bg-gray-800 rounded-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-white">
-        <div>
-            <label for="mes" class="block mb-2 text-sm font-semibold">🗓️ Mês</label>
-            <select name="mes" id="mes" class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2">
-                <option value="">-- Todos os meses --</option>
-                <?php foreach ($mesesDisponiveis as $mes): ?>
-                    <option value="<?= htmlspecialchars($mes) ?>" <?= ($mes === $mesSelecionado) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($mes) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div>
-            <label for="keywords" class="block mb-2 text-sm font-semibold">🔍 Palavras-chave (produto)</label>
-            <input type="text" name="keywords" id="keywords"
-                   value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÇARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
-                   class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-                   placeholder="ex: fitzgerald, gin, spritz">
-        </div>
-        <div class="md:col-span-2 flex justify-end items-end">
-            <button type="submit" class="btn-acao">Aplicar Filtros</button>
-        </div>
-    </form>
-    <?php endif; ?>
+      <!-- Filtros -->
+      <?php if (!empty($mesesDisponiveis)): ?>
+      <form method="GET" class="bg-gray-800 rounded-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-white">
+          <div>
+              <label for="mes" class="block mb-2 text-sm font-semibold">🗓️ Mês</label>
+              <select name="mes" id="mes" class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2">
+                  <option value="">-- Todos os meses --</option>
+                  <?php foreach ($mesesDisponiveis as $mes): ?>
+                      <option value="<?= htmlspecialchars($mes) ?>" <?= ($mes === $mesSelecionado) ? 'selected' : '' ?>>
+                          <?= htmlspecialchars($mes) ?>
+                      </option>
+                  <?php endforeach; ?>
+              </select>
+          </div>
+          <div>
+              <label for="keywords" class="block mb-2 text-sm font-semibold">🔍 Palavras-chave (produto)</label>
+              <input type="text" name="keywords" id="keywords"
+                     value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÇARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
+                     class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+                     placeholder="ex: fitzgerald, gin, spritz">
+          </div>
+          <div class="md:col-span-2 flex justify-end items-end">
+              <button type="submit" class="btn-acao">Aplicar Filtros</button>
+          </div>
+      </form>
+      <?php endif; ?>
 
-    <?php if (!empty($dadosFiltrados)): ?>
+      <?php if (!empty($dadosFiltrados)): ?>
         <button
             onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
             class="btn-acao mb-4"
@@ -340,12 +366,12 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
                 <thead class="bg-gray-700 text-white sticky top-0 z-10">
                     <tr>
                         <?php
-                        $cabecalho = $dados[0];
+                        $cabecalho = $dados[0] ?? [];
                         $indices = [];
                         $colunasDesejadas = ['Data', 'Produto', 'Preço', 'Qtde. total', 'Total'];
 
                         foreach ($colunasDesejadas as $coluna) {
-                            $idx = array_search($coluna, $cabecalho);
+                            $idx = array_search($coluna, $cabecalho, true);
                             if ($idx !== false) {
                                 $indices[$coluna] = $idx;
                                 echo "<th class='px-4 py-2 border bg-gray-700'>" . htmlspecialchars($coluna) . "</th>";
@@ -358,7 +384,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
                     <?php foreach ($dadosFiltrados as $linha): ?>
                         <tr class="border-t border-gray-600">
                             <?php foreach ($indices as $idx): ?>
-                                <td class="px-4 py-1 border"><?= htmlspecialchars($linha[$idx] ?? '') ?></td>
+                                <td class="px-4 py-1 border"><?= htmlspecialchars((string)($linha[$idx] ?? '')) ?></td>
                             <?php endforeach; ?>
                         </tr>
                     <?php endforeach; ?>
@@ -384,39 +410,45 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
                     <tbody>
                         <?php
                         $resumo = [];
+                        $idxProdutoResumo = $indices['Produto'] ?? null;
+                        $idxPrecoResumo   = $indices['Preço'] ?? null;
+                        $idxQtdeResumo    = $indices['Qtde. total'] ?? null;
+                        $idxTotalResumo   = $indices['Total'] ?? null;
 
                         foreach ($dadosFiltrados as $linha) {
-                            $produto = $linha[$indices['Produto']] ?? '';
-                            $preco = floatval(str_replace(',', '.', $linha[$indices['Preço']] ?? 0));
-                            $qtde = intval($linha[$indices['Qtde. total']] ?? 0);
-                            $total = floatval(str_replace(',', '.', $linha[$indices['Total']] ?? 0));
+                            $produto = ($idxProdutoResumo !== null) ? ($linha[$idxProdutoResumo] ?? '') : '';
+                            $preco   = ($idxPrecoResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxPrecoResumo] ?? 0)) : 0.0;
+                            $qtde    = ($idxQtdeResumo    !== null) ? (int)($linha[$idxQtdeResumo] ?? 0) : 0;
+                            $total   = ($idxTotalResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxTotalResumo] ?? 0)) : 0.0;
+
+                            if ($produto === '') continue;
 
                             if (!isset($resumo[$produto])) {
-                                $resumo[$produto] = ['preco' => $preco, 'qtde' => 0, 'total' => 0];
+                                $resumo[$produto] = ['preco' => $preco, 'qtde' => 0, 'total' => 0.0];
                             }
 
-                            $resumo[$produto]['qtde'] += $qtde;
+                            $resumo[$produto]['qtde']  += $qtde;
                             $resumo[$produto]['total'] += $total;
                         }
 
                         $totalGeralQtde = 0;
-                        $totalGeralValor = 0;
+                        $totalGeralValor = 0.0;
 
                         foreach ($resumo as $produto => $info) {
                             echo "<tr class='border-t border-gray-600'>";
-                            echo "<td class='px-4 py-1 border'>" . htmlspecialchars($produto) . "</td>";
-                            echo "<td class='px-4 py-1 border'>R$ " . number_format($info['preco'], 2, ',', '.') . "</td>";
-                            echo "<td class='px-4 py-1 border'>" . $info['qtde'] . "</td>";
-                            echo "<td class='px-4 py-1 border'>R$ " . number_format($info['total'], 2, ',', '.') . "</td>";
+                            echo "<td class='px-4 py-1 border'>" . htmlspecialchars((string)$produto) . "</td>";
+                            echo "<td class='px-4 py-1 border'>R$ " . number_format((float)$info['preco'], 2, ',', '.') . "</td>";
+                            echo "<td class='px-4 py-1 border'>" . (int)$info['qtde'] . "</td>";
+                            echo "<td class='px-4 py-1 border'>R$ " . number_format((float)$info['total'], 2, ',', '.') . "</td>";
                             echo "</tr>";
 
-                            $totalGeralQtde += $info['qtde'];
-                            $totalGeralValor += $info['total'];
+                            $totalGeralQtde += (int)$info['qtde'];
+                            $totalGeralValor += (float)$info['total'];
                         }
 
                         echo "<tr class='bg-gray-800 font-bold border-t border-gray-500'>";
                         echo "<td class='px-4 py-2 border text-right' colspan='2'>TOTAL GERAL</td>";
-                        echo "<td class='px-4 py-2 border text-white'>" . $totalGeralQtde . "</td>";
+                        echo "<td class='px-4 py-2 border text-white'>" . (int)$totalGeralQtde . "</td>";
                         echo "<td class='px-4 py-2 border text-white'>R$ " . number_format($totalGeralValor, 2, ',', '.') . "</td>";
                         echo "</tr>";
 
@@ -430,183 +462,185 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
             </div>
             <button onclick="copiarResumoEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
         </div>
-    <?php endif; ?>
-    
-<script>
-window.addEventListener("unload", function () {
-    navigator.sendBeacon(window.location.pathname + "?limpar=1");
-});
-</script>
+      <?php endif; ?>
 
-<h1 class="text-2xl font-bold mb-4">Fechamento GOD</h1>
-<div id="card-godsave" class="mt-6 card1 no-hover p-6">
-  <div class="flex flex-col md:flex-row gap-4">
-    <div>
-      <label for="percent_bastards" class="block mb-1 text-sm font-semibold">Bastards Pilsen (%)</label>
-      <input
-        type="number"
-        id="percent_bastards"
-        step="0.01"
-        value="<?= $percentualBonificacao ?>"
-        oninput="atualizarBonificacaoGodSave()"
-        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-      />
-    </div>
-    <div>
-      <label for="percent_especiais" class="block mb-1 text-sm font-semibold">Especiais (%)</label>
-      <input
-        type="number"
-        id="percent_especiais"
-        step="0.01"
-        value="<?= $percentualEspeciais ?>"
-        oninput="atualizarBonificacaoGodSave()"
-        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-      />
-    </div>
-  </div>
-  <div class="overflow-auto mt-4">
-    <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-      <thead class="bg-gray-700 text-white">
-        <tr>
-          <th class="px-4 py-2 border">Cliente</th>
-          <th class="px-4 py-2 border">Produto</th>
-          <th class="px-4 py-2 border">Quantidade vendida</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($totaisGodSave as $cliente => $lista): ?>
-          <?php foreach ($lista as $produto => $qtde): ?>
-            <tr class="border-t border-gray-600">
-              <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
-              <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
-              <td class="px-4 py-1 border"><?= $qtde ?></td>
-            </tr>
-          <?php endforeach; ?>
-        <?php endforeach; ?>
-        <tr class="border-t border-gray-600">
-          <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-            TOTAL BASTARDS PILSEN <?= $litrosBastards ?> L = R$ <span id="bonificacao-godsave-text"><?= number_format($bonificacaoBastards, 2, ',', '.') ?></span>
-          </td>
-        </tr>
-        <tr class="border-t border-gray-600">
-          <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-            TOTAL ESPECIAIS <?= $litrosEspeciais ?> L = R$ <span id="bonificacao-especiais-text"><?= number_format($bonificacaoEspeciais, 2, ',', '.') ?></span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
-</div>
+      <script>
+      window.addEventListener("unload", function () {
+          navigator.sendBeacon(window.location.pathname + "?limpar=1");
+      });
+      </script>
 
-<hr class="divider_yellow my-6">
-
-<h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
-<form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-  <input type="hidden" name="formulario" value="choripan" />
-
-  <!-- upload -->
-  <div>
-    <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Arquivo Choripan</label>
-    <input
-      type="file"
-      name="arquivoChoripan"
-      id="arquivoChoripan"
-      accept=".xlsx"
-      class="w-full text-black bg-gray-600 rounded p-2"
-    />
-  </div>
-
-  <!-- Rebate Welt -->
-  <div>
-    <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Welt (R$)</label>
-    <input
-      type="number"
-      name="rebate_welt"
-      id="rebate_welt"
-      step="0.01"
-      value="<?= number_format($rebateWelt, 2, '.', '') ?>"
-      class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-    />
-  </div>
-
-  <!-- Rebate Especiais -->
-  <div>
-    <label for="rebate_especiais" class="block mb-1 text-sm font-semibold">Rebate Especiais (R$)</label>
-    <input
-      type="number"
-      name="rebate_especiais"
-      id="rebate_especiais"
-      step="0.01"
-      value="<?= number_format($rebateEspeciais, 2, '.', '') ?>"
-      class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-    />
-  </div>
-
-  <!-- botão -->
-  <div>
-    <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
-  </div>
-  
-  <!-- Botão de copiar para e-mail -->
-  <button
-    onclick="copiarChoripanEmail()" class="mt-4 btn-acao">
-    📋 Copiar para E-mail
-  </button>
-</form>
-
-<?php if (!empty($totaisChoripan)): ?>
-  <div id="card-choripan" class="mt-6 card1 no-hover p-6">
-    <div class="overflow-auto">
-      <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-        <thead class="bg-gray-700 text-white">
-          <tr>
-            <th class="px-4 py-2 border">Cliente</th>
-            <th class="px-4 py-2 border">Produto</th>
-            <th class="px-4 py-2 border">Quantidade vendida</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($totaisChoripan as $cliente => $lista): ?>
-            <?php foreach ($lista as $produto => $qtde): ?>
-              <tr class="border-t border-gray-600">
-                <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
-                <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
-                <td class="px-4 py-1 border"><?= $qtde ?></td>
+      <!-- GOD SAVE -->
+      <h1 class="text-2xl font-bold mb-4">Fechamento GOD</h1>
+      <div id="card-godsave" class="mt-6 card1 no-hover p-6">
+        <div class="flex flex-col md:flex-row gap-4">
+          <div>
+            <label for="percent_bastards" class="block mb-1 text-sm font-semibold">Bastards Pilsen (%)</label>
+            <input
+              type="number"
+              id="percent_bastards"
+              step="0.01"
+              value="<?= htmlspecialchars((string)$percentualBonificacao) ?>"
+              oninput="atualizarBonificacaoGodSave()"
+              class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+            />
+          </div>
+          <div>
+            <label for="percent_especiais" class="block mb-1 text-sm font-semibold">Especiais (%)</label>
+            <input
+              type="number"
+              id="percent_especiais"
+              step="0.01"
+              value="<?= htmlspecialchars((string)$percentualEspeciais) ?>"
+              oninput="atualizarBonificacaoGodSave()"
+              class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+            />
+          </div>
+        </div>
+        <div class="overflow-auto mt-4">
+          <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
+            <thead class="bg-gray-700 text-white">
+              <tr>
+                <th class="px-4 py-2 border">Cliente</th>
+                <th class="px-4 py-2 border">Produto</th>
+                <th class="px-4 py-2 border">Quantidade vendida</th>
               </tr>
-            <?php endforeach; ?>
-          <?php endforeach; ?>
-          <tr class="border-t border-gray-600-600">
-            <td class="px-4 py-1 border text-center text-lg font-semibold" colspan='3'>
-              TOTAL REPASSE R$ <?= number_format($repasseWelt,      2, ',', '.') ?>
-              + R$ <?= number_format($repasseEspeciais, 2, ',', '.') ?>
-              = R$ <?= number_format($totalRepasse,     2, ',', '.') ?>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              <?php foreach ($totaisGodSave as $cliente => $lista): ?>
+                <?php foreach ($lista as $produto => $qtde): ?>
+                  <tr class="border-t border-gray-600">
+                    <td class="px-4 py-1 border"><?= htmlspecialchars((string)$cliente) ?></td>
+                    <td class="px-4 py-1 border"><?= htmlspecialchars((string)$produto) ?></td>
+                    <td class="px-4 py-1 border"><?= (int)$qtde ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endforeach; ?>
+              <tr class="border-t border-gray-600">
+                <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
+                  TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = R$
+                  <span id="bonificacao-godsave-text"><?= number_format((float)$bonificacaoBastards, 2, ',', '.') ?></span>
+                </td>
+              </tr>
+              <tr class="border-t border-gray-600">
+                <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
+                  TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = R$
+                  <span id="bonificacao-especiais-text"><?= number_format((float)$bonificacaoEspeciais, 2, ',', '.') ?></span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+      </div>
 
+      <hr class="divider_yellow my-6">
+
+      <!-- CHORIPAN -->
+      <h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
+      <form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <input type="hidden" name="formulario" value="choripan" />
+
+        <!-- upload -->
+        <div>
+          <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Arquivo Choripan</label>
+          <input
+            type="file"
+            name="arquivoChoripan"
+            id="arquivoChoripan"
+            accept=".xlsx"
+            class="w-full text-black bg-gray-600 rounded p-2"
+          />
+        </div>
+
+        <!-- Rebate Welt -->
+        <div>
+          <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Welt (R$)</label>
+          <input
+            type="number"
+            name="rebate_welt"
+            id="rebate_welt"
+            step="0.01"
+            value="<?= number_format((float)$rebateWelt, 2, '.', '') ?>"
+            class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+          />
+        </div>
+
+        <!-- Rebate Especiais -->
+        <div>
+          <label for="rebate_especiais" class="block mb-1 text-sm font-semibold">Rebate Especiais (R$)</label>
+          <input
+            type="number"
+            name="rebate_especiais"
+            id="rebate_especiais"
+            step="0.01"
+            value="<?= number_format((float)$rebateEspeciais, 2, '.', '') ?>"
+            class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+          />
+        </div>
+
+        <!-- botão -->
+        <div>
+          <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
+        </div>
+
+        <!-- Botão de copiar para e-mail -->
+        <button onclick="copiarChoripanEmail()" type="button" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+      </form>
+
+      <?php if (!empty($totaisChoripan)): ?>
+        <div id="card-choripan" class="mt-6 card1 no-hover p-6">
+          <div class="overflow-auto">
+            <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
+              <thead class="bg-gray-700 text-white">
+                <tr>
+                  <th class="px-4 py-2 border">Cliente</th>
+                  <th class="px-4 py-2 border">Produto</th>
+                  <th class="px-4 py-2 border">Quantidade vendida</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($totaisChoripan as $cliente => $lista): ?>
+                  <?php foreach ($lista as $produto => $qtde): ?>
+                    <tr class="border-t border-gray-600">
+                      <td class="px-4 py-1 border"><?= htmlspecialchars((string)$cliente) ?></td>
+                      <td class="px-4 py-1 border"><?= htmlspecialchars((string)$produto) ?></td>
+                      <td class="px-4 py-1 border"><?= (int)$qtde ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endforeach; ?>
+                <tr class="border-t border-gray-600">
+                  <td class="px-4 py-1 border text-center text-lg font-semibold" colspan='3'>
+                    TOTAL REPASSE R$ <?= number_format((float)$repasseWelt,      2, ',', '.') ?>
+                    + R$ <?= number_format((float)$repasseEspeciais, 2, ',', '.') ?>
+                    = R$ <?= number_format((float)$totalRepasse,     2, ',', '.') ?>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <?php endif; ?>
+
+    </main>
   </div>
-<?php endif; ?>
-
-</body>
 
 <script>
-const litrosBastards = <?= $litrosBastards ?>;
-const litrosEspeciais = <?= $litrosEspeciais ?>;
-
+const litrosBastards = <?= (int)$litrosBastards ?>;
+const litrosEspeciais = <?= (int)$litrosEspeciais ?>;
 
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
+    if (!cardOriginal) {
+        alert('Sem conteúdo do Choripan para copiar.');
+        return;
+    }
     const card = cardOriginal.cloneNode(true);
 
-    // estilos idênticos aos do copiarResumoEmail
     const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
-    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
     const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
 
-    // percorre todas as tabelas dentro do card
     card.querySelectorAll('table').forEach(table => {
         table.removeAttribute('class');
         const linhas = table.querySelectorAll('tr');
@@ -616,24 +650,19 @@ function copiarChoripanEmail() {
                 celula.removeAttribute('class');
                 celula.removeAttribute('style');
                 if (i === 0) {
-                    // cabeçalho
                     celula.setAttribute("style", estiloHeader);
                 } else if (
                     linha.innerText.includes("TOTAL GERAL") ||
                     linha.innerText.includes("REPASSE")
                 ) {
-                    // se por acaso tiver alguma linha de totalização
                     celula.setAttribute("style", estiloTotal);
                 } else {
-                    // todas as outras células
                     celula.setAttribute("style", estiloCelula);
                 }
             }
         });
     });
-    
 
-    // clona o card para fora da tela, copia e limpa
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -654,12 +683,16 @@ function copiarChoripanEmail() {
 
 function copiarGodSaveEmail() {
     const cardOriginal = document.getElementById('card-godsave');
+    if (!cardOriginal) {
+        alert('Sem conteúdo do GOD Save para copiar.');
+        return;
+    }
     const card = cardOriginal.cloneNode(true);
 
     card.querySelectorAll('input, button').forEach(el => el.remove());
 
     const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
-    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
     const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
 
     card.querySelectorAll('table').forEach(table => {
@@ -675,7 +708,6 @@ function copiarGodSaveEmail() {
                 } else if (
                     linha.innerText.includes("TOTAL BASTARDS") ||
                     linha.innerText.includes("TOTAL ESPECIAIS")
-
                 ) {
                     celula.setAttribute("style", estiloTotal);
                 } else {
@@ -717,20 +749,19 @@ function atualizarBonificacaoGodSave() {
         spanE.textContent = bonE.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 }
-
 document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
 
-</script>
-
-
-<script>
 function copiarResumoEmail() {
     const tabelaOriginal = document.getElementById('bulldog');
+    if (!tabelaOriginal) {
+        alert('Sem resumo para copiar.');
+        return;
+    }
     const tabela = tabelaOriginal.cloneNode(true);
 
     const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:6px;font-size:14px;";
     const estiloCelula = "border:1px solid #ccc;padding:6px;color:#333;background-color:#fff;font-size:12px;";
-    const estiloTotal = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:6px;color:#111;font-size:12px;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:6px;color:#111;font-size:12px;";
 
     tabela.removeAttribute("class");
     const linhas = tabela.querySelectorAll("tr");
@@ -739,7 +770,6 @@ function copiarResumoEmail() {
         for (const celula of celulas) {
             celula.removeAttribute("class");
             celula.removeAttribute("style");
-
             if (i === 0) {
                 celula.setAttribute("style", estiloHeader);
             } else if (linha.innerText.includes("TOTAL GERAL") || linha.innerText.includes("REPASSE")) {
@@ -765,4 +795,5 @@ function copiarResumoEmail() {
     alert("Resumo copiado!");
 }
 </script>
+</body>
 </html>
