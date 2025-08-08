@@ -221,18 +221,20 @@ if (
 // === Início Fechamento GOD Save ===
 $totaisGodSave = [];
 $litrosBastards = 0;
+
 $litrosEspeciais = 0;
 $percentualBonificacao = 30;
 $percentualEspeciais = 25;
 $bonificacaoBastards = 0;
 $bonificacaoEspeciais = 0;
 
+
 if (!empty($dadosChoripan)) {
     $cabCh      = $dadosChoripan[0];
     $idxCli     = array_search('Cliente',           $cabCh, true);
     $idxProd    = array_search('Produto',           $cabCh, true);
     $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
-    $idxTipo    = array_search('Tipo',              $cabCh, true);
+
 
     foreach (array_slice($dadosChoripan, 1) as $linha) {
         $cliente = $linha[$idxCli]  ?? '';
@@ -243,6 +245,7 @@ if (!empty($dadosChoripan)) {
         if (strcasecmp($tipo, 'Chopp') !== 0) {
             continue;
         }
+
         $produto = $linha[$idxProd]  ?? '';
         $quant   = intval($linha[$idxQuant] ?? 0);
 
@@ -268,6 +271,7 @@ $percentualBonificacao = $percentualBonificacao ?? 0;
 $percentualEspeciais   = $percentualEspeciais   ?? 0;
 $bonificacaoBastards   = $bonificacaoBastards   ?? 0;
 $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
+
 // === Fim Fechamento GOD Save ===
 
 ?>
@@ -592,6 +596,7 @@ window.addEventListener("unload", function () {
 const litrosBastards = <?= $litrosBastards ?>;
 const litrosEspeciais = <?= $litrosEspeciais ?>;
 
+
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
     const card = cardOriginal.cloneNode(true);
@@ -670,6 +675,7 @@ function copiarGodSaveEmail() {
                 } else if (
                     linha.innerText.includes("TOTAL BASTARDS") ||
                     linha.innerText.includes("TOTAL ESPECIAIS")
+
                 ) {
                     celula.setAttribute("style", estiloTotal);
                 } else {
@@ -713,6 +719,7 @@ function atualizarBonificacaoGodSave() {
 }
 
 document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
+
 </script>
 
 
