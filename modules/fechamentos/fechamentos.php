@@ -221,8 +221,13 @@ if (
 // === Início Fechamento GOD Save ===
 $totaisGodSave = [];
 $litrosBastards = 0;
+
+$litrosEspeciais = 0;
 $percentualBonificacao = 30;
+$percentualEspeciais = 25;
 $bonificacaoBastards = 0;
+$bonificacaoEspeciais = 0;
+
 
 if (!empty($dadosChoripan)) {
     $cabCh      = $dadosChoripan[0];
@@ -230,11 +235,17 @@ if (!empty($dadosChoripan)) {
     $idxProd    = array_search('Produto',           $cabCh, true);
     $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
 
+
     foreach (array_slice($dadosChoripan, 1) as $linha) {
         $cliente = $linha[$idxCli]  ?? '';
         if (stripos($cliente, 'god save') === false) {
             continue;
         }
+        $tipo = $linha[$idxTipo]  ?? '';
+        if (strcasecmp($tipo, 'Chopp') !== 0) {
+            continue;
+        }
+
         $produto = $linha[$idxProd]  ?? '';
         $quant   = intval($linha[$idxQuant] ?? 0);
 
@@ -243,17 +254,24 @@ if (!empty($dadosChoripan)) {
 
         if (strcasecmp($produto, 'Bastards Pilsen') === 0) {
             $litrosBastards += $quant;
+        } else {
+            $litrosEspeciais += $quant;
         }
     }
 
-    $bonificacaoBastards = $litrosBastards * ($percentualBonificacao / 100);
+    $bonificacaoBastards  = $litrosBastards  * ($percentualBonificacao / 100);
+    $bonificacaoEspeciais = $litrosEspeciais * ($percentualEspeciais / 100);
 }
 
 // Expor variáveis
-$totaisGodSave       = $totaisGodSave       ?? [];
-$litrosBastards      = $litrosBastards      ?? 0;
+$totaisGodSave         = $totaisGodSave         ?? [];
+$litrosBastards        = $litrosBastards        ?? 0;
+$litrosEspeciais       = $litrosEspeciais       ?? 0;
 $percentualBonificacao = $percentualBonificacao ?? 0;
-$bonificacaoBastards = $bonificacaoBastards ?? 0;
+$percentualEspeciais   = $percentualEspeciais   ?? 0;
+$bonificacaoBastards   = $bonificacaoBastards   ?? 0;
+$bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
+
 // === Fim Fechamento GOD Save ===
 
 ?>
@@ -420,6 +438,67 @@ window.addEventListener("unload", function () {
 });
 </script>
 
+<h1 class="text-2xl font-bold mb-4">Fechamento GOD</h1>
+<div id="card-godsave" class="mt-6 card1 no-hover p-6">
+  <div class="flex flex-col md:flex-row gap-4">
+    <div>
+      <label for="percent_bastards" class="block mb-1 text-sm font-semibold">Bastards Pilsen (%)</label>
+      <input
+        type="number"
+        id="percent_bastards"
+        step="0.01"
+        value="<?= $percentualBonificacao ?>"
+        oninput="atualizarBonificacaoGodSave()"
+        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+      />
+    </div>
+    <div>
+      <label for="percent_especiais" class="block mb-1 text-sm font-semibold">Especiais (%)</label>
+      <input
+        type="number"
+        id="percent_especiais"
+        step="0.01"
+        value="<?= $percentualEspeciais ?>"
+        oninput="atualizarBonificacaoGodSave()"
+        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+      />
+    </div>
+  </div>
+  <div class="overflow-auto mt-4">
+    <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
+      <thead class="bg-gray-700 text-white">
+        <tr>
+          <th class="px-4 py-2 border">Cliente</th>
+          <th class="px-4 py-2 border">Produto</th>
+          <th class="px-4 py-2 border">Quantidade vendida</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($totaisGodSave as $cliente => $lista): ?>
+          <?php foreach ($lista as $produto => $qtde): ?>
+            <tr class="border-t border-gray-600">
+              <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
+              <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
+              <td class="px-4 py-1 border"><?= $qtde ?></td>
+            </tr>
+          <?php endforeach; ?>
+        <?php endforeach; ?>
+        <tr class="border-t border-gray-600">
+          <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
+            TOTAL BASTARDS PILSEN <?= $litrosBastards ?> L = R$ <span id="bonificacao-godsave-text"><?= number_format($bonificacaoBastards, 2, ',', '.') ?></span>
+          </td>
+        </tr>
+        <tr class="border-t border-gray-600">
+          <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
+            TOTAL ESPECIAIS <?= $litrosEspeciais ?> L = R$ <span id="bonificacao-especiais-text"><?= number_format($bonificacaoEspeciais, 2, ',', '.') ?></span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+</div>
+
 <hr class="divider_yellow my-6">
 
 <h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
@@ -511,54 +590,12 @@ window.addEventListener("unload", function () {
   </div>
 <?php endif; ?>
 
-<?php if (!empty($totaisGodSave)): ?>
-  <div id="card-godsave" class="mt-6 card1 no-hover p-6">
-    <div class="overflow-auto">
-      <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-        <thead class="bg-gray-700 text-white">
-          <tr>
-            <th class="px-4 py-2 border">Cliente</th>
-            <th class="px-4 py-2 border">Produto</th>
-            <th class="px-4 py-2 border">Quantidade vendida</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($totaisGodSave as $cliente => $lista): ?>
-            <?php foreach ($lista as $produto => $qtde): ?>
-              <tr class="border-t border-gray-600">
-                <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
-                <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
-                <td class="px-4 py-1 border"><?= $qtde ?></td>
-              </tr>
-            <?php endforeach; ?>
-          <?php endforeach; ?>
-          <tr class="border-t border-gray-600">
-            <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-              TOTAL BASTARDS PILSEN <?= $litrosBastards ?> L = R$ <span id="bonificacao-godsave-text"><?= number_format($bonificacaoBastards, 2, ',', '.') ?></span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="mt-4">
-      <label for="percent_godsave" class="block mb-1 text-sm font-semibold">Bonificação (%)</label>
-      <input
-        type="number"
-        id="percent_godsave"
-        step="0.01"
-        value="<?= $percentualBonificacao ?>"
-        oninput="atualizarBonificacaoGodSave()"
-        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-      />
-    </div>
-    <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
-  </div>
-<?php endif; ?>
-
 </body>
 
 <script>
 const litrosBastards = <?= $litrosBastards ?>;
+const litrosEspeciais = <?= $litrosEspeciais ?>;
+
 
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
@@ -637,7 +674,8 @@ function copiarGodSaveEmail() {
                     celula.setAttribute("style", estiloHeader);
                 } else if (
                     linha.innerText.includes("TOTAL BASTARDS") ||
-                    linha.innerText.includes("BONIFICAÇÃO")
+                    linha.innerText.includes("TOTAL ESPECIAIS")
+
                 ) {
                     celula.setAttribute("style", estiloTotal);
                 } else {
@@ -666,15 +704,22 @@ function copiarGodSaveEmail() {
 }
 
 function atualizarBonificacaoGodSave() {
-    const input = document.getElementById('percent_godsave');
-    if (!input) return;
-    const pct = parseFloat(input.value) || 0;
-    const bonificacao = litrosBastards * (pct / 100);
-    const span = document.getElementById('bonificacao-godsave-text');
-    span.textContent = bonificacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const pctB = parseFloat(document.getElementById('percent_bastards')?.value) || 0;
+    const pctE = parseFloat(document.getElementById('percent_especiais')?.value) || 0;
+    const bonB = litrosBastards * (pctB / 100);
+    const bonE = litrosEspeciais * (pctE / 100);
+    const spanB = document.getElementById('bonificacao-godsave-text');
+    const spanE = document.getElementById('bonificacao-especiais-text');
+    if (spanB) {
+        spanB.textContent = bonB.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (spanE) {
+        spanE.textContent = bonE.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 }
 
-document.getElementById('percent_godsave') && atualizarBonificacaoGodSave();
+document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
+
 </script>
 
 
