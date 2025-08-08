@@ -218,6 +218,44 @@ if (
 }
 // === Fim Fechamento Choripan ===
 
+// === Início Fechamento GOD Save ===
+$totaisGodSave = [];
+$litrosBastards = 0;
+$percentualBonificacao = 30;
+$bonificacaoBastards = 0;
+
+if (!empty($dadosChoripan)) {
+    $cabCh      = $dadosChoripan[0];
+    $idxCli     = array_search('Cliente',           $cabCh, true);
+    $idxProd    = array_search('Produto',           $cabCh, true);
+    $idxQuant   = array_search('Quantidade Vendida',$cabCh, true);
+
+    foreach (array_slice($dadosChoripan, 1) as $linha) {
+        $cliente = $linha[$idxCli]  ?? '';
+        if (stripos($cliente, 'god save') === false) {
+            continue;
+        }
+        $produto = $linha[$idxProd]  ?? '';
+        $quant   = intval($linha[$idxQuant] ?? 0);
+
+        $totaisGodSave[$cliente][$produto] =
+            ($totaisGodSave[$cliente][$produto] ?? 0) + $quant;
+
+        if (strcasecmp($produto, 'Bastards Pilsen') === 0) {
+            $litrosBastards += $quant;
+        }
+    }
+
+    $bonificacaoBastards = $litrosBastards * ($percentualBonificacao / 100);
+}
+
+// Expor variáveis
+$totaisGodSave       = $totaisGodSave       ?? [];
+$litrosBastards      = $litrosBastards      ?? 0;
+$percentualBonificacao = $percentualBonificacao ?? 0;
+$bonificacaoBastards = $bonificacaoBastards ?? 0;
+// === Fim Fechamento GOD Save ===
+
 ?>
 <!DOCTYPE html>
 
@@ -473,10 +511,55 @@ window.addEventListener("unload", function () {
   </div>
 <?php endif; ?>
 
+<?php if (!empty($totaisGodSave)): ?>
+  <div id="card-godsave" class="mt-6 card1 no-hover p-6">
+    <div class="overflow-auto">
+      <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
+        <thead class="bg-gray-700 text-white">
+          <tr>
+            <th class="px-4 py-2 border">Cliente</th>
+            <th class="px-4 py-2 border">Produto</th>
+            <th class="px-4 py-2 border">Quantidade vendida</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($totaisGodSave as $cliente => $lista): ?>
+            <?php foreach ($lista as $produto => $qtde): ?>
+              <tr class="border-t border-gray-600">
+                <td class="px-4 py-1 border"><?= htmlspecialchars($cliente) ?></td>
+                <td class="px-4 py-1 border"><?= htmlspecialchars($produto) ?></td>
+                <td class="px-4 py-1 border"><?= $qtde ?></td>
+              </tr>
+            <?php endforeach; ?>
+          <?php endforeach; ?>
+          <tr class="border-t border-gray-600">
+            <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
+              TOTAL BASTARDS PILSEN <?= $litrosBastards ?> L = R$ <span id="bonificacao-godsave-text"><?= number_format($bonificacaoBastards, 2, ',', '.') ?></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-4">
+      <label for="percent_godsave" class="block mb-1 text-sm font-semibold">Bonificação (%)</label>
+      <input
+        type="number"
+        id="percent_godsave"
+        step="0.01"
+        value="<?= $percentualBonificacao ?>"
+        oninput="atualizarBonificacaoGodSave()"
+        class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
+      />
+    </div>
+    <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+  </div>
+<?php endif; ?>
 
 </body>
 
 <script>
+const litrosBastards = <?= $litrosBastards ?>;
+
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
     const card = cardOriginal.cloneNode(true);
@@ -531,6 +614,67 @@ function copiarChoripanEmail() {
     document.body.removeChild(container);
     alert('Conteúdo do Choripan copiado! Agora é só colar no e-mail.');
 }
+
+function copiarGodSaveEmail() {
+    const cardOriginal = document.getElementById('card-godsave');
+    const card = cardOriginal.cloneNode(true);
+
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
+
+    card.querySelectorAll('table').forEach(table => {
+        table.removeAttribute('class');
+        const linhas = table.querySelectorAll('tr');
+        linhas.forEach((linha, i) => {
+            const celulas = linha.children;
+            for (const celula of celulas) {
+                celula.removeAttribute('class');
+                celula.removeAttribute('style');
+                if (i === 0) {
+                    celula.setAttribute("style", estiloHeader);
+                } else if (
+                    linha.innerText.includes("TOTAL BASTARDS") ||
+                    linha.innerText.includes("BONIFICAÇÃO")
+                ) {
+                    celula.setAttribute("style", estiloTotal);
+                } else {
+                    celula.setAttribute("style", estiloCelula);
+                }
+            }
+        });
+    });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNode(container);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+
+    document.body.removeChild(container);
+    alert('Conteúdo do God Save copiado! Agora é só colar no e-mail.');
+}
+
+function atualizarBonificacaoGodSave() {
+    const input = document.getElementById('percent_godsave');
+    if (!input) return;
+    const pct = parseFloat(input.value) || 0;
+    const bonificacao = litrosBastards * (pct / 100);
+    const span = document.getElementById('bonificacao-godsave-text');
+    span.textContent = bonificacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+document.getElementById('percent_godsave') && atualizarBonificacaoGodSave();
 </script>
 
 
