@@ -41,7 +41,8 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
         main.UNIDADE,
         main.QUANTIDADE_TOTAL,
         main.OBSERVACAO,
-        main.SETOR
+        main.SETOR,
+        DATE_FORMAT(main.DATA_HORA, '%d/%m/%Y') as DATA
       FROM (
         SELECT
             t.CODIGO,
@@ -50,7 +51,8 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
             t.UNIDADE,
             SUM(t.QUANTIDADE) AS QUANTIDADE_TOTAL,
             GROUP_CONCAT(NULLIF(TRIM(t.OBSERVACAO), '') SEPARATOR '; ') AS OBSERVACAO,
-            t.SETOR
+            t.SETOR,
+            MIN(t.DATA_HORA) as DATA_HORA
         FROM (
             SELECT p.CODIGO, p.INSUMO, p.CATEGORIA, p.UNIDADE, p.QUANTIDADE, p.OBSERVACAO, p.FILIAL, p.DATA_HORA, p.SETOR
             FROM pedidos p
@@ -91,7 +93,7 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
 
     $out = fopen('php://output', 'w');
     // Cabeçalho com a nova ordem e inclusão de "Código"
-    fputcsv($out, ['Código', 'Categoria', 'Produto', 'Unidade', 'QTDE', 'Observação', 'Setor'], ';');
+    fputcsv($out, ['Código', 'Categoria', 'Produto', 'Unidade', 'QTDE', 'Observação', 'Setor', 'Data'], ';');
     
     while ($row = $res2->fetch_assoc()) {
         $qPedido = number_format((float)$row['QUANTIDADE_TOTAL'], 2, ',', '.');
@@ -102,7 +104,8 @@ if ($action === 'csv' && $selFilial && $dataInicio && $dataFim) {
             $row['UNIDADE'],
             $qPedido,
             $row['OBSERVACAO'] ?? '',
-            $row['SETOR'] ?? ''
+            $row['SETOR'] ?? '',
+            $row['DATA'] ?? ''
         ], ';');
     }
 
