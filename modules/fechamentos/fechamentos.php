@@ -565,7 +565,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
         <!-- Rebate Welt -->
         <div>
-          <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Welt (R$)</label>
+          <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Pilsen (R$)</label>
           <input
             type="number"
             name="rebate_welt"
