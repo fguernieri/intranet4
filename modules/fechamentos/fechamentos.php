@@ -289,8 +289,8 @@ if (!empty($dadosChoripan)) {
         }
     }
 
-    $bonificacaoBastards  = $litrosBastards  * ($percentualBonificacao / 100);
-    $bonificacaoEspeciais = $litrosEspeciais * ($percentualEspeciais   / 100);
+    $bonificacaoBastards  = (int) round($litrosBastards  * ($percentualBonificacao / 100));
+    $bonificacaoEspeciais = (int) round($litrosEspeciais * ($percentualEspeciais   / 100));
 }
 
 // Expor variáveis (garantindo definidos)
@@ -310,6 +310,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
     <title>Fechamentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
   <div class="flex min-h-screen w-full">
@@ -470,6 +471,24 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       });
       </script>
 
+      <!-- Relatório de Vendas -->
+      <form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <input type="hidden" name="formulario" value="choripan" />
+        <div class="md:col-span-4">
+          <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Relatório de Vendas</label>
+          <input
+            type="file"
+            name="arquivoChoripan"
+            id="arquivoChoripan"
+            accept=".xlsx"
+            class="w-full text-black bg-gray-600 rounded p-2"
+          />
+        </div>
+        <div>
+          <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
+        </div>
+      </form>
+
       <!-- GOD SAVE -->
       <h1 class="text-2xl font-bold mb-4">Fechamento GOD</h1>
       <div id="card-godsave" class="mt-6 card1 no-hover p-6">
@@ -531,27 +550,18 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
             </tbody>
           </table>
         </div>
-        <button onclick="copiarGodSaveEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+        <div class="flex gap-4 mt-4">
+          <button onclick="copiarGodSaveEmail()" class="btn-acao">📋 Copiar para E-mail</button>
+          <button onclick="exportarGodSavePNG()" class="btn-acao">🖼️ Exportar PNG</button>
+        </div>
       </div>
 
       <hr class="divider_yellow my-6">
 
       <!-- CHORIPAN -->
       <h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
-      <form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <form method="POST" class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <input type="hidden" name="formulario" value="choripan" />
-
-        <!-- upload -->
-        <div>
-          <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Arquivo Choripan</label>
-          <input
-            type="file"
-            name="arquivoChoripan"
-            id="arquivoChoripan"
-            accept=".xlsx"
-            class="w-full text-black bg-gray-600 rounded p-2"
-          />
-        </div>
 
         <!-- Rebate Welt -->
         <div>
@@ -581,12 +591,14 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
         <!-- botão -->
         <div>
-          <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
+          <button type="submit" class="btn-acao w-full">Atualizar</button>
         </div>
-
-        <!-- Botão de copiar para e-mail -->
-        <button onclick="copiarChoripanEmail()" type="button" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
       </form>
+
+      <div class="flex gap-4 mb-6">
+        <button onclick="copiarChoripanEmail()" type="button" class="btn-acao">📋 Copiar para E-mail</button>
+        <button onclick="exportarChoripanPNG()" type="button" class="btn-acao">🖼️ Exportar PNG</button>
+      </div>
 
       <?php if (!empty($totaisChoripan)): ?>
         <div id="card-choripan" class="mt-6 card1 no-hover p-6">
@@ -738,16 +750,52 @@ function copiarGodSaveEmail() {
 function atualizarBonificacaoGodSave() {
     const pctB = parseFloat(document.getElementById('percent_bastards')?.value) || 0;
     const pctE = parseFloat(document.getElementById('percent_especiais')?.value) || 0;
-    const bonB = litrosBastards * (pctB / 100);
-    const bonE = litrosEspeciais * (pctE / 100);
+    const bonB = Math.round(litrosBastards * (pctB / 100));
+    const bonE = Math.round(litrosEspeciais * (pctE / 100));
     const spanB = document.getElementById('bonificacao-godsave-text');
     const spanE = document.getElementById('bonificacao-especiais-text');
     if (spanB) {
-        spanB.textContent = bonB.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        spanB.textContent = bonB.toLocaleString('pt-BR');
     }
     if (spanE) {
-        spanE.textContent = bonE.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        spanE.textContent = bonE.toLocaleString('pt-BR');
     }
+}
+
+function exportarChoripanPNG() {
+    const card = document.getElementById('card-choripan');
+    if (!card) {
+        alert('Sem conteúdo do Choripan para exportar.');
+        return;
+    }
+    html2canvas(card).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'choripan.png';
+        link.click();
+    });
+}
+
+function exportarGodSavePNG() {
+    const cardOriginal = document.getElementById('card-godsave');
+    if (!cardOriginal) {
+        alert('Sem conteúdo do GOD Save para exportar.');
+        return;
+    }
+    const card = cardOriginal.cloneNode(true);
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+    html2canvas(card).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'godsave.png';
+        link.click();
+        document.body.removeChild(container);
+    });
 }
 document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
 
