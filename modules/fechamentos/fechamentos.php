@@ -518,7 +518,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
         <div class="card-section">
           <div class="card-header">
             <div class="flex justify-between items-center">
-              <h2 class="section-title">📋 Detalhes das Vendas</h2>
+              <h2 class="section-title text-2xl">📋 Detalhes das Vendas</h2>
               <button
                 onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
                 class="btn-secondary"
@@ -669,7 +669,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <!-- GOD SAVE -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title">🏆 Fechamento GOD</h1>
+          <h1 class="section-title text-2xl">🏆 Fechamento GOD</h1>
         </div>
         <div class="card-body">
           <div id="card-godsave" class="mt-6">
@@ -743,7 +743,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <!-- CHORIPAN -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title">🍻 Fechamento Choripan</h1>
+          <h1 class="section-title text-2xl">🍻 Fechamento Choripan</h1>
         </div>
         <div class="card-body">
           <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
