@@ -107,7 +107,20 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
   <title>Gestão de Metas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="../../assets/css/style.css">
-
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    .btn-acao-cinza {
+      background-color: #4b5563;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .btn-acao-cinza:hover {
+      background-color: #374151;
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-white">
   <div class="flex h-screen">
@@ -231,9 +244,17 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
         </button>
       </form>
 
-      <h1 class="text-2xl text-yellow-400 font-semibold mb-4">Metas por Vendedor (<?= str_pad((string)$mesAtual, 2, '0', STR_PAD_LEFT) ?>/<?= $anoAtual ?>)</h1>
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl text-yellow-400 font-semibold">Metas por Vendedor (<?= str_pad((string)$mesAtual, 2, '0', STR_PAD_LEFT) ?>/<?= $anoAtual ?>)</h1>
+        <button id="btnExportarPNG" class="btn-acao-verde flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Exportar PNG
+        </button>
+      </div>
 
-      <div class="overflow-auto">
+      <div class="overflow-auto" id="tabelaMetas">
         <table class="w-full text-sm bg-gray-800 rounded shadow">
           <thead>
             <tr class="bg-gray-700">
@@ -300,5 +321,136 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
       </script>
     </main>
   </div>
+  <!-- Modal de seleção de vendedores -->
+  <div id="modalSelecaoVendedores" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+      <h2 class="text-xl text-yellow-400 font-semibold mb-4">Selecione os Vendedores</h2>
+      
+      <div class="mb-4">
+        <div class="flex justify-between mb-2">
+          <button id="btnSelecionarTodos" class="text-sm text-blue-400 hover:underline">Selecionar Todos</button>
+          <button id="btnLimparSelecao" class="text-sm text-red-400 hover:underline">Limpar Seleção</button>
+        </div>
+        <div class="max-h-60 overflow-y-auto p-2 bg-gray-900 rounded">
+          <?php foreach ($vendedores as $vend): ?>
+            <div class="flex items-center mb-2">
+              <input type="checkbox" id="vend-<?= $vend['id'] ?>" value="<?= $vend['id'] ?>" class="checkbox-vendedor mr-2">
+              <label for="vend-<?= $vend['id'] ?>" class="text-white"><?= htmlspecialchars($vend['nome']) ?></label>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-2">
+        <button id="btnCancelarExportacao" class="btn-acao-cinza">Cancelar</button>
+        <button id="btnConfirmarExportacao" class="btn-acao-verde">Exportar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Manipulação do modal
+    const modal = document.getElementById('modalSelecaoVendedores');
+    const btnExportarPNG = document.getElementById('btnExportarPNG');
+    const btnCancelarExportacao = document.getElementById('btnCancelarExportacao');
+    const btnConfirmarExportacao = document.getElementById('btnConfirmarExportacao');
+    const btnSelecionarTodos = document.getElementById('btnSelecionarTodos');
+    const btnLimparSelecao = document.getElementById('btnLimparSelecao');
+    const checkboxesVendedores = document.querySelectorAll('.checkbox-vendedor');
+    
+    // Abrir modal
+    btnExportarPNG.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+    });
+    
+    // Fechar modal
+    btnCancelarExportacao.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+    
+    // Selecionar todos
+    btnSelecionarTodos.addEventListener('click', () => {
+      checkboxesVendedores.forEach(checkbox => {
+        checkbox.checked = true;
+      });
+    });
+    
+    // Limpar seleção
+    btnLimparSelecao.addEventListener('click', () => {
+      checkboxesVendedores.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+    });
+    
+    // Exportar para PNG
+    btnConfirmarExportacao.addEventListener('click', async () => {
+      // Obter IDs dos vendedores selecionados
+      const vendedoresSelecionados = Array.from(checkboxesVendedores)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+      
+      if (vendedoresSelecionados.length === 0) {
+        alert('Selecione pelo menos um vendedor para exportar.');
+        return;
+      }
+      
+      // Criar uma tabela temporária apenas com os vendedores selecionados
+      const tabelaOriginal = document.querySelector('#tabelaMetas table');
+      const tabelaTemp = tabelaOriginal.cloneNode(true);
+      
+      // Manter apenas o cabeçalho e as linhas dos vendedores selecionados
+      const linhas = tabelaTemp.querySelectorAll('tbody tr');
+      linhas.forEach(linha => {
+        const idVendedor = linha.querySelector('input').dataset.vendedor;
+        if (!vendedoresSelecionados.includes(idVendedor)) {
+          linha.remove();
+        }
+      });
+      
+      // Criar um elemento temporário para renderizar a tabela
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.background = '#1f2937'; // Fundo escuro
+      tempDiv.style.padding = '20px';
+      tempDiv.style.borderRadius = '8px';
+      
+      // Adicionar título
+      const titulo = document.createElement('h2');
+      titulo.textContent = `Metas por Vendedor (${String(<?= $mesAtual ?>).padStart(2, '0')}/<?= $anoAtual ?>)`;
+      titulo.style.color = '#fbbf24'; // Amarelo
+      titulo.style.fontSize = '20px';
+      titulo.style.fontWeight = 'bold';
+      titulo.style.marginBottom = '16px';
+      
+      tempDiv.appendChild(titulo);
+      tempDiv.appendChild(tabelaTemp);
+      document.body.appendChild(tempDiv);
+      
+      try {
+        // Capturar a tabela como imagem
+        const canvas = await html2canvas(tempDiv, {
+          backgroundColor: '#1f2937',
+          scale: 2 // Melhor qualidade
+        });
+        
+        // Converter para PNG e fazer download
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `Metas_Vendedores_${String(<?= $mesAtual ?>).padStart(2, '0')}_<?= $anoAtual ?>.png`;
+        link.click();
+        
+        // Fechar o modal
+        modal.classList.add('hidden');
+      } catch (error) {
+        console.error('Erro ao exportar para PNG:', error);
+        alert('Ocorreu um erro ao exportar para PNG. Por favor, tente novamente.');
+      } finally {
+        // Remover o elemento temporário
+        document.body.removeChild(tempDiv);
+      }
+    });
+  </script>
 </body>
 </html>
