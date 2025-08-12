@@ -311,6 +311,149 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Estilos personalizados para melhorar a harmonia visual */
+        .card-section {
+            background-color: #1f2937;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .card-header {
+            background-color: #111827;
+            padding: 1rem 1.5rem;
+            border-top-left-radius: 0.75rem;
+            border-top-right-radius: 0.75rem;
+            border-bottom: 2px solid #fbbf24;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .table-container {
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #374151;
+        }
+        
+        .custom-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .custom-table th {
+            background-color: #374151;
+            color: #f3f4f6;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+        }
+        
+        .custom-table td {
+            padding: 0.625rem 1rem;
+            border-top: 1px solid #4b5563;
+        }
+        
+        .custom-table tr:hover td {
+            background-color: #2d3748;
+        }
+        
+        .custom-table tr.total-row td {
+            background-color: #374151;
+            font-weight: 600;
+            color: #fbbf24;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e5e7eb;
+        }
+        
+        .form-control {
+            width: 100%;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            color: #f3f4f6;
+            transition: border-color 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: #60a5fa;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-secondary {
+            background-color: #4b5563;
+            color: white;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #374151;
+        }
+        
+        .btn-success {
+            background-color: #059669;
+            color: white;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .btn-success:hover {
+            background-color: #047857;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
   <div class="flex min-h-screen w-full">
@@ -318,150 +461,177 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <?php include __DIR__ . '/../../sidebar.php'; ?>
     </aside>
 
-    <main class="flex-1 p-10 overflow-auto">
+    <main class="flex-1 p-6 overflow-auto max-w-7xl mx-auto">
 
-      <h1 class="text-2xl font-bold mb-6">Fechamento Bulldog</h1>
-
-      <form method="POST" enctype="multipart/form-data" class="mb-6 space-y-4">
-          <input type="file" name="arquivo" accept=".xlsx" required class="text-black bg-gray-600 rounded" />
-          <button type="submit" class="btn-acao">Enviar</button>
-      </form>
+      <div class="card-section">
+        <div class="card-header">
+          <h1 class="section-title text-2xl">📊 Fechamento Bulldog</h1>
+        </div>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data" class="mb-6">
+            <div class="form-group">
+              <label for="arquivo" class="form-label">Selecione o arquivo Excel</label>
+              <div class="flex gap-4">
+                <input type="file" name="arquivo" id="arquivo" accept=".xlsx" required class="form-control" />
+                <button type="submit" class="btn-primary">Enviar</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <!-- Filtros -->
       <?php if (!empty($mesesDisponiveis)): ?>
-      <form method="GET" class="bg-gray-800 rounded-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-white">
-          <div>
-              <label for="mes" class="block mb-2 text-sm font-semibold">🗓️ Mês</label>
-              <select name="mes" id="mes" class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2">
-                  <option value="">-- Todos os meses --</option>
-                  <?php foreach ($mesesDisponiveis as $mes): ?>
-                      <option value="<?= htmlspecialchars($mes) ?>" <?= ($mes === $mesSelecionado) ? 'selected' : '' ?>>
-                          <?= htmlspecialchars($mes) ?>
-                      </option>
-                  <?php endforeach; ?>
+      <div class="card-section">
+        <div class="card-header">
+          <h2 class="section-title">🔍 Filtros de Pesquisa</h2>
+        </div>
+        <div class="card-body">
+          <form method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="form-group">
+              <label for="mes" class="form-label">🗓️ Mês</label>
+              <select name="mes" id="mes" class="form-control">
+                <option value="">-- Todos os meses --</option>
+                <?php foreach ($mesesDisponiveis as $mes): ?>
+                  <option value="<?= htmlspecialchars($mes) ?>" <?= ($mes === $mesSelecionado) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($mes) ?>
+                  </option>
+                <?php endforeach; ?>
               </select>
-          </div>
-          <div>
-              <label for="keywords" class="block mb-2 text-sm font-semibold">🔍 Palavras-chave (produto)</label>
+            </div>
+            <div class="form-group">
+              <label for="keywords" class="form-label">🔍 Palavras-chave (produto)</label>
               <input type="text" name="keywords" id="keywords"
-                     value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÇARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
-                     class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-                     placeholder="ex: fitzgerald, gin, spritz">
-          </div>
-          <div class="md:col-span-2 flex justify-end items-end">
-              <button type="submit" class="btn-acao">Aplicar Filtros</button>
-          </div>
-      </form>
+                value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÇARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
+                class="form-control"
+                placeholder="ex: fitzgerald, gin, spritz">
+            </div>
+            <div class="md:col-span-2 flex justify-end">
+              <button type="submit" class="btn-primary">Aplicar Filtros</button>
+            </div>
+          </form>
+        </div>
+      </div>
       <?php endif; ?>
 
       <?php if (!empty($dadosFiltrados)): ?>
-        <button
-            onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
-            class="btn-acao mb-4"
-        >
-            🔽 Mostrar/Esconder Detalhes
-        </button>
+        <div class="card-section">
+          <div class="card-header">
+            <div class="flex justify-between items-center">
+              <h2 class="section-title">📋 Detalhes das Vendas</h2>
+              <button
+                onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
+                class="btn-secondary"
+              >
+                🔽 Mostrar/Esconder Detalhes
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="tabela-detalhes" class="overflow-auto hidden transition-all duration-300 ease-in-out table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <?php
+                    $cabecalho = $dados[0] ?? [];
+                    $indices = [];
+                    $colunasDesejadas = ['Data', 'Produto', 'Preço', 'Qtde. total', 'Total'];
 
-        <div id="tabela-detalhes" class="overflow-auto hidden transition-all duration-300 ease-in-out">
-            <table class="table-auto w-full text-sm text-left border border-gray-700">
-                <thead class="bg-gray-700 text-white sticky top-0 z-10">
-                    <tr>
-                        <?php
-                        $cabecalho = $dados[0] ?? [];
-                        $indices = [];
-                        $colunasDesejadas = ['Data', 'Produto', 'Preço', 'Qtde. total', 'Total'];
-
-                        foreach ($colunasDesejadas as $coluna) {
-                            $idx = array_search($coluna, $cabecalho, true);
-                            if ($idx !== false) {
-                                $indices[$coluna] = $idx;
-                                echo "<th class='px-4 py-2 border bg-gray-700'>" . htmlspecialchars($coluna) . "</th>";
-                            }
-                        }
-                        ?>
-                    </tr>
+                    foreach ($colunasDesejadas as $coluna) {
+                      $idx = array_search($coluna, $cabecalho, true);
+                      if ($idx !== false) {
+                        $indices[$coluna] = $idx;
+                        echo "<th>" . htmlspecialchars($coluna) . "</th>";
+                      }
+                    }
+                    ?>
+                  </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($dadosFiltrados as $linha): ?>
-                        <tr class="border-t border-gray-600">
-                            <?php foreach ($indices as $idx): ?>
-                                <td class="px-4 py-1 border"><?= htmlspecialchars((string)($linha[$idx] ?? '')) ?></td>
-                            <?php endforeach; ?>
-                        </tr>
-                    <?php endforeach; ?>
+                  <?php foreach ($dadosFiltrados as $linha): ?>
+                    <tr>
+                      <?php foreach ($indices as $idx): ?>
+                        <td><?= htmlspecialchars((string)($linha[$idx] ?? '')) ?></td>
+                      <?php endforeach; ?>
+                    </tr>
+                  <?php endforeach; ?>
                 </tbody>
-            </table>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <hr class="divider_yellow my-6">
-
         <!-- RESUMO POR PRODUTO -->
-        <div class="mt-10 card1 no-hover p-6">
-            <h2 class="text-xl font-semibold mb-4">📊 Resumo por Produto</h2>
-            <div class="overflow-auto">
-                <table id="bulldog" class="table-auto text-sm text-left border border-gray-700 w-full">
-                    <thead class="bg-gray-700 text-white">
-                        <tr>
-                            <th class="px-4 py-2 border">Produto</th>
-                            <th class="px-4 py-2 border">Preço</th>
-                            <th class="px-4 py-2 border">Soma Qtde. total</th>
-                            <th class="px-4 py-2 border">Soma Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $resumo = [];
-                        $idxProdutoResumo = $indices['Produto'] ?? null;
-                        $idxPrecoResumo   = $indices['Preço'] ?? null;
-                        $idxQtdeResumo    = $indices['Qtde. total'] ?? null;
-                        $idxTotalResumo   = $indices['Total'] ?? null;
+        <div class="card-section">
+          <div class="card-header">
+            <h2 class="section-title text-xl">📊 Resumo por Produto</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table id="bulldog" class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Preço</th>
+                    <th>Soma Qtde. total</th>
+                    <th>Soma Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                  $resumo = [];
+                  $idxProdutoResumo = $indices['Produto'] ?? null;
+                  $idxPrecoResumo   = $indices['Preço'] ?? null;
+                  $idxQtdeResumo    = $indices['Qtde. total'] ?? null;
+                  $idxTotalResumo   = $indices['Total'] ?? null;
 
-                        foreach ($dadosFiltrados as $linha) {
-                            $produto = ($idxProdutoResumo !== null) ? ($linha[$idxProdutoResumo] ?? '') : '';
-                            $preco   = ($idxPrecoResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxPrecoResumo] ?? 0)) : 0.0;
-                            $qtde    = ($idxQtdeResumo    !== null) ? (int)($linha[$idxQtdeResumo] ?? 0) : 0;
-                            $total   = ($idxTotalResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxTotalResumo] ?? 0)) : 0.0;
+                  foreach ($dadosFiltrados as $linha) {
+                      $produto = ($idxProdutoResumo !== null) ? ($linha[$idxProdutoResumo] ?? '') : '';
+                      $preco   = ($idxPrecoResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxPrecoResumo] ?? 0)) : 0.0;
+                      $qtde    = ($idxQtdeResumo    !== null) ? (int)($linha[$idxQtdeResumo] ?? 0) : 0;
+                      $total   = ($idxTotalResumo   !== null) ? (float)str_replace(',', '.', (string)($linha[$idxTotalResumo] ?? 0)) : 0.0;
 
-                            if ($produto === '') continue;
+                      if ($produto === '') continue;
 
-                            if (!isset($resumo[$produto])) {
-                                $resumo[$produto] = ['preco' => $preco, 'qtde' => 0, 'total' => 0.0];
-                            }
+                      if (!isset($resumo[$produto])) {
+                          $resumo[$produto] = ['preco' => $preco, 'qtde' => 0, 'total' => 0.0];
+                      }
 
-                            $resumo[$produto]['qtde']  += $qtde;
-                            $resumo[$produto]['total'] += $total;
-                        }
+                      $resumo[$produto]['qtde']  += $qtde;
+                      $resumo[$produto]['total'] += $total;
+                  }
 
-                        $totalGeralQtde = 0;
-                        $totalGeralValor = 0.0;
+                  $totalGeralQtde = 0;
+                  $totalGeralValor = 0.0;
 
-                        foreach ($resumo as $produto => $info) {
-                            echo "<tr class='border-t border-gray-600'>";
-                            echo "<td class='px-4 py-1 border'>" . htmlspecialchars((string)$produto) . "</td>";
-                            echo "<td class='px-4 py-1 border'>R$ " . number_format((float)$info['preco'], 2, ',', '.') . "</td>";
-                            echo "<td class='px-4 py-1 border'>" . (int)$info['qtde'] . "</td>";
-                            echo "<td class='px-4 py-1 border'>R$ " . number_format((float)$info['total'], 2, ',', '.') . "</td>";
-                            echo "</tr>";
+                  foreach ($resumo as $produto => $info) {
+                      echo "<tr>";
+                      echo "<td>" . htmlspecialchars((string)$produto) . "</td>";
+                      echo "<td>R$ " . number_format((float)$info['preco'], 2, ',', '.') . "</td>";
+                      echo "<td>" . (int)$info['qtde'] . "</td>";
+                      echo "<td>R$ " . number_format((float)$info['total'], 2, ',', '.') . "</td>";
+                      echo "</tr>";
 
-                            $totalGeralQtde += (int)$info['qtde'];
-                            $totalGeralValor += (float)$info['total'];
-                        }
+                      $totalGeralQtde += (int)$info['qtde'];
+                      $totalGeralValor += (float)$info['total'];
+                  }
 
-                        echo "<tr class='bg-gray-800 font-bold border-t border-gray-500'>";
-                        echo "<td class='px-4 py-2 border text-right' colspan='2'>TOTAL GERAL</td>";
-                        echo "<td class='px-4 py-2 border text-white'>" . (int)$totalGeralQtde . "</td>";
-                        echo "<td class='px-4 py-2 border text-white'>R$ " . number_format($totalGeralValor, 2, ',', '.') . "</td>";
-                        echo "</tr>";
+                  echo "<tr class='total-row'>";
+                  echo "<td colspan='2'>TOTAL GERAL</td>";
+                  echo "<td>" . (int)$totalGeralQtde . "</td>";
+                  echo "<td>R$ " . number_format($totalGeralValor, 2, ',', '.') . "</td>";
+                  echo "</tr>";
 
-                        echo "<tr class='bg-gray-800 font-bold border-t border-gray-500'>";
-                        echo "<td class='px-4 py-2 border text-right' colspan='3'>REPASSE (85%)</td>";
-                        echo "<td class='px-4 py-2 border text-white'>R$ " . number_format($totalGeralValor * 0.85, 2, ',', '.') . "</td>";
-                        echo "</tr>";
-                        ?>
-                    </tbody>
-                </table>
+                  echo "<tr class='total-row'>";
+                  echo "<td colspan='3'>REPASSE (85%)</td>";
+                  echo "<td>R$ " . number_format($totalGeralValor * 0.85, 2, ',', '.') . "</td>";
+                  echo "</tr>";
+                  ?>
+                </tbody>
+              </table>
             </div>
-            <button onclick="copiarResumoEmail()" class="mt-4 btn-acao">📋 Copiar para E-mail</button>
+            <button onclick="copiarResumoEmail()" class="mt-4 btn-primary">📋 Copiar para E-mail</button>
+          </div>
         </div>
       <?php endif; ?>
 
@@ -472,167 +642,184 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       </script>
 
       <!-- Relatório de Vendas -->
-      <form method="POST" enctype="multipart/form-data" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-        <input type="hidden" name="formulario" value="choripan" />
-        <div class="md:col-span-4">
-          <label for="arquivoChoripan" class="block mb-1 text-sm font-semibold">Relatório de Vendas</label>
-          <input
-            type="file"
-            name="arquivoChoripan"
-            id="arquivoChoripan"
-            accept=".xlsx"
-            class="w-full text-black bg-gray-600 rounded p-2"
-          />
+      <div class="card-section">
+        <div class="card-header">
+          <h2 class="section-title">📤 Upload Relatório de Vendas (Choripan)</h2>
         </div>
-        <div>
-          <button type="submit" class="btn-acao w-full">Enviar XLSX | Atualizar</button>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <input type="hidden" name="formulario" value="choripan" />
+            <div class="md:col-span-4 form-group">
+              <label for="arquivoChoripan" class="form-label">Selecione o arquivo Excel:</label>
+              <input
+                type="file"
+                name="arquivoChoripan"
+                id="arquivoChoripan"
+                accept=".xlsx"
+                class="form-control"
+              />
+            </div>
+            <div>
+              <button type="submit" class="btn-primary w-full">Enviar XLSX | Atualizar</button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
 
       <!-- GOD SAVE -->
-      <h1 class="text-2xl font-bold mb-4">Fechamento GOD</h1>
-      <div id="card-godsave" class="mt-6 card1 no-hover p-6">
-        <div class="flex flex-col md:flex-row gap-4">
-          <div>
-            <label for="percent_bastards" class="block mb-1 text-sm font-semibold">Bastards Pilsen (%)</label>
-            <input
-              type="number"
-              id="percent_bastards"
-              step="0.01"
-              value="<?= htmlspecialchars((string)$percentualBonificacao) ?>"
-              oninput="atualizarBonificacaoGodSave()"
-              class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-            />
-          </div>
-          <div>
-            <label for="percent_especiais" class="block mb-1 text-sm font-semibold">Especiais (%)</label>
-            <input
-              type="number"
-              id="percent_especiais"
-              step="0.01"
-              value="<?= htmlspecialchars((string)$percentualEspeciais) ?>"
-              oninput="atualizarBonificacaoGodSave()"
-              class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-            />
-          </div>
+      <div class="card-section">
+        <div class="card-header">
+          <h2 class="section-title">🏆 Fechamento GOD</h2>
         </div>
-        <div class="overflow-auto mt-4">
-          <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-            <thead class="bg-gray-700 text-white">
-              <tr>
-                <th class="px-4 py-2 border">Cliente</th>
-                <th class="px-4 py-2 border">Produto</th>
-                <th class="px-4 py-2 border">Quantidade vendida</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($totaisGodSave as $cliente => $lista): ?>
-                <?php foreach ($lista as $produto => $qtde): ?>
-                  <tr class="border-t border-gray-600">
-                    <td class="px-4 py-1 border"><?= htmlspecialchars((string)$cliente) ?></td>
-                    <td class="px-4 py-1 border"><?= htmlspecialchars((string)$produto) ?></td>
-                    <td class="px-4 py-1 border"><?= (int)$qtde ?></td>
+        <div class="card-body">
+          <div id="card-godsave" class="mt-6">
+            <div class="flex flex-col md:flex-row gap-4">
+              <div class="form-group">
+                <label for="percent_bastards" class="form-label">Bastards Pilsen (%)</label>
+                <input
+                  type="number"
+                  id="percent_bastards"
+                  step="0.01"
+                  value="<?= htmlspecialchars((string)$percentualBonificacao) ?>"
+                  oninput="atualizarBonificacaoGodSave()"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label for="percent_especiais" class="form-label">Especiais (%)</label>
+                <input
+                  type="number"
+                  id="percent_especiais"
+                  step="0.01"
+                  value="<?= htmlspecialchars((string)$percentualEspeciais) ?>"
+                  oninput="atualizarBonificacaoGodSave()"
+                  class="form-control"
+                />
+              </div>
+            </div>
+            <div class="table-container mt-4">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Produto</th>
+                    <th>Quantidade vendida</th>
                   </tr>
-                <?php endforeach; ?>
-              <?php endforeach; ?>
-              <tr class="border-t border-gray-600">
-                <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-                  TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = 
-                  <span id="bonificacao-godsave-text"><?= (int)$bonificacaoBastards ?></span> L
-                </td>
-              </tr>
-              <tr class="border-t border-gray-600">
-                <td class="px-4 py-1 border text-center text-lg font-semibold" colspan="3">
-                  TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = 
-                  <span id="bonificacao-especiais-text"><?= (int)$bonificacaoEspeciais ?></span> L
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="flex gap-4 mt-4">
-          <button onclick="copiarGodSaveEmail()" class="btn-acao">📋 Copiar para E-mail</button>
-          <button onclick="exportarGodSavePNG()" class="btn-acao">🖼️ Exportar PNG</button>
+                </thead>
+                <tbody>
+                  <?php foreach ($totaisGodSave as $cliente => $lista): ?>
+                    <?php foreach ($lista as $produto => $qtde): ?>
+                      <tr>
+                        <td><?= htmlspecialchars((string)$cliente) ?></td>
+                        <td><?= htmlspecialchars((string)$produto) ?></td>
+                        <td><?= (int)$qtde ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endforeach; ?>
+                  <tr class="total-row">
+                    <td class="text-center" colspan="3">
+                      TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = 
+                      <span id="bonificacao-godsave-text"><?= (int)$bonificacaoBastards ?></span> L
+                    </td>
+                  </tr>
+                  <tr class="total-row">
+                    <td class="text-center" colspan="3">
+                      TOTAL ESPECIAIS <?= (int)$litrosEspeciais ?> L = 
+                      <span id="bonificacao-especiais-text"><?= (int)$bonificacaoEspeciais ?></span> L
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="btn-group mt-4">
+              <button onclick="copiarGodSaveEmail()" class="btn-secondary">📋 Copiar para E-mail</button>
+              <button onclick="exportarGodSavePNG()" class="btn-primary">🖼️ Exportar PNG</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <hr class="divider_yellow my-6">
 
       <!-- CHORIPAN -->
-      <h1 class="text-2xl font-bold mb-4">Fechamento Choripan</h1>
-      <form method="POST" class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-        <input type="hidden" name="formulario" value="choripan" />
-
-        <!-- Rebate Welt -->
-        <div>
-          <label for="rebate_welt" class="block mb-1 text-sm font-semibold">Rebate Pilsen (R$)</label>
-          <input
-            type="number"
-            name="rebate_welt"
-            id="rebate_welt"
-            step="0.01"
-            value="<?= number_format((float)$rebateWelt, 2, '.', '') ?>"
-            class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-          />
+      <div class="card-section">
+        <div class="card-header">
+          <h2 class="section-title">🍻 Fechamento Choripan</h2>
         </div>
+        <div class="card-body">
+          <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
+            <input type="hidden" name="formulario" value="choripan" />
 
-        <!-- Rebate Especiais -->
-        <div>
-          <label for="rebate_especiais" class="block mb-1 text-sm font-semibold">Rebate Especiais (R$)</label>
-          <input
-            type="number"
-            name="rebate_especiais"
-            id="rebate_especiais"
-            step="0.01"
-            value="<?= number_format((float)$rebateEspeciais, 2, '.', '') ?>"
-            class="w-full bg-gray-700 border border-gray-600 rounded-md text-sm p-2"
-          />
-        </div>
+            <!-- Rebate Welt -->
+            <div class="form-group">
+              <label for="rebate_welt" class="form-label">Rebate Pilsen (R$)</label>
+              <input
+                type="number"
+                name="rebate_welt"
+                id="rebate_welt"
+                step="0.01"
+                value="<?= number_format((float)$rebateWelt, 2, '.', '') ?>"
+                class="form-control"
+              />
+            </div>
 
-        <!-- botão -->
-        <div>
-          <button type="submit" class="btn-acao w-full">Atualizar</button>
-        </div>
-      </form>
+            <!-- Rebate Especiais -->
+            <div class="form-group">
+              <label for="rebate_especiais" class="form-label">Rebate Especiais (R$)</label>
+              <input
+                type="number"
+                name="rebate_especiais"
+                id="rebate_especiais"
+                step="0.01"
+                value="<?= number_format((float)$rebateEspeciais, 2, '.', '') ?>"
+                class="form-control"
+              />
+            </div>
 
-      <div class="flex gap-4 mb-6">
-        <button onclick="copiarChoripanEmail()" type="button" class="btn-acao">📋 Copiar para E-mail</button>
-        <button onclick="exportarChoripanPNG()" type="button" class="btn-acao">🖼️ Exportar PNG</button>
-      </div>
+            <!-- botão -->
+            <div>
+              <button type="submit" class="btn-primary w-full">Atualizar</button>
+            </div>
+          </form>
 
-      <?php if (!empty($totaisChoripan)): ?>
-        <div id="card-choripan" class="mt-6 card1 no-hover p-6">
-          <div class="overflow-auto">
-            <table class="table-auto w-full text-sm text-left border border-gray-700 mt-4 mb-4">
-              <thead class="bg-gray-700 text-white">
-                <tr>
-                  <th class="px-4 py-2 border">Cliente</th>
-                  <th class="px-4 py-2 border">Produto</th>
-                  <th class="px-4 py-2 border">Quantidade vendida</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($totaisChoripan as $cliente => $lista): ?>
-                  <?php foreach ($lista as $produto => $qtde): ?>
-                    <tr class="border-t border-gray-600">
-                      <td class="px-4 py-1 border"><?= htmlspecialchars((string)$cliente) ?></td>
-                      <td class="px-4 py-1 border"><?= htmlspecialchars((string)$produto) ?></td>
-                      <td class="px-4 py-1 border"><?= (int)$qtde ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endforeach; ?>
-                <tr class="border-t border-gray-600">
-                  <td class="px-4 py-1 border text-center text-lg font-semibold" colspan='3'>
-                    TOTAL REPASSE R$ <?= number_format((float)$repasseWelt,      2, ',', '.') ?>
-                    + R$ <?= number_format((float)$repasseEspeciais, 2, ',', '.') ?>
-                    = R$ <?= number_format((float)$totalRepasse,     2, ',', '.') ?>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="btn-group mb-6">
+            <button onclick="copiarChoripanEmail()" type="button" class="btn-secondary">📋 Copiar para E-mail</button>
+            <button onclick="exportarChoripanPNG()" type="button" class="btn-primary">🖼️ Exportar PNG</button>
           </div>
+
+          <?php if (!empty($totaisChoripan)): ?>
+            <div id="card-choripan" class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Produto</th>
+                    <th>Quantidade vendida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($totaisChoripan as $cliente => $lista): ?>
+                    <?php foreach ($lista as $produto => $qtde): ?>
+                      <tr>
+                        <td><?= htmlspecialchars((string)$cliente) ?></td>
+                        <td><?= htmlspecialchars((string)$produto) ?></td>
+                        <td><?= (int)$qtde ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endforeach; ?>
+                  <tr class="total-row">
+                    <td class="text-center" colspan='3'>
+                      TOTAL REPASSE R$ <?= number_format((float)$repasseWelt,      2, ',', '.') ?>
+                      + R$ <?= number_format((float)$repasseEspeciais, 2, ',', '.') ?>
+                      = R$ <?= number_format((float)$totalRepasse,     2, ',', '.') ?>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
         </div>
-      <?php endif; ?>
+      </div>
 
     </main>
   </div>
