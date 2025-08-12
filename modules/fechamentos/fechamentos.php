@@ -644,7 +644,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <!-- Relatório de Vendas -->
       <div class="card-section">
         <div class="card-header">
-          <h2 class="section-title">📤 Upload Relatório de Vendas (Choripan)</h2>
+          <h1 class="section-title">📤 Upload Relatório de Vendas</h1>
         </div>
         <div class="card-body">
           <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
@@ -669,7 +669,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <!-- GOD SAVE -->
       <div class="card-section">
         <div class="card-header">
-          <h2 class="section-title">🏆 Fechamento GOD</h2>
+          <h1 class="section-title">🏆 Fechamento GOD</h1>
         </div>
         <div class="card-body">
           <div id="card-godsave" class="mt-6">
@@ -739,12 +739,11 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
         </div>
       </div>
 
-      <hr class="divider_yellow my-6">
 
       <!-- CHORIPAN -->
       <div class="card-section">
         <div class="card-header">
-          <h2 class="section-title">🍻 Fechamento Choripan</h2>
+          <h1 class="section-title">🍻 Fechamento Choripan</h1>
         </div>
         <div class="card-body">
           <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
