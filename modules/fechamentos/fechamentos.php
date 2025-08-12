@@ -518,7 +518,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
         <div class="card-section">
           <div class="card-header">
             <div class="flex justify-between items-center">
-              <h2 class="section-title text-2xl">📋 Detalhes das Vendas</h2>
+              <h2 class="section-title">📋 Detalhes das Vendas</h2>
               <button
                 onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
                 class="btn-secondary"
@@ -644,7 +644,8 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
       <!-- Relatório de Vendas -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title">📤 Upload Relatório de Vendas</h1>
+          <h1 class="section-title text-2xl">📤 Upload Relatório de Vendas</h1>
+
         </div>
         <div class="card-body">
           <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
