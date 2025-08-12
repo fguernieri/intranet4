@@ -394,6 +394,20 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
         return;
       }
       
+      // Mostrar mensagem de carregamento
+      const loadingMessage = document.createElement('div');
+      loadingMessage.textContent = 'Gerando imagem, aguarde...';
+      loadingMessage.style.position = 'fixed';
+      loadingMessage.style.top = '50%';
+      loadingMessage.style.left = '50%';
+      loadingMessage.style.transform = 'translate(-50%, -50%)';
+      loadingMessage.style.padding = '15px 20px';
+      loadingMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      loadingMessage.style.color = 'white';
+      loadingMessage.style.borderRadius = '5px';
+      loadingMessage.style.zIndex = '9999';
+      document.body.appendChild(loadingMessage);
+      
       // Criar uma tabela temporária apenas com os vendedores selecionados
       const tabelaOriginal = document.querySelector('#tabelaMetas table');
       const tabelaTemp = tabelaOriginal.cloneNode(true);
@@ -401,11 +415,38 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
       // Manter apenas o cabeçalho e as linhas dos vendedores selecionados
       const linhas = tabelaTemp.querySelectorAll('tbody tr');
       linhas.forEach(linha => {
-        const idVendedor = linha.querySelector('input').dataset.vendedor;
+        const inputs = linha.querySelectorAll('input');
+        if (inputs.length === 0) return;
+        
+        const idVendedor = inputs[0].dataset.vendedor;
         if (!vendedoresSelecionados.includes(idVendedor)) {
           linha.remove();
+          return;
         }
+        
+        // Substituir inputs por texto formatado
+          inputs.forEach(input => {
+            const valor = parseFloat(input.value);
+            const valorFormatado = valor.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+            
+            const td = input.parentElement;
+            td.innerHTML = valorFormatado;
+            td.style.textAlign = 'right';
+            td.style.paddingRight = '10px';
+            td.style.minWidth = '120px'; // Garantir largura mínima para os valores
+            td.style.fontFamily = 'monospace'; // Usar fonte monoespaçada para alinhamento dos números
+          });
       });
+      
+      // Alinhar cabeçalhos de valores à direita
+      const headers = tabelaTemp.querySelectorAll('thead th');
+      for (let i = 1; i < headers.length; i++) {
+        headers[i].style.textAlign = 'right';
+        headers[i].style.paddingRight = '10px';
+      }
       
       // Criar um elemento temporário para renderizar a tabela
       const tempDiv = document.createElement('div');
@@ -414,6 +455,25 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
       tempDiv.style.background = '#1f2937'; // Fundo escuro
       tempDiv.style.padding = '20px';
       tempDiv.style.borderRadius = '8px';
+      tempDiv.style.width = 'auto';
+      
+      // Estilizar a tabela para melhor visualização na exportação
+      tabelaTemp.style.width = '100%';
+      tabelaTemp.style.borderCollapse = 'collapse';
+      tabelaTemp.style.fontSize = '14px';
+      
+      // Estilizar células da tabela
+      const allCells = tabelaTemp.querySelectorAll('th, td');
+      allCells.forEach(cell => {
+        cell.style.padding = '10px';
+        cell.style.border = '1px solid #4b5563';
+      });
+      
+      // Estilizar cabeçalho
+      const headerRow = tabelaTemp.querySelector('thead tr');
+      if (headerRow) {
+        headerRow.style.backgroundColor = '#374151';
+      }
       
       // Adicionar título
       const titulo = document.createElement('h2');
@@ -431,7 +491,10 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
         // Capturar a tabela como imagem
         const canvas = await html2canvas(tempDiv, {
           backgroundColor: '#1f2937',
-          scale: 2 // Melhor qualidade
+          scale: 2, // Melhor qualidade
+          logging: false,
+          useCORS: true,
+          allowTaint: true
         });
         
         // Converter para PNG e fazer download
@@ -447,7 +510,8 @@ if(isset($_GET['action']) && $_GET['action'] == 'clonar') {
         console.error('Erro ao exportar para PNG:', error);
         alert('Ocorreu um erro ao exportar para PNG. Por favor, tente novamente.');
       } finally {
-        // Remover o elemento temporário
+        // Remover o elemento temporário e a mensagem de carregamento
+        document.body.removeChild(loadingMessage);
         document.body.removeChild(tempDiv);
       }
     });
