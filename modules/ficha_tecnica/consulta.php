@@ -31,14 +31,25 @@ $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex">
 <style>
-/* Remove os ícones de ordenação em todos os <th> do DataTable */
-table.dataTable thead th.sorting:before,
-table.dataTable thead th.sorting:after,
-table.dataTable thead th.sorting_asc:before,
-table.dataTable thead th.sorting_asc:after,
-table.dataTable thead th.sorting_desc:before,
-table.dataTable thead th.sorting_desc:after {
+/* Remove os ícones de ordenação em todos os <th> do DataTable, exceto na coluna Farol */
+table.dataTable thead th.sorting:not(:first-child):before,
+table.dataTable thead th.sorting:not(:first-child):after,
+table.dataTable thead th.sorting_asc:not(:first-child):before,
+table.dataTable thead th.sorting_asc:not(:first-child):after,
+table.dataTable thead th.sorting_desc:not(:first-child):before,
+table.dataTable thead th.sorting_desc:not(:first-child):after {
   display: none !important;
+}
+
+/* Estiliza os ícones de ordenação na coluna Farol */
+table.dataTable thead th:first-child.sorting:before,
+table.dataTable thead th:first-child.sorting:after,
+table.dataTable thead th:first-child.sorting_asc:before,
+table.dataTable thead th:first-child.sorting_asc:after,
+table.dataTable thead th:first-child.sorting_desc:before,
+table.dataTable thead th:first-child.sorting_desc:after {
+  opacity: 0.8;
+  color: #22d3ee; /* Cor ciano para destacar */
 }
 </style>
 
@@ -286,6 +297,15 @@ function fecharImportProdutos() {
 
 <script>
 $(document).ready(function() {
+  // Função personalizada para ordenação da coluna Farol
+  $.fn.dataTable.ext.type.order['farol-pre'] = function(data) {
+    // Extrai a classe de cor do HTML
+    if (data.includes('bg-green-500')) return 1; // Verde (prioridade alta)
+    if (data.includes('bg-yellow-400')) return 2; // Amarelo (prioridade média)
+    if (data.includes('bg-red-500')) return 3; // Vermelho (prioridade baixa)
+    return 4; // Cinza (sem prioridade/desconhecido)
+  };
+
   // Inicializa o DataTable e guarda na variável "table"
   const table = $('#tabela-consulta').DataTable({
     language: {
@@ -295,9 +315,9 @@ $(document).ready(function() {
     ordering: true,
     order: [],           // sem ordenação inicial
     columnDefs: [
-      { targets: [0,5], orderable: false }, // Farol e Ações não ordenáveis
-      { targets: 5, searchable: false } // Ações fora da procura
-
+      { targets: [5], orderable: false }, // Apenas Ações não ordenáveis
+      { targets: 5, searchable: false }, // Ações fora da procura
+      { targets: 0, type: 'farol' } // Usa o tipo personalizado para ordenação do Farol
     ],
     initComplete: function () {
       // Esconde os controles padrão
