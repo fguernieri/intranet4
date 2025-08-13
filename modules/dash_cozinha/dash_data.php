@@ -11,43 +11,70 @@ $totalPreco = 0;
 
 $sql = "SELECT nome_prato, codigo_cloudify 
         FROM ficha_tecnica 
-        WHERE farol = 'verde' 
-          AND codigo_cloudify IS NOT NULL";
+        WHERE farol = 'verde'";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($fichas as $ficha) {
     $codigo = $ficha['codigo_cloudify'];
+    // Se o código cloudify for nulo, definimos valores padrão
+    if ($codigo === null) {
+        $pratos[] = [
+            'nome'   => $ficha['nome_prato'],
+            'grupo'  => 'Não categorizado',
+            'custo'  => 0,
+            'preco'  => 0,
+            'cmv'    => 0
+        ];
+        continue;
+    }
+    
     $sqlPB = "SELECT Grupo, `Custo médio` AS custo, Valor AS preco 
               FROM ProdutosBares 
-              WHERE `Cód. Ref.` = ? 
-                AND `Custo médio` > 0 
-                AND Valor > 0";
+              WHERE `Cód. Ref.` = ?";
     $stmtPB = $pdo_dw->prepare($sqlPB);
     $stmtPB->execute([$codigo]);
     $pb = $stmtPB->fetch(PDO::FETCH_ASSOC);
 
+    // Se encontrou informações no Cloudify
     if ($pb) {
-        $cmv = ($pb['custo'] / $pb['preco']) * 100;
+        $custo = (float)($pb['custo'] ?? 0);
+        $preco = (float)($pb['preco'] ?? 0);
+        $cmv = ($preco > 0) ? ($custo / $preco) * 100 : 0;
         $pratos[] = [
             'nome'   => $ficha['nome_prato'],
-            'grupo'  => $pb['Grupo'],
-            'custo'  => (float)$pb['custo'],
-            'preco'  => (float)$pb['preco'],
+            'grupo'  => $pb['Grupo'] ?? 'Não categorizado',
+            'custo'  => $custo,
+            'preco'  => $preco,
             'cmv'    => $cmv
         ];
-        $totalCusto += $pb['custo'];
-        $totalPreco += $pb['preco'];
+        $totalCusto += $custo;
+        $totalPreco += $preco;
+    } else {
+        // Se não encontrou no Cloudify, adiciona com valores zerados
+        $pratos[] = [
+            'nome'   => $ficha['nome_prato'],
+            'grupo'  => 'Não categorizado',
+            'custo'  => 0,
+            'preco'  => 0,
+            'cmv'    => 0
+        ];
     }
 }
 
 // 2) KPIs
+// Contagem de pratos com preço e custo válidos para médias
+$pratosValidos = array_filter($pratos, function($p) {
+    return $p['preco'] > 0;
+});
+$countValidos = count($pratosValidos);
+
 $kpis = [
     'total' => count($pratos),
-    'custo' => $totalCusto / max(1, count($pratos)),
-    'preco' => $totalPreco / max(1, count($pratos)),
-    'cmv'   => ($totalCusto / max(1, $totalPreco)) * 100
+    'custo' => $countValidos > 0 ? $totalCusto / $countValidos : 0,
+    'preco' => $countValidos > 0 ? $totalPreco / $countValidos : 0,
+    'cmv'   => ($totalPreco > 0) ? ($totalCusto / $totalPreco) * 100 : 0
 ];
 
 // 3) Chart CMV por prato
