@@ -259,7 +259,10 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                                 <?php echo number_format((float)$linha['ENVASE_NECESSARIO_INOX'], 0, ',', '.'); ?>
                                             </td>
                                             <td class="px-4 py-3 text-center valor-positivo">
-                                                <?php echo number_format((float)$linha['DIFERENCA_INOX'], 0, ',', '.'); ?>
+                                                <?php 
+                                                    $diferenca = (float)$linha['DIFERENCA_INOX'];
+                                                    echo $diferenca > 0 ? number_format($diferenca, 0, ',', '.') : '0';
+                                                ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -304,7 +307,10 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                     <?php echo number_format((float)$linha['ENVASE_NECESSARIO_PET'], 0, ',', '.'); ?>
                 </td>
                 <td class="px-4 py-3 text-center valor-positivo">
-                    <?php echo number_format((float)$linha['DIFERENCA_PET'], 0, ',', '.'); ?>
+                    <?php 
+                        $diferenca = (float)$linha['DIFERENCA_PET'];
+                        echo $diferenca > 0 ? number_format($diferenca, 0, ',', '.') : '0';
+                    ?>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -357,7 +363,10 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                             <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 0, ',', '.'); ?>
                                         </td>
                                         <td class="px-1 py-1 text-center valor-positivo">
-                                            <?php echo number_format($linha['ORDEM_DE_ENVASE'], 0, ',', '.'); ?>
+                                            <?php 
+                                                $ordem_envase = (float)$linha['ORDEM_DE_ENVASE'];
+                                                echo $ordem_envase > 0 ? number_format($ordem_envase, 0, ',', '.') : '0';
+                                            ?>
                                         </td>
                                         <td class="px-1 py-1 text-center text-gray-700">
                                             <?php echo number_format($linha['MEDIA_DIARIA'], 0, ',', '.'); ?>
