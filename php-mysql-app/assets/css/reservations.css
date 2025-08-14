@@ -1,0 +1,283 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f5f6fa;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1rem;
+}
+
+/* Formulário mais compacto */
+.reservation-form {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.reservation-form h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.form-group {
+    margin-bottom: 0.8rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    color: #34495e;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+/* Grid de Disponibilidade */
+.availability-section {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.availability-section h2 {
+    margin: 0 0 0.8rem 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.availability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.6rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.date-card {
+    background: #f8f9fa;
+    padding: 0.8rem;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.date-header {
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.date-info {
+    font-size: 0.85rem;
+}
+
+.date-info p {
+    margin: 0.3rem 0;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+}
+
+.progress {
+    height: 100%;
+    background: #3498db;
+    border-radius: 3px;
+}
+
+/* Lista de Reservas */
+.reservations-list {
+    margin-top: 1rem;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.reservations-list h2 {
+    font-size: 1.1rem;
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+}
+
+.date-reservations {
+    margin-bottom: 1.5rem;
+}
+
+.date-reservations h3 {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.table th {
+    font-weight: 500;
+    color: #2c3e50;
+    background: #f8f9fa;
+    padding: 0.6rem;
+    text-align: left;
+}
+
+.table td {
+    padding: 0.6rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #444;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Botões */
+.btn {
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+    width: 100%;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+.btn-danger {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    background: #ff5252;
+    border-radius: 3px;
+}
+
+.btn-danger:hover {
+    background: #ff3838;
+}
+
+/* Mensagens */
+.message {
+    padding: 0.8rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    background: #fee;
+    color: #e74c3c;
+    border-left: 3px solid #e74c3c;
+}
+
+.success-message {
+    background: #efe;
+    color: #27ae60;
+    border-left: 3px solid #27ae60;
+}
+
+/* Filtros e Títulos */
+.filter-section {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.filter-button.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.filter-button:hover {
+    background: #f8f9fa;
+}
+
+.filter-button.active:hover {
+    background: #2980b9;
+}
+
+/* Estiliza a scrollbar */
+.availability-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.availability-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.availability-grid::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.availability-grid::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
