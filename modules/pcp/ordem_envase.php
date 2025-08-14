@@ -243,11 +243,15 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                 <?php if (empty($dados_filtrados)): ?>
                                     <tr class="table-row">
                                         <td colspan="4" class="px-4 py-6 text-center text-gray-600">
-                                            Nenhuma cerveja com ordem de envase &gt; 0
+                                            Nenhuma cerveja com ordem de envase pendente
                                         </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($dados_filtrados as $linha): ?>
+                                        <?php 
+                                        $diferenca = (float)$linha['DIFERENCA_INOX'];
+                                        if ($diferenca <= 0) continue; // Pula linhas com ordem zero ou negativa
+                                        ?>
                                         <tr class="table-row">
                                             <td class="px-4 py-3 font-semibold text-gray-800">
                                                 <?php echo htmlspecialchars($linha['CERVEJA']); ?>
@@ -259,10 +263,7 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                                 <?php echo number_format((float)$linha['ENVASE_NECESSARIO_INOX'], 0, ',', '.'); ?>
                                             </td>
                                             <td class="px-4 py-3 text-center valor-positivo">
-                                                <?php 
-                                                    $diferenca = (float)$linha['DIFERENCA_INOX'];
-                                                    echo $diferenca > 0 ? number_format($diferenca, 0, ',', '.') : '0';
-                                                ?>
+                                                <?php echo number_format($diferenca, 0, ',', '.'); ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -291,11 +292,15 @@ $atualizacao_recente = $atualizacao_recente ?? null;
     <?php if (empty($dados_filtrados_pet)): ?>
         <tr class="table-row">
             <td colspan="4" class="px-4 py-6 text-center text-gray-600">
-                Nenhuma cerveja com ordem de envase &gt; 0
+                Nenhuma cerveja com ordem de envase pendente
             </td>
         </tr>
     <?php else: ?>
         <?php foreach ($dados_filtrados_pet as $linha): ?>
+            <?php 
+            $diferenca = (float)$linha['DIFERENCA_PET'];
+            if ($diferenca <= 0) continue; // Pula linhas com ordem zero ou negativa
+            ?>
             <tr class="table-row">
                 <td class="px-4 py-3 font-semibold text-gray-800">
                     <?php echo htmlspecialchars($linha['CERVEJA']); ?>
@@ -307,10 +312,7 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                     <?php echo number_format((float)$linha['ENVASE_NECESSARIO_PET'], 0, ',', '.'); ?>
                 </td>
                 <td class="px-4 py-3 text-center valor-positivo">
-                    <?php 
-                        $diferenca = (float)$linha['DIFERENCA_PET'];
-                        echo $diferenca > 0 ? number_format($diferenca, 0, ',', '.') : '0';
-                    ?>
+                    <?php echo number_format($diferenca, 0, ',', '.'); ?>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -354,6 +356,10 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($dados_latas_linha as $linha): ?>
+                                    <?php 
+                                    $ordem_envase = (float)$linha['ORDEM_DE_ENVASE'];
+                                    if ($ordem_envase <= 0) continue; // Pula linhas com ordem zero ou negativa
+                                    ?>
                                     <tr>
                                         <td class="px-1 py-1 font-semibold text-gray-800"><?php echo htmlspecialchars($linha['CERVEJA']); ?></td>
                                         <td class="px-1 py-1 text-center <?php echo ($linha['ESTOQUE_ATUAL'] < 200) ? 'valor-negativo' : 'text-gray-700'; ?>">
@@ -363,10 +369,7 @@ $atualizacao_recente = $atualizacao_recente ?? null;
                                             <?php echo number_format($linha['ESTOQUE_IDEAL_45_DIAS'], 0, ',', '.'); ?>
                                         </td>
                                         <td class="px-1 py-1 text-center valor-positivo">
-                                            <?php 
-                                                $ordem_envase = (float)$linha['ORDEM_DE_ENVASE'];
-                                                echo $ordem_envase > 0 ? number_format($ordem_envase, 0, ',', '.') : '0';
-                                            ?>
+                                            <?php echo number_format($ordem_envase, 0, ',', '.'); ?>
                                         </td>
                                         <td class="px-1 py-1 text-center text-gray-700">
                                             <?php echo number_format($linha['MEDIA_DIARIA'], 0, ',', '.'); ?>
