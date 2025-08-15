@@ -237,18 +237,18 @@ main {
 
 /* Melhora o contraste da tabela */
 #tabela-auditoria th {
-  background-color: #374151; /* gray-700 */
-  color: #F9FAFB;            /* gray-50 */
+  background-color: #1F2937; /* gray-800 */
+  color: #FFFFFF;            /* white */
 }
 #tabela-auditoria td {
-  background-color: #1F2937; /* gray-800 */
-  color: #E5E7EB;            /* gray-200 */
+  background-color: #111827; /* gray-900 */
+  color: #F3F4F6;            /* gray-100 */
 }
 #tabela-auditoria tr:nth-child(even) td {
-  background-color: #111827; /* gray-900 */
+  background-color: #1F2937; /* gray-800 */
 }
 #tabela-auditoria tbody tr:hover td {
-  background-color: #4B5563; /* gray-600 */
+  background-color: #374151; /* gray-700 */
 }
 
 /* ---------- Estilos para controles do DataTables (select "Exibir" e input "Pesquisar") ---------- */
