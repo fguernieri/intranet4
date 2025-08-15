@@ -225,3 +225,75 @@ main {
   color: #fff !important;                   /* texto claro   */
   border-color: #444 !important;            /* borda discreta */
 }
+/* ================================
+   ADICIONE ao final de assets/css/style.css
+   (ou cole inteiro se preferir substituir)
+   ================================ */
+
+/* Status badges */
+.status-em-dia { background-color: #10B981; }
+.status-atrasada { background-color: #EF4444; }
+.status-nao_auditada { background-color: #F59E0B; }
+
+/* Melhora o contraste da tabela */
+#tabela-auditoria th {
+  background-color: #374151; /* gray-700 */
+  color: #F9FAFB;            /* gray-50 */
+}
+#tabela-auditoria td {
+  background-color: #1F2937; /* gray-800 */
+  color: #E5E7EB;            /* gray-200 */
+}
+#tabela-auditoria tr:nth-child(even) td {
+  background-color: #111827; /* gray-900 */
+}
+#tabela-auditoria tbody tr:hover td {
+  background-color: #4B5563; /* gray-600 */
+}
+
+/* ---------- Estilos para controles do DataTables (select "Exibir" e input "Pesquisar") ---------- */
+/* Estiliza o select de "Exibir" e o input de busca do DataTables */
+.dataTables_length select,
+.dataTables_filter input {
+  color: #E5E7EB;              /* cor do texto das opções / input */
+  background-color: #374151;   /* cor do fundo do controle */
+  border: 1px solid #4B5563;
+  padding: .35rem .6rem;
+  border-radius: .25rem;
+  font-size: 0.9rem;
+}
+
+/* Estiliza (quando possível) o texto das <option> */
+.dataTables_length select option {
+  color: #E5E7EB;
+  background-color: #1F2937;
+}
+
+/* Placeholder do campo de busca */
+.dataTables_filter input::placeholder {
+  color: #94A3B8;
+  opacity: 1;
+}
+
+/* Remove aparência nativa para permitir estilos consistentes */
+.dataTables_length select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Ajustes opcionais para o label ao redor (ex.: "Exibir") */
+.dataTables_length label,
+.dataTables_filter label {
+  color: #E5E7EB;
+  margin-right: .5rem;
+  font-size: 0.95rem;
+}
+
+/* Para alinhar melhor com o tema escuro e espaçamento entre controles */
+div.dataTables_wrapper div.dataTables_length {
+  margin-bottom: .5rem;
+}
+div.dataTables_wrapper div.dataTables_filter {
+  text-align: right;
+}
