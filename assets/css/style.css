@@ -297,3 +297,23 @@ div.dataTables_wrapper div.dataTables_length {
 div.dataTables_wrapper div.dataTables_filter {
   text-align: right;
 }
+/* DataTables: deixa textos dos controles em branco para melhor contraste */
+.dataTables_info,
+.dataTables_paginate,
+.dataTables_length label,
+.dataTables_filter label,
+.dataTables_wrapper .dataTables_processing,
+.dataTables_wrapper .dataTables_paginate .paginate_button,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: #fff !important;
+}
+
+/* DataTables: ícone de busca e setas de paginação */
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    background-color: #374151 !important; /* bg-gray-700 */
+    color: #fff !important;
+    border-color: #4b5563 !important; /* border-gray-600 */
+}
+
