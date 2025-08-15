@@ -88,6 +88,7 @@ if (file_exists($logPath)) {
     <?php foreach ($modulos as $m): ?>
       <a href="<?= htmlspecialchars($m['link']) ?>"
          class="block hover:text-yellow-400"><?= htmlspecialchars($m['nome']) ?></a>
+
     <?php endforeach; ?>
     <?php if ($_SESSION['usuario_perfil'] === 'admin'): ?>
       <a href="<?= BASE_URL ?>/modules/usuarios/admin_permissoes.php"

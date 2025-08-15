@@ -117,12 +117,13 @@ if (
   <h1 class="text-2xl font-bold mb-4">Dashboard da Cozinha</h1>
 
   <!-- Disp Cozinhas -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
     <a href="disp_bdf_almoco.php"       class="btn-acao">Disp BDF Almoço</a>
     <a href="disp_bdf_almoco_fds.php"   class="btn-acao">Disp BDF Almoço FDS</a>
     <a href="disp_bdf_noite.php"        class="btn-acao">Disp BDF Noite</a>
     <a href="disp_wab.php"              class="btn-acao">Disp WAB</a>
     <a href="telegram_disp_config.php"  class="btn-acao-azul">Telegram</a>
+    <a href="../ficha_tecnica/auditoria.php" class="btn-acao-verde">Auditoria de Fichas</a>
   </div>
 
   <!-- KPIs -->
