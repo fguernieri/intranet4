@@ -67,6 +67,21 @@ if (isset($_GET['sucesso'])) {
     .status-em-dia { background-color: #10B981; }
     .status-atrasada { background-color: #EF4444; }
     .status-nao-auditada { background-color: #F59E0B; }
+    /* Melhora o contraste da tabela */
+    #tabela-auditoria th {
+      background-color: #374151; /* gray-700 */
+      color: #F9FAFB;            /* gray-50 */
+    }
+    #tabela-auditoria td {
+      background-color: #1F2937; /* gray-800 */
+      color: #E5E7EB;            /* gray-200 */
+    }
+    #tabela-auditoria tr:nth-child(even) td {
+      background-color: #111827; /* gray-900 */
+    }
+    #tabela-auditoria tbody tr:hover td {
+      background-color: #4B5563; /* gray-600 */
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex">
