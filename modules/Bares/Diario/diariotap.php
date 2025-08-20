@@ -95,7 +95,7 @@ if ($ano_selecionado && $mes_selecionado && $dia_selecionado) {
             bdf.observacoes,
             bdf.algum_evento_relevante_na_cidade,
             -- Faturamento total do dia (query simples e rápida)
-            (SELECT COALESCE(SUM(total), 0) FROM fVendasTap WHERE data = ?) AS faturamento_total
+            (SELECT COALESCE(SUM(total), 0) FROM fVendasTap WHERE DATE(data) = ?) AS faturamento_total
         FROM DiarioDeBordoBdf bdf 
         WHERE DATE(bdf.hora_de_inicio) = ? AND bdf.periodo = 'bar'
         LIMIT 1
@@ -116,7 +116,7 @@ if ($ano_selecionado && $mes_selecionado && $dia_selecionado) {
     $sql_grafico = "
         SELECT grupos_de_produto, SUM(total) AS total_por_grupo
         FROM fVendasTap
-        WHERE `data` = ?
+        WHERE DATE(`data`) = ?
         GROUP BY grupos_de_produto
         ORDER BY total_por_grupo DESC
         LIMIT 6
