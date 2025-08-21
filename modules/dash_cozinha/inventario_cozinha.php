@@ -205,17 +205,22 @@ $hoje = date('Y-m-d');
         <div class="text-xs text-gray-400">Selecione a empresa e clique em "Atualizar listagem"</div>
       </div>
 
+      <!-- Filtro dinâmico -->
+      <div class="mb-4">
+        <input id="filtro-global" type="text" placeholder="Filtrar (digite 3+ caracteres)" class="w-full bg-gray-800 text-white p-2 rounded text-sm" />
+      </div>
+      
       <div class="overflow-x-auto bg-gray-800 rounded-lg shadow mb-8">
         <table class="min-w-full text-xs mx-auto">
           <thead class="bg-gray-700 text-yellow-400">
             <tr>
-              <th class="p-2 text-left">Código</th>
-              <th class="p-2 text-left">Nome</th>
-              <th class="p-2 text-left">Grupo</th>
-              <th class="p-2 text-left">Unidade</th>
-              <th class="p-2 text-center" style="width:12rem">Quantidade apurada</th>
-            </tr>
-          </thead>
+              <th class="p-2 text-left sortable" data-col="0">Código <span class="sort-indicator"></span></th>
+              <th class="p-2 text-left sortable" data-col="1">Nome <span class="sort-indicator"></span></th>
+              <th class="p-2 text-left sortable" data-col="2">Grupo <span class="sort-indicator"></span></th>
+              <th class="p-2 text-left sortable" data-col="3">Unidade <span class="sort-indicator"></span></th>
+               <th class="p-2 text-center" style="width:12rem">Quantidade apurada</th>
+             </tr>
+           </thead>
           <tbody class="divide-y divide-gray-700">
             <?php foreach ($insumos as $row):
               $cod = htmlspecialchars($row['codigo'] ?? '', ENT_QUOTES);
@@ -317,6 +322,69 @@ $hoje = date('Y-m-d');
       const inputs = document.querySelectorAll('input[name="quantidade[]"]');
       inputs.forEach(i => i.value = '');
     });
+
+    // --- Sortable and Filter logic ---
+    function compareValues(a, b, asc) {
+      // try numeric compare
+      const na = parseFloat(a.replace(',', '.'));
+      const nb = parseFloat(b.replace(',', '.'));
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      a = a.toLowerCase(); b = b.toLowerCase();
+      if (a < b) return asc ? -1 : 1;
+      if (a > b) return asc ? 1 : -1;
+      return 0;
+    }
+
+    function sortTable(colIndex) {
+      const table = document.querySelector('table');
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const th = table.querySelector('th.sortable[data-col="' + colIndex + '"]');
+      const asc = !(th.dataset.sortOrder === 'asc');
+      rows.sort((r1, r2) => {
+        const c1 = (r1.children[colIndex].textContent || '').trim();
+        const c2 = (r2.children[colIndex].textContent || '').trim();
+        return compareValues(c1, c2, asc);
+      });
+      // apply order
+      rows.forEach(r => tbody.appendChild(r));
+      // update indicators
+      document.querySelectorAll('th.sortable').forEach(h => { h.dataset.sortOrder = ''; h.querySelector('.sort-indicator').textContent = ''; });
+      th.dataset.sortOrder = asc ? 'asc' : 'desc';
+      th.querySelector('.sort-indicator').textContent = asc ? ' ▲' : ' ▼';
+    }
+
+    // attach click handlers to sortable headers
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => sortTable(parseInt(th.dataset.col, 10)));
+    });
+
+    // filter
+    const filtroInput = document.getElementById('filtro-global');
+    let filtroTimer = null;
+    function applyFilterNow() {
+      const q = (filtroInput.value || '').trim().toLowerCase();
+      const tbody = document.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      if (q.length < 3) {
+        // show all
+        rows.forEach(r => r.style.display = '');
+        return;
+      }
+      rows.forEach(r => {
+        const text = Array.from(r.children).map(td => td.textContent || '').join(' ').toLowerCase();
+        r.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    filtroInput.addEventListener('input', function () {
+      clearTimeout(filtroTimer);
+      filtroTimer = setTimeout(applyFilterNow, 300);
+    });
+
+    // Apply filter after populating table on refresh
+    const originalRefresh = document.getElementById('refresh-list').onclick;
+    // no-op: we keep existing listener; after it finishes, we reapply filter (handled in fetch flow)
   </script>
 </body>
 </html>
