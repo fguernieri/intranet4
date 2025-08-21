@@ -77,6 +77,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
 // Busca insumos do grupo solicitado — inicialmente vazio; a listagem será carregada via AJAX após selecionar empresa e clicar Atualizar
 $insumos = [];
 
+// Bloco de diagnóstico acionável em produção: passe ?debug=1 na URL para ver informações.
+$debug_info = '';
+if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+  try {
+    // Informações de conexão/DB
+    $dbName = $pdo_dw->query('SELECT DATABASE()')->fetchColumn();
+    $lower = $pdo_dw->query('SELECT @@lower_case_table_names')->fetchColumn();
+    $charset = $pdo_dw->query('SELECT @@character_set_database')->fetchColumn();
+    $collation = $pdo_dw->query('SELECT @@collation_database')->fetchColumn();
+
+    $debug_info .= "Database: $dbName\n";
+    $debug_info .= "lower_case_table_names: $lower\n";
+    $debug_info .= "character_set_database: $charset\n";
+    $debug_info .= "collation_database: $collation\n\n";
+
+    // Contagens e comparações para os dois grupos
+    $groups = [
+      'WAB' => 'W - INSUMOS - W - INSUMO COZINHA',
+      'BDF' => 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA',
+    ];
+    foreach ($groups as $k => $g) {
+      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE `Grupo` = ?');
+      $stmt->execute([$g]);
+      $cnt_exact = $stmt->fetchColumn();
+
+      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE TRIM(`Grupo`) = ?');
+      $stmt->execute([$g]);
+      $cnt_trim = $stmt->fetchColumn();
+
+      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE `Grupo` LIKE ?');
+      $stmt->execute(['%INSUMO%']);
+      $cnt_like = $stmt->fetchColumn();
+
+      $debug_info .= "$k -> group: $g\n exact=$cnt_exact trim=$cnt_trim likeINSUMO=$cnt_like\n\n";
+    }
+
+    // Valores distintos de Grupo com tamanho e HEX
+    $stmt = $pdo_dw->query("SELECT `Grupo`, COUNT(*) AS cnt, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM ProdutosBares GROUP BY `Grupo`, CHAR_LENGTH(`Grupo`), HEX(`Grupo`) ORDER BY cnt DESC LIMIT 50");
+    $groupsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $debug_info .= "Distinct Grupo (sample):\n";
+    foreach ($groupsList as $gr) {
+      $debug_info .= "{$gr['Grupo']} | cnt={$gr['cnt']} | len={$gr['len']} | hex={$gr['hexval']}\n";
+    }
+
+    // Amostra de linhas que contêm INSUMO
+    $stmt = $pdo_dw->prepare("SELECT `Cód. Ref.`, `Nome`, `Grupo`, `Unidade`, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM ProdutosBares WHERE `Grupo` LIKE ? LIMIT 200");
+    $stmt->execute(['%INSUMO%']);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $debug_info .= "\nSample rows (like %INSUMO%):\n";
+    foreach (array_slice($rows, 0, 50) as $r) {
+      $cr = $r['Cód. Ref.'] ?? $r['Cód. Ref.'];
+      $debug_info .= "$cr | {$r['Nome']} | {$r['Grupo']} | len={$r['len']} | hex={$r['hexval']}\n";
+    }
+
+  } catch (PDOException $e) {
+    $debug_info = 'DEBUG ERROR: ' . $e->getMessage();
+  }
+}
+
 // Valores padrão
 $usuario = $_SESSION['usuario_nome'] ?? '';
 $hoje = date('Y-m-d');
