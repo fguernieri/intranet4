@@ -262,24 +262,6 @@ $hoje = date('Y-m-d');
     cbWab.addEventListener('change', () => { if (cbWab.checked) cbBdf.checked = false; });
     cbBdf.addEventListener('change', () => { if (cbBdf.checked) cbWab.checked = false; });
 
-    document.getElementById('share-telegram').addEventListener('click', async function () {
-      const content = generateTxtContent();
-      if (!content || content.split('\n').length <= 1) {
-        alert('Preencha ao menos uma quantidade antes de compartilhar.');
-        return;
-      }
-      const filename = 'inventario_cozinha_' + new Date().toISOString().replace(/[:.]/g,'') + '.txt';
-      if (navigator.canShare && navigator.canShare({ files: [] })) {
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const filesArray = [new File([blob], filename, { type: 'text/plain' })];
-        try { await navigator.share({ files: filesArray, title: 'Inventário de Insumos', text: 'Inventário gerado' }); return; } catch (err) {}
-      }
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      alert('Arquivo gerado para download. Use o app do Telegram para compartilhar o arquivo.');
-    });
-
     // Atualiza a listagem a partir do banco via AJAX, enviando a empresa selecionada
     document.getElementById('refresh-list').addEventListener('click', async function () {
       const empresa = cbWab.checked ? 'WAB' : (cbBdf.checked ? 'BDF' : '');
