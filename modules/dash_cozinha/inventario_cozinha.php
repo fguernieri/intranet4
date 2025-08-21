@@ -166,6 +166,9 @@ $hoje = date('Y-m-d');
   </aside>
 
   <main class="flex-1 bg-gray-900 p-6 relative">
+    <?php if (!empty($debug_info)): ?>
+      <div class="mb-4 p-3 bg-gray-800 text-sm text-yellow-300 rounded"><pre style="white-space:pre-wrap;"><?= htmlspecialchars($debug_info, ENT_QUOTES | ENT_SUBSTITUTE) ?></pre></div>
+    <?php endif; ?>
     <h1 class="text-2xl font-bold text-yellow-400 mb-4">Inventário de Insumos — Cozinha</h1>
 
     <form method="post">
