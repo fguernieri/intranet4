@@ -150,6 +150,9 @@ $hoje = date('Y-m-d');
   <title>Inventário de Insumos - Cozinha</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="/assets/css/style.css" rel="stylesheet">
+  <!-- jsPDF + autoTable (gera formulário PDF A4 para impressão) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
@@ -186,7 +189,8 @@ $hoje = date('Y-m-d');
             <button type="submit" name="generate" value="1" class="btn-acao">Salvar e baixar .txt</button>
             <button type="button" id="refresh-list" class="btn-acao-verde">Atualizar listagem</button>
             <button type="button" id="clear-inputs" class="btn-acao-vermelho">Limpar preenchimento</button>
-        </div>
+            <button type="button" id="print-form" class="btn-acao-azul">Formulário</button>
+      </div>
       </div>
 
       <!-- Seletor de empresa (checkboxes) -->
@@ -358,6 +362,62 @@ $hoje = date('Y-m-d');
     // Apply filter after populating table on refresh
     const originalRefresh = document.getElementById('refresh-list').onclick;
     // no-op: we keep existing listener; after it finishes, we reapply filter (handled in fetch flow)
+
+    // Gera PDF A4 (formulário para impressão) com cabeçalho repetido em cada página
+    document.getElementById('print-form').addEventListener('click', function () {
+      const rows = Array.from(document.querySelectorAll('tbody tr'));
+      if (!rows || rows.length === 0) { alert('Tabela vazia. Atualize a listagem antes.'); return; }
+      const colaborador = document.querySelector('input[name="colaborador"]').value || '';
+      const dataInv = document.querySelector('input[name="data"]').value || '';
+
+      const head = [['Código', 'Nome', 'Grupo', 'Unidade', 'Quantidade apurada']];
+      const body = rows.map(r => {
+        const tds = r.querySelectorAll('td');
+        const codigo = (tds[0] && tds[0].textContent) ? tds[0].textContent.trim() : '';
+        const nome = (tds[1] && tds[1].textContent) ? tds[1].textContent.trim() : '';
+        const grupo = (tds[2] && tds[2].textContent) ? tds[2].textContent.trim() : '';
+        const unidade = (tds[3] && tds[3].textContent) ? tds[3].textContent.trim() : '';
+        const qtdInput = r.querySelector('input[name="quantidade[]"]');
+        const quantidade = qtdInput ? qtdInput.value.trim() : '';
+        return [codigo, nome, grupo, unidade, quantidade];
+      });
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+
+      const header = function () {
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Inventário Cozinha - Formulário de Contagem', margin, 15);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('Colaborador: ' + colaborador, margin, 22);
+        doc.text('Data: ' + dataInv, margin + 100, 22);
+        const page = 'Página ' + doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(page, pageWidth - margin, 15, { align: 'right' });
+        doc.setLineWidth(0.2);
+        doc.line(margin, 24, pageWidth - margin, 24);
+      };
+
+      doc.autoTable({
+        head: head,
+        body: body,
+        startY: 28,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [55,65,81], textColor: 255 },
+        didDrawPage: function (data) {
+          header();
+        }
+      });
+
+      // abre em nova aba para o usuário imprimir/anotar
+      const url = doc.output('bloburl');
+      window.open(url, '_blank');
+    });
   </script>
 </body>
 </html>
