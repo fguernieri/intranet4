@@ -3,12 +3,9 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-$conn->set_charset('utf8mb4');
-if ($conn->connect_error) {
-    die("Conexão falhou: " . $conn->connect_error);
-}
+// Use a conexão Cloudify (não sobrescrever $pdo usado pelo sidebar)
+require_once __DIR__ . '/../../config/db_dw.php';
+// espera-se que config/db_dw.php defina $pdo_dw (PDO)
 
 // Quando o formulário for submetido, gera o .txt para download
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
@@ -47,24 +44,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
   exit;
 }
 
-// Função utilitária para escapar caracteres no Markdown do Telegram
-function escapeTelegramMarkdown(string $texto): string {
-  $map = ['\\' => '\\\\', '_' => '\\_', '*' => '\\*', '`' => '\\`', '[' => '\\[', ']' => '\\]'];
-  return str_replace(array_keys($map), array_values($map), $texto);
-}
+// Envio por Telegram será feito pelo telefone do usuário via Web Share API (cliente).
 
-// Nota: envio por Telegram passa a ser feito pelo telefone do usuário via Web Share API.
+// Endpoint AJAX: retorna lista atualizada de insumos em JSON
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'refresh') {
+  $groupAjax = 'W - INSUMOS - W - INSUMO COZINHA';
+  $sqlAjax = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? ORDER BY `Nome`";
+  try {
+    $stmtAjax = $pdo_dw->prepare($sqlAjax);
+    $stmtAjax->execute([$groupAjax]);
+    $insumosAjax = $stmtAjax->fetchAll(PDO::FETCH_ASSOC);
+  } catch (PDOException $e) {
+    $insumosAjax = [];
+  }
+  header('Content-Type: application/json; charset=utf-8');
+  echo json_encode($insumosAjax, JSON_UNESCAPED_UNICODE);
+  exit;
+}
 
 // Busca insumos do grupo solicitado
 $group = 'W - INSUMOS - W - INSUMO COZINHA';
 $sql = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? ORDER BY `Nome`";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param('s', $group);
-$stmt->execute();
-$res = $stmt->get_result();
-$insumos = $res->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
-$conn->close();
+$stmt = null;
+try {
+  $stmt = $pdo_dw->prepare($sql);
+  $stmt->execute([$group]);
+  $insumos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+  $insumos = [];
+}
 
 // Valores padrão
 $usuario = $_SESSION['usuario_nome'] ?? '';
@@ -87,8 +95,12 @@ $hoje = date('Y-m-d');
 </head>
 <body class="bg-gray-900 text-gray-100 flex min-h-screen">
 
-  <aside class="bg-gray-800 w-60 p-6 flex-shrink-0">
-    <?php include __DIR__ . '/../../sidebar.php'; ?>
+  <aside>
+    <?php
+    // Recarrega a conexão principal (intranet) para garantir que $pdo aponte para o DB correto
+    require __DIR__ . '/../../config/db.php';
+    include __DIR__ . '/../../sidebar.php';
+    ?>
   </aside>
 
   <main class="flex-1 bg-gray-900 p-6 relative">
@@ -113,6 +125,10 @@ $hoje = date('Y-m-d');
           <div class="space-y-2 w-full">
             <button type="submit" name="generate" value="1" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded">Salvar e baixar .txt</button>
             <button type="button" id="share-telegram" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Compartilhar via Telegram (telefone)</button>
+            <div class="flex gap-2">
+              <button type="button" id="refresh-list" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded text-sm">Atualizar listagem</button>
+              <button type="button" id="clear-inputs" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-sm">Limpar preenchimento</button>
+            </div>
           </div>
         </div>
       </div>
@@ -203,6 +219,39 @@ $hoje = date('Y-m-d');
       a.remove();
       URL.revokeObjectURL(url);
       alert('Arquivo gerado para download. Use o app do Telegram para compartilhar o arquivo.');
+    });
+
+    // Atualiza a listagem a partir do banco via AJAX
+    document.getElementById('refresh-list').addEventListener('click', async function () {
+      try {
+        const resp = await fetch(window.location.pathname + '?action=refresh');
+        if (!resp.ok) throw new Error('Falha ao buscar listagem');
+        const data = await resp.json();
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-700';
+          tr.innerHTML = `
+            <td class="p-2">${row.codigo}<input type="hidden" name="codigo[]" value="${row.codigo}"></td>
+            <td class="p-2">${row.Nome ?? row.nome}</td>
+            <td class="p-2">${row.grupo}<input type="hidden" name="grupo[]" value="${row.grupo}"></td>
+            <td class="p-2">${row.unidade}<input type="hidden" name="unidade[]" value="${row.unidade}"></td>
+            <td class="p-2 text-center"><input type="text" name="quantidade[]" placeholder="0,00" class="qtd-input bg-gray-600 text-white text-xs p-1 rounded"></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        alert('Listagem atualizada');
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao atualizar listagem');
+      }
+    });
+
+    // Limpa todos os inputs de quantidade
+    document.getElementById('clear-inputs').addEventListener('click', function () {
+      const inputs = document.querySelectorAll('input[name="quantidade[]"]');
+      inputs.forEach(i => i.value = '');
     });
   </script>
 </body>
