@@ -409,13 +409,12 @@ $hoje = date('Y-m-d');
         head: head,
         body: body,
         startY: headerHeight,
-        margin: { left: margin, right: margin, top: margin },
+        margin: { left: margin, right: margin, top: headerHeight },
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [55,65,81], textColor: 255 },
         didDrawPage: function (data) {
-          // autoTable desenha a tabela primeiro; desenhamos o cabeçalho no topo reservando espaço
-          const pageNumber = doc.internal.getNumberOfPages();
-          drawHeader(pageNumber);
+          // data.pageNumber é fornecido pelo autoTable e indica a página atual
+          drawHeader(data.pageNumber);
         }
       });
 
