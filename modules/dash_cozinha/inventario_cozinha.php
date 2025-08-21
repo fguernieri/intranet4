@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
   if ($empresa === 'WAB') {
     $groupAjax = 'WAB - INSUMOS - WAB - INSUMO COZINHA';
   } elseif ($empresa === 'BDF') {
-    $groupAjax = 'T - PRODUTOS INTERMEDIARIOS - T - INSUMO COZINHA';
+    $groupAjax = 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA';
   } else {
     // Sem empresa válida: retorna array vazio
     header('Content-Type: application/json; charset=utf-8');
