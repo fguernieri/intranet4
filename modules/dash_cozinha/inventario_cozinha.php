@@ -1,6 +1,8 @@
 <?php
 // modules/dash_cozinha/inventario_cozinha.php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
+require __DIR__ . '/../../config/db.php';
+
 
 
 // Use a conexão Cloudify (não sobrescrever $pdo usado pelo sidebar)
@@ -155,29 +157,23 @@ $hoje = date('Y-m-d');
     .qtd-input { width:5rem; text-align:center }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex min-h-screen">
+<body class="bg-gray-900 text-gray-100 flex flex-col p-4 sm:p-6 sm:flex-row max-h-screen">
 
-  <aside>
-    <?php
-    // Recarrega a conexão principal (intranet) para garantir que $pdo aponte para o DB correto
-    require __DIR__ . '/../../config/db.php';
-    include __DIR__ . '/../../sidebar.php';
-    ?>
-  </aside>
+  <?php include __DIR__ . '/../../sidebar.php'?>
 
-  <main class="flex-1 bg-gray-900 p-6 relative">
+  <main class="flex-1 sm:pt-10">
     <?php if (!empty($debug_info)): ?>
       <div class="mb-4 p-3 bg-gray-800 text-sm text-yellow-300 rounded"><pre style="white-space:pre-wrap;"><?= htmlspecialchars($debug_info, ENT_QUOTES | ENT_SUBSTITUTE) ?></pre></div>
     <?php endif; ?>
-    <h1 class="text-2xl font-bold text-yellow-400 mb-4">Inventário de Insumos — Cozinha</h1>
+    <h1 class="text-2xl font-bold text-yellow-400 mb-4">Inventário Cozinha</h1>
 
-    <form method="post">
+    <form method="post" class="grid grid-cols-1">
       <?php if (!empty($notice)): ?>
         <div class="mb-4 p-3 bg-gray-700 text-yellow-300 rounded">
           <?= htmlspecialchars($notice, ENT_QUOTES) ?>
         </div>
       <?php endif; ?>
-      <div class="mb-4 grid grid-cols-3 gap-4">
+      <div class="mb-4 gap-4 grid">
         <div>
           <label class="text-xs">Colaborador</label>
           <input type="text" name="colaborador" value="<?= htmlspecialchars($usuario, ENT_QUOTES) ?>" class="w-full bg-gray-800 text-white p-2 rounded text-sm">
@@ -186,15 +182,10 @@ $hoje = date('Y-m-d');
           <label class="text-xs">Data do inventário</label>
           <input type="date" name="data" value="<?= htmlspecialchars($hoje) ?>" class="w-full bg-gray-800 text-white p-2 rounded text-sm">
         </div>
-        <div class="flex items-end">
-          <div class="space-y-2 w-full">
-            <button type="submit" name="generate" value="1" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded">Salvar e baixar .txt</button>
-            <button type="button" id="share-telegram" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Compartilhar via Telegram (telefone)</button>
-            <div class="flex gap-2">
-              <button type="button" id="refresh-list" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded text-sm">Atualizar listagem</button>
-              <button type="button" id="clear-inputs" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-sm">Limpar preenchimento</button>
-            </div>
-          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+            <button type="submit" name="generate" value="1" class="btn-acao">Salvar e baixar .txt</button>
+            <button type="button" id="refresh-list" class="btn-acao-verde">Atualizar listagem</button>
+            <button type="button" id="clear-inputs" class="btn-acao-vermelho">Limpar preenchimento</button>
         </div>
       </div>
 
