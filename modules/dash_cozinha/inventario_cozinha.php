@@ -387,30 +387,35 @@ $hoje = date('Y-m-d');
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 15;
 
-      const header = function () {
+      // Reservar espaço maior para o cabeçalho (em mm) para evitar sobreposição
+      const headerHeight = 38; // ajuste: espaço reservado do topo até a linha separadora
+
+      const drawHeader = function (pageNumber) {
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
-        doc.text('Inventário Cozinha - Formulário de Contagem', margin, 15);
+        doc.text('Inventário Cozinha - Formulário de Contagem', margin, 16);
         doc.setFontSize(9);
         doc.setFont(undefined, 'normal');
-        doc.text('Colaborador: ' + colaborador, margin, 22);
-        doc.text('Data: ' + dataInv, margin + 100, 22);
-        const page = 'Página ' + doc.internal.getNumberOfPages();
+        doc.text('Colaborador: ' + colaborador, margin, 23);
+        doc.text('Data: ' + dataInv, margin + 100, 23);
         doc.setFontSize(8);
-        doc.text(page, pageWidth - margin, 15, { align: 'right' });
+        doc.text('Página ' + pageNumber, pageWidth - margin, 16, { align: 'right' });
         doc.setLineWidth(0.2);
-        doc.line(margin, 24, pageWidth - margin, 24);
+        // linha abaixo do cabeçalho
+        doc.line(margin, headerHeight - 4, pageWidth - margin, headerHeight - 4);
       };
 
       doc.autoTable({
         head: head,
         body: body,
-        startY: 28,
-        margin: { left: margin, right: margin },
+        startY: headerHeight,
+        margin: { left: margin, right: margin, top: margin },
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [55,65,81], textColor: 255 },
         didDrawPage: function (data) {
-          header();
+          // autoTable desenha a tabela primeiro; desenhamos o cabeçalho no topo reservando espaço
+          const pageNumber = doc.internal.getNumberOfPages();
+          drawHeader(pageNumber);
         }
       });
 
