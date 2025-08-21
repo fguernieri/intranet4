@@ -185,20 +185,21 @@ $hoje = date('Y-m-d');
           <label class="text-xs">Data do inventário</label>
           <input type="date" name="data" value="<?= htmlspecialchars($hoje) ?>" class="w-full bg-gray-800 text-white p-2 rounded text-sm">
         </div>
+              <!-- Seletor de empresa (checkboxes) -->
+        <div class="mb-4 p-3 bg-gray-800 rounded flex items-center gap-6">
+          <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_wab"> <span class="ml-2">WAB</span></label>
+          <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_bdf"> <span class="ml-2">BDF</span></label>
+          <div class="text-xs text-gray-400">Selecione a empresa e clique em "Atualizar listagem"</div>
+          <button type="button" id="refresh-list" class="btn-acao-verde">Atualizar listagem</button>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-            <button type="submit" name="generate" value="1" class="btn-acao">Salvar e baixar .txt</button>
-            <button type="button" id="refresh-list" class="btn-acao-verde">Atualizar listagem</button>
+            <button type="button" id="print-form" class="btn-acao-azul">Imprimir Formulário</button>
             <button type="button" id="clear-inputs" class="btn-acao-vermelho">Limpar preenchimento</button>
-            <button type="button" id="print-form" class="btn-acao-azul">Formulário</button>
+            <button type="submit" name="generate" value="1" class="btn-acao">Salvar e baixar arquivo</button>
       </div>
       </div>
 
-      <!-- Seletor de empresa (checkboxes) -->
-      <div class="mb-4 p-3 bg-gray-800 rounded flex items-center gap-6">
-        <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_wab"> <span class="ml-2">WAB</span></label>
-        <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_bdf"> <span class="ml-2">BDF</span></label>
-        <div class="text-xs text-gray-400">Selecione a empresa e clique em "Atualizar listagem"</div>
-      </div>
 
       <!-- Filtro dinâmico -->
       <div class="mb-4">
