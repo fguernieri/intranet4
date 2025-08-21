@@ -131,7 +131,7 @@ if (isset($_GET['sucesso'])) {
             <label for="status_auditoria" class="block text-sm font-medium text-gray-400 mb-1">Status</label>
             <select id="status_auditoria" name="status_auditoria" required class="w-full bg-gray-700 border border-gray-600 rounded py-2 px-3 text-white">
               <option value="OK">OK</option>
-              option value="Parcial">Parcial</option>
+              <option value="Parcial">Parcial</option>
               <option value="NOK">NOK</option>
             </select>
           </div>
