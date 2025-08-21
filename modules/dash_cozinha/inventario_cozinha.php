@@ -46,9 +46,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
 
 // Envio por Telegram será feito pelo telefone do usuário via Web Share API (cliente).
 
-// Endpoint AJAX: retorna lista atualizada de insumos em JSON
+// Endpoint AJAX: retorna lista atualizada de insumos em JSON (agora recebe `empresa`)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'refresh') {
-  $groupAjax = 'W - INSUMOS - W - INSUMO COZINHA';
+  $empresa = $_GET['empresa'] ?? '';
+  // Mapear empresa para o grupo correto
+  if ($empresa === 'WAB') {
+    $groupAjax = 'W - INSUMOS - W - INSUMO COZINHA';
+  } elseif ($empresa === 'BDF') {
+    $groupAjax = 'T - PRODUTOS INTERMEDIARIOS - T - INSUMO COZINHA';
+  } else {
+    // Sem empresa válida: retorna array vazio
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([], JSON_UNESCAPED_UNICODE);
+    exit;
+  }
+
   $sqlAjax = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? ORDER BY `Nome`";
   try {
     $stmtAjax = $pdo_dw->prepare($sqlAjax);
@@ -62,17 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
   exit;
 }
 
-// Busca insumos do grupo solicitado
-$group = 'W - INSUMOS - W - INSUMO COZINHA';
-$sql = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? ORDER BY `Nome`";
-$stmt = null;
-try {
-  $stmt = $pdo_dw->prepare($sql);
-  $stmt->execute([$group]);
-  $insumos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-  $insumos = [];
-}
+// Busca insumos do grupo solicitado — inicialmente vazio; a listagem será carregada via AJAX após selecionar empresa e clicar Atualizar
+$insumos = [];
 
 // Valores padrão
 $usuario = $_SESSION['usuario_nome'] ?? '';
@@ -133,6 +136,13 @@ $hoje = date('Y-m-d');
         </div>
       </div>
 
+      <!-- Seletor de empresa (checkboxes) -->
+      <div class="mb-4 p-3 bg-gray-800 rounded flex items-center gap-6">
+        <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_wab"> <span class="ml-2">WAB</span></label>
+        <label class="inline-flex items-center text-sm"><input type="checkbox" id="empresa_bdf"> <span class="ml-2">BDF</span></label>
+        <div class="text-xs text-gray-400">Selecione a empresa e clique em "Atualizar listagem"</div>
+      </div>
+
       <div class="overflow-x-auto bg-gray-800 rounded-lg shadow mb-8">
         <table class="min-w-full text-xs mx-auto">
           <thead class="bg-gray-700 text-yellow-400">
@@ -174,12 +184,13 @@ $hoje = date('Y-m-d');
       const rows = document.querySelectorAll('tbody tr');
       const lines = ['Código de referência;Quantidade apurada'];
       rows.forEach(r => {
-        const cod = r.querySelector('input[name="codigo[]"]').value.trim();
+        const codEl = r.querySelector('input[name="codigo[]"]');
         const qtdInput = r.querySelector('input[name="quantidade[]"]');
-        const qtd = qtdInput ? qtdInput.value.trim() : '';
+        if (!codEl || !qtdInput) return;
+        const cod = codEl.value.trim();
+        const qtd = qtdInput.value.trim();
         if (!cod || !qtd) return;
         const q = qtd.replace('.', ',');
-        // sanitiza
         const codS = cod.replace(/[;\n\r]/g, ' ');
         const qS = q.replace(/[;\n\r]/g, ' ');
         lines.push(codS + ';' + qS);
@@ -187,44 +198,36 @@ $hoje = date('Y-m-d');
       return lines.join('\n');
     }
 
+    // Controle mutual-exclusion para os checkboxes de empresa
+    const cbWab = document.getElementById('empresa_wab');
+    const cbBdf = document.getElementById('empresa_bdf');
+    cbWab.addEventListener('change', () => { if (cbWab.checked) cbBdf.checked = false; });
+    cbBdf.addEventListener('change', () => { if (cbBdf.checked) cbWab.checked = false; });
+
     document.getElementById('share-telegram').addEventListener('click', async function () {
       const content = generateTxtContent();
       if (!content || content.split('\n').length <= 1) {
         alert('Preencha ao menos uma quantidade antes de compartilhar.');
         return;
       }
-
       const filename = 'inventario_cozinha_' + new Date().toISOString().replace(/[:.]/g,'') + '.txt';
-
-      // Se Web Share API for suportada com arquivos
       if (navigator.canShare && navigator.canShare({ files: [] })) {
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const filesArray = [new File([blob], filename, { type: 'text/plain' })];
-        try {
-          await navigator.share({ files: filesArray, title: 'Inventário de Insumos', text: 'Inventário gerado' });
-          return;
-        } catch (err) {
-          console.warn('Share failed', err);
-        }
+        try { await navigator.share({ files: filesArray, title: 'Inventário de Insumos', text: 'Inventário gerado' }); return; } catch (err) {}
       }
-
-      // Fallback: gerar e forçar download (o usuário pode então abrir o Telegram e enviar o arquivo manualmente)
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
       alert('Arquivo gerado para download. Use o app do Telegram para compartilhar o arquivo.');
     });
 
-    // Atualiza a listagem a partir do banco via AJAX
+    // Atualiza a listagem a partir do banco via AJAX, enviando a empresa selecionada
     document.getElementById('refresh-list').addEventListener('click', async function () {
+      const empresa = cbWab.checked ? 'WAB' : (cbBdf.checked ? 'BDF' : '');
+      if (!empresa) { alert('Selecione a empresa (WAB ou BDF) antes de atualizar.'); return; }
       try {
-        const resp = await fetch(window.location.pathname + '?action=refresh');
+        const resp = await fetch(window.location.pathname + '?action=refresh&empresa=' + empresa);
         if (!resp.ok) throw new Error('Falha ao buscar listagem');
         const data = await resp.json();
         const tbody = document.querySelector('tbody');
@@ -234,14 +237,13 @@ $hoje = date('Y-m-d');
           tr.className = 'hover:bg-gray-700';
           tr.innerHTML = `
             <td class="p-2">${row.codigo}<input type="hidden" name="codigo[]" value="${row.codigo}"></td>
-            <td class="p-2">${row.Nome ?? row.nome}</td>
+            <td class="p-2">${row.nome}</td>
             <td class="p-2">${row.grupo}<input type="hidden" name="grupo[]" value="${row.grupo}"></td>
             <td class="p-2">${row.unidade}<input type="hidden" name="unidade[]" value="${row.unidade}"></td>
             <td class="p-2 text-center"><input type="text" name="quantidade[]" placeholder="0,00" class="qtd-input bg-gray-600 text-white text-xs p-1 rounded"></td>
           `;
           tbody.appendChild(tr);
         });
-        alert('Listagem atualizada');
       } catch (err) {
         console.error(err);
         alert('Erro ao atualizar listagem');
