@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
   $empresa = $_GET['empresa'] ?? '';
   // Mapear empresa para o grupo correto
   if ($empresa === 'WAB') {
-    $groupAjax = 'W - INSUMOS - W - INSUMO COZINHA';
+    $groupAjax = 'WAB - INSUMOS - WAB - INSUMO COZINHA';
   } elseif ($empresa === 'BDF') {
     $groupAjax = 'T - PRODUTOS INTERMEDIARIOS - T - INSUMO COZINHA';
   } else {
@@ -94,7 +94,7 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
 
     // Contagens e comparações para os dois grupos
     $groups = [
-      'WAB' => 'W - INSUMOS - W - INSUMO COZINHA',
+    'WAB' => 'WAB - INSUMOS - WAB - INSUMO COZINHA',
       'BDF' => 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA',
     ];
     foreach ($groups as $k => $g) {
