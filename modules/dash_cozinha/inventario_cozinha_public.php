@@ -1,6 +1,5 @@
 <?php
 // modules/dash_cozinha/inventario_cozinha.php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 require __DIR__ . '/../../config/db.php';
 
 
@@ -160,9 +159,8 @@ $hoje = date('Y-m-d');
     .qtd-input { width:5rem; text-align:center }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col p-4 sm:p-6 sm:flex-row max-h-screen">
+<body class="bg-gray-900 text-gray-100 flex flex-col p-4 sm:p-6 sm:flex-row">
 
-  <?php include __DIR__ . '/../../sidebar.php'?>
 
   <main class="flex-1 p-6 sm:pt-10 sm:max-w-6xl mx-auto">
     <?php if (!empty($debug_info)): ?>
