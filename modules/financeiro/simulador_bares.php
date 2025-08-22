@@ -26,6 +26,14 @@ $connFinanceiro->set_charset('utf8mb4');
 if ($connFinanceiro->connect_error) {
     die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
 }
+
+require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
+$connFinanceiro->set_charset('utf8mb4');
+if ($connFinanceiro->connect_error) {
+    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
+}
+
     $jsonData = json_decode(file_get_contents('php://input'), true);
     
     // Verificar se o JSON foi decodificado corretamente
@@ -384,13 +392,6 @@ $sql = "
     INNER JOIN fcontasapagardetalhestap AS d ON c.ID_CONTA = d.ID_CONTA
     WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual
 ";
-// Adicione ANTES de usar $connFinanceiro->query($sql);
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
-$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-$connFinanceiro->set_charset('utf8mb4');
-if ($connFinanceiro->connect_error) {
-    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
-}
 $res = $connFinanceiro->query($sql); // <-- ALTERADO para usar $connFinanceiro
 $linhas = [];
 while ($f = $res->fetch_assoc()) {
@@ -1146,7 +1147,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
         $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
         echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
       } else { echo '-'; } ?>
-    </td>
+  </td>
 </tr>
 
     <?php endif; ?>
@@ -1241,7 +1242,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
         $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
         echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
       } else { echo '-'; } ?>
-    </td>
+  </td>
 </tr>
 
         <?php foreach($matrizOrdenada[$catName] as $sub => $mesValores): ?>
@@ -1249,25 +1250,27 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
            <tr class="dre-sub">
   <td class="p-2 text-left" style="padding-left:2em;"><?= htmlspecialchars($sub) ?></td>
   <td class="p-2 text-right"><?= 'R$ '.number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?></td>
-  <td class="p-2 text-center"><?= $media3Rec > 0 ? number_format((($media3Sub[$catName][$sub] ?? 0)/$media3Rec)*100,2,',','.') .'%' : '-' ?></td>
+  <td class="p-2 text-center">
+    <?= $media3Rec > 0 ? number_format((($media3Sub[$catName][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') . '%' : '-' ?>
+  </td>
   <td class="p-2 text-right">
     <input type="text" class="simul-valor font-semibold bg-gray-800 text-yellow-400 text-right w-24 rounded px-1"
-           value="<?= number_format($media3Sub[$catName][$sub] ?? 0,2,',','.') ?>">
+           value="<?= number_format($media3Sub[$catName][$sub] ?? 0, 2, ',', '.') ?>">
   </td>
   <td class="p-2 text-center">
     <input type="text" class="simul-perc font-semibold bg-gray-800 text-yellow-400 text-center rounded px-1"
-           style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Sub[$catName][$sub] ?? 0)/$media3Rec)*100,2,',','.') : '-' ?>">
+           style="width:60px;" value="<?= $media3Rec > 0 ? number_format((($media3Sub[$catName][$sub] ?? 0) / $media3Rec) * 100, 2, ',', '.') : '-' ?>">
   </td>
   <td class="p-2 text-right">-</td>
-  <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ '.number_format($metasArray[$catName][$sub],2,',','.') : '' ?></td>
-  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub]/$metaReceita)*100,2,',','.') .'%' : '' ?></td>
-  <td class="p-2 text-right"><?= 'R$ '.number_format($atualSub[$catName][$sub] ?? 0,2,',','.') ?></td>
+  <td class="p-2 text-right"><?= isset($metasArray[$catName][$sub]) ? 'R$ ' . number_format($metasArray[$catName][$sub], 2, ',', '.') : '' ?></td>
+  <td class="p-2 text-center"><?= ($metaReceita > 0 && isset($metasArray[$catName][$sub])) ? number_format(($metasArray[$catName][$sub] / $metaReceita) * 100, 2, ',', '.') . '%' : '' ?></td>
+  <td class="p-2 text-right"><?= 'R$ ' . number_format($atualSub[$catName][$sub] ?? 0, 2, ',', '.') ?></td>
   <td class="p-2 text-center">
     <?php
-      $meta_cvs_val = $metasArray[$catName][$sub] ?? null;
-      $realizado_cvs_val = $atualSub[$catName][$sub] ?? 0;
-      if (isset($meta_cvs_val) && $meta_cvs_val != 0) {
-        echo number_format(($realizado_cvs_val / $meta_cvs_val) * 100, 2, ',', '.') . '%';
+      $meta_cs_val = $metasArray[$catName][$sub] ?? null;
+      $realizado_cs_val = $atualSub[$catName][$sub] ?? 0;
+      if (isset($meta_cs_val) && $meta_cs_val != 0) {
+        echo number_format(($realizado_cs_val / $meta_cs_val) * 100, 2, ',', '.') . '%';
       } else { echo '-'; }
     ?>
   </td>
@@ -1280,7 +1283,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
         $corComparacao = ($comparacao >= 0) ? 'text-green-400' : 'text-red-400';
         echo '<span class="' . $corComparacao . '">R$ ' . number_format($comparacao, 2, ',', '.') . '</span>';
       } else { echo '-'; } ?>
-    </td>
+  </td>
 </tr>
 
           <?php endif; ?>
@@ -1787,7 +1790,9 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
       <?php endif; ?>
     <?php endforeach; ?>
   <?php endif; ?>
-<!-- FLUXO DE CAIXA (META - igual acompanhamento_financeiro) -->
+<?php endforeach; ?>
+
+      <!-- FLUXO DE CAIXA (META - igual acompanhamento_financeiro) -->
       <?php
         // Cálculo igual acompanhamento_financeiro.php: sempre calcular a partir das metas das demais linhas
         $metaInvestInterno = $metasArray['INVESTIMENTO INTERNO'][''] ?? 0;
@@ -1904,31 +1909,20 @@ function atualizarTotaisCategorias() {
     let currentRow = catRow.nextElementSibling;
 
     // Soma todas as subcategorias desta categoria (tanto valor quanto percentual)
-    while (currentRow) {
-        let stopIterating = false;
-        if (currentRow.classList.contains('dre-sub')) {
-            hasSubCategories = true;
-            const subInputValor = currentRow.querySelector('input.simul-valor');
-            const subInputPerc = currentRow.querySelector('input.simul-perc');
-            
-            if (subInputValor) {
-                subtotalValor += parseBRL(subInputValor.value);
-            }
-            
-            if (subInputPerc) {
-                subtotalPercentual += parseBRL(subInputPerc.value);
-            }
-        } else if (currentRow.classList.contains('dre-cat') || 
-                   currentRow.classList.contains('dre-cat-principal') ||
-                   currentRow.classList.contains('dre-subcat-l1')) {
-            // Para quando encontrar a próxima categoria principal ou um bloco RNO
-            stopIterating = true;
-        }
-
-        if (stopIterating) {
-            break;
-        }
-        currentRow = currentRow.nextElementSibling;
+    while (currentRow && currentRow.classList.contains('dre-sub')) {
+      hasSubCategories = true;
+      const subInputValor = currentRow.querySelector('input.simul-valor');
+      const subInputPerc = currentRow.querySelector('input.simul-perc');
+      
+      if (subInputValor) {
+        subtotalValor += parseBRL(subInputValor.value);
+      }
+      
+      if (subInputPerc) {
+        subtotalPercentual += parseBRL(subInputPerc.value);
+      }
+      
+      currentRow = currentRow.nextElementSibling;
     }
 
     // Atualiza tanto o valor quanto o percentual da categoria principal
@@ -1972,7 +1966,7 @@ function atualizarPercentuaisSimulacao() {
             if (simulPercInput !== document.activeElement) {
                 const percentual = parseBRL(simulPercInput.value); // Pega o percentual definido pelo usuário
                 const novoValor = (percentual / 100) * receitaBrutaSimulada; // Calcula o novo valor absoluto
-                simulacaoValor = formatSimValue(novoValor); // Atualiza o campo de valor absoluto
+                simulValorInput.value = formatSimValue(novoValor); // Atualiza o campo de valor absoluto
                 // NÃO atualiza simulPercInput.value aqui, pois ele é a entrada fixa do usuário.
             }
         }
@@ -2249,8 +2243,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputValorSimul = row.querySelector('input.simul-valor');
         const inputPercSimul = row.querySelector('input.simul-perc');
 
+        if (!inputValorSimul || !inputPercSimul) return;
+
+        const nomeLinhaAtual = primeiroTd.textContent.trim();
+
+        // Atualiza contexto da categoria atual
         if (row.classList.contains('dre-cat') || row.classList.contains('dre-cat-principal')) {
-            categoriaAtualContexto = primeiroTd.textContent.trim();
+            categoriaAtualContexto = nomeLinhaAtual;
         }
 
         // Limpa restrições anteriores
@@ -2557,8 +2556,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!primeiroTd) return;
 
         const inputValorSimul = row.querySelector('input.simul-valor');
-        const inputPercSimul = row.querySelector('input.simul-perc');
 
+        // Atualizar contexto de categoria mesmo se a linha de categoria não for uma meta em si (ex: se for readonly)
         if (row.classList.contains('dre-cat')) {
              categoriaAtualContexto = primeiroTd.textContent.trim();
         }
@@ -2963,7 +2962,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let key = '';
         if (row.classList.contains('dre-cat')) {
             key = primeiroTd.textContent.trim();
-        } else if (row.classList.contains('dre-subcat-l2')) {
+        } else if (row.classList.contains('dre-subcat-l2')) { // Para RECEITAS NAO OPERACIONAIS
             if (inputValorSimul.dataset.cat === "RECEITAS NAO OPERACIONAIS" &&
                 inputValorSimul.dataset.subCat && inputValorSimul.dataset.subSubCat) {
                 key = `RNO_${inputValorSimul.dataset.subCat.replace(/_/g, ' ')}___${inputValorSimul.dataset.subSubCat.replace(/_/g, ' ')}`;
