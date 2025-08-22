@@ -21,7 +21,14 @@ if ($conn->connect_error) {
 
 // ==================== [ NOVO: CONEXÃO PARA fcontasapagartap ] ====================
 require_once __DIR__ . '/db_config_financeiro.php';
-$connFinanceiro = pg_connect("host=" . DB_RELATORIO_HOST . " dbname=" . DB_RELATORIO_NAME . " user=" . DB_RELATORIO_USER . " password=" . DB_RELATORIO_PASS);
+$connFinanceiro = pg_connect(
+    "host=" . DB_RELATORIO_HOST .
+    " port=" . DB_RELATORIO_PORT .
+    " dbname=" . DB_RELATORIO_NAME .
+    " user=" . DB_RELATORIO_USER .
+    " password=" . DB_RELATORIO_PASS
+);
+
 if (!$connFinanceiro) {
     die("Conexão financeiro falhou: " . pg_last_error());
 }
