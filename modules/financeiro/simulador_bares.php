@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_start();
     }
     
-    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset('utf8mb4');
 if ($conn->connect_error) {
@@ -358,6 +358,8 @@ if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
 
+
+
 // Defina o ano e mês atual (ou pegue do GET)
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
@@ -367,7 +369,7 @@ $ordenacao = isset($_GET['ordenacao']) ? $_GET['ordenacao'] : 'nome';
 if (!in_array($ordenacao, ['nome', 'percentual', 'valor'])) {
     $ordenacao = 'nome';
 }
-
+$res = $connFinanceiro->query($sql);
 // Carregue todas as parcelas do ano para médias e totais
 $sql = "
     SELECT 
