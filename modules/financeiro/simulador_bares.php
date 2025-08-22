@@ -20,14 +20,14 @@ if ($conn->connect_error) {
 }
 
 // ==================== [ NOVO: CONEXÃO PARA fcontasapagartap ] ====================
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+require_once __DIR__ . '/db_config_financeiro.php';
 $connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
 $connFinanceiro->set_charset('utf8mb4');
 if ($connFinanceiro->connect_error) {
     die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
 }
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+require_once __DIR__ . '/db_config_financeiro.php';
 $connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
 $connFinanceiro->set_charset('utf8mb4');
 if ($connFinanceiro->connect_error) {
@@ -368,7 +368,7 @@ if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+require_once __DIR__ . '/db_config_financeiro.php';
 $connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
 $connFinanceiro->set_charset('utf8mb4');
 if ($connFinanceiro->connect_error) {
