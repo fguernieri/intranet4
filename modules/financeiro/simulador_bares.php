@@ -12,21 +12,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         session_start();
     }
     
-    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
-    $connRelatorio = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-    $connRelatorio->set_charset('utf8mb4');
-    if ($connRelatorio->connect_error) {
-    die("Conexão relatorio falhou: " . $connRelatorio->connect_error);
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$conn->set_charset('utf8mb4');
+if ($conn->connect_error) {
+    die("Conexão falhou: " . $conn->connect_error);
 }
 
-    require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
-    $connPost = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $connPost->set_charset('utf8mb4');
-    
-    if ($connPost->connect_error) {
-        echo json_encode(['sucesso' => false, 'erro' => "Conexão falhou: " . $connPost->connect_error]);
-        exit;
-    }
+// ==================== [ NOVO: CONEXÃO PARA fcontasapagartap ] ====================
+require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
+$connFinanceiro->set_charset('utf8mb4');
+if ($connFinanceiro->connect_error) {
+    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
+}
     $jsonData = json_decode(file_get_contents('php://input'), true);
     
     // Verificar se o JSON foi decodificado corretamente
@@ -384,7 +383,7 @@ $sql = "
     INNER JOIN fcontasapagardetalhestap AS d ON c.ID_CONTA = d.ID_CONTA
     WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual
 ";
-$res = $conn->query($sql);
+$res = $connFinanceiro->query($sql); // <-- ALTERADO para usar $connFinanceiro
 $linhas = [];
 while ($f = $res->fetch_assoc()) {
     $linhas[] = [
@@ -425,7 +424,7 @@ $sqlOutrasRec = "
 $resOutrasRec = $conn->query($sqlOutrasRec);
 
 // DEBUG: Verificar quantos registros foram encontrados
-echo "<!-- DEBUG: fOutrasReceitasTap query returned " . ($resOutrasRec ? $resOutrasRec->num_rows : 0) . " rows -->";
+echo "<!-- DEBUG: fOutrasReceitas query returned " . ($resOutrasRec ? $resOutrasRec->num_rows : 0) . " rows -->";
 
 if ($resOutrasRec) {
     while ($row = $resOutrasRec->fetch_assoc()) {
