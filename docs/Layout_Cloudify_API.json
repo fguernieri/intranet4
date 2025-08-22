@@ -1,0 +1,293 @@
+{
+	"info": {
+		"_postman_id": "2b6302ef-64c8-4a12-a069-5dccbdc4979f",
+		"name": "LayoutCC (Prod) - Clientes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21669220"
+	},
+	"item": [
+		{
+			"name": "CFYCC873",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC873\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"DataRef\": 20250228,\r\n                \"ConsolidarCentroEstoque\": 1\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC870",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC870\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"DataInicio\": 20250708,\r\n                \"DataFim\": 20250708,\r\n                \"SituacaoCupom\" : 1,\r\n                \"IdentifDesconto\" : 1,\r\n                \"IdentifTaxaServico\" : 1,\r\n                \"IdentifConsultaProd\": 1,\r\n                \"IdentifConsultaFormaPagto\" : 1,\r\n                \"IdentifConsultaProdCancelados\": 2\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC884",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC884\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"CpfCnpj\": null,\r\n                \"TpPessoa\": null,\r\n                \"TpClientes\": null\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC880",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC880\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"CodGrupos\": [],\r\n                \"CodRefProdutos\": []\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC881",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC881\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"DataIni\": 20250323,\r\n                \"DataFim\": 20250423,\r\n                \"CodGrupos\": [],\r\n                \"CodRefProdutos\": []\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC882",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC882\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CFYCC883",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Parameters\": {\r\n        \"AccKey\": \"{{AccKey}}\",\r\n        \"TokenKey\": \"{{TokenKey}}\",\r\n        \"ApiName\": \"CFYCC883\",\r\n        \"Data\": {\r\n            \"Solicitante\": {\r\n                \"LoginUsr\": \"{{LoginUsr}}\",\r\n                \"NomeUsr\": \"{{NomeUsr}}\",\r\n                \"CodEmpresa\": {{CodEmpresa}},\r\n                \"CodFilial\": {{CodFilial}}\r\n            },\r\n            \"Filtros\": {\r\n                \"DataIni\": 20220101,\r\n                \"DataFim\": 20220131,\r\n                \"IndPrevReal\": 20,\r\n                \"IndRegime\": 30,\r\n                \"IndTipoRel\": 1,\r\n                \"NrContas\": [],\r\n                \"NrCentrosCusto\": [],\r\n                \"NrFiliais\": []\r\n            }\r\n        }\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.cloudfy.net.br/ApiCFYCC",
+					"protocol": "https",
+					"host": [
+						"api",
+						"cloudfy",
+						"net",
+						"br"
+					],
+					"path": [
+						"ApiCFYCC"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "AccKey",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "TokenKey",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "LoginUsr",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "NomeUsr",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CodEmpresa",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CodFilial",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

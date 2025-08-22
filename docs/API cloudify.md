@@ -1,5 +1,11 @@
 # Documentação da API – Estrutura Consolidada
 
+## Dados de acesso
+AccKey: bjJ4FQvmuA6AoHNDjsDU6893bastards
+TokenKey: BHzQaSYPd0dFZPuGQzzR2vnCjwTTfH16wghmEps9HLIHq3Lbnpr6893870e56ec8
+LoginUsr: integracaoapis@bastards.com
+NomeUsr: INTEGRACAO API BASTARDS
+
 ## CC870
 
 | Descrição do campo | Nome do campo | Ocorrência | Tipo | Tam. | Valor fixo | Obrigatório |
