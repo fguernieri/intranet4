@@ -21,17 +21,9 @@ if ($conn->connect_error) {
 
 // ==================== [ NOVO: CONEXÃO PARA fcontasapagartap ] ====================
 require_once __DIR__ . '/db_config_financeiro.php';
-$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-$connFinanceiro->set_charset('utf8mb4');
-if ($connFinanceiro->connect_error) {
-    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
-}
-
-require_once __DIR__ . '/db_config_financeiro.php';
-$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-$connFinanceiro->set_charset('utf8mb4');
-if ($connFinanceiro->connect_error) {
-    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
+$connFinanceiro = pg_connect("host=" . DB_RELATORIO_HOST . " dbname=" . DB_RELATORIO_NAME . " user=" . DB_RELATORIO_USER . " password=" . DB_RELATORIO_PASS);
+if (!$connFinanceiro) {
+    die("Conexão financeiro falhou: " . pg_last_error());
 }
 
 
@@ -369,10 +361,9 @@ if ($conn->connect_error) {
 }
 
 require_once __DIR__ . '/db_config_financeiro.php';
-$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-$connFinanceiro->set_charset('utf8mb4');
-if ($connFinanceiro->connect_error) {
-    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
+$connFinanceiro = pg_connect("host=" . DB_RELATORIO_HOST . " dbname=" . DB_RELATORIO_NAME . " user=" . DB_RELATORIO_USER . " password=" . DB_RELATORIO_PASS);
+if (!$connFinanceiro) {
+    die("Conexão financeiro falhou: " . pg_last_error());
 }
 
 // Defina o ano e mês atual (ou pegue do GET)
@@ -400,9 +391,9 @@ $sql = "
     INNER JOIN fcontasapagardetalhestap AS d ON c.ID_CONTA = d.ID_CONTA
     WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual
 ";
-$res = $connFinanceiro->query($sql); // <-- ALTERADO para usar $connFinanceiro
+$res = pg_query($connFinanceiro, $sql); // <-- ALTERADO para usar $connFinanceiro
 $linhas = [];
-while ($f = $res->fetch_assoc()) {
+while ($f = pg_fetch_assoc($res)) {
     $linhas[] = [
         'ID_CONTA'        => $f['ID_CONTA'],
         'CATEGORIA'       => $f['CATEGORIA'],
