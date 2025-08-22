@@ -124,7 +124,6 @@ if (
     <a href="disp_wab.php"              class="btn-acao">Disp WAB</a>
     <a href="inventario_cozinha.php"   class="btn-acao-verde">Inventário Cozinha</a>
     <a href="telegram_disp_config.php"  class="btn-acao-azul">Telegram</a>
-    <a href="../ficha_tecnica/auditoria.php" class="btn-acao-verde">Auditoria de Fichas</a>
   </div>
 
   <!-- KPIs -->

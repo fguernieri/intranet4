@@ -112,7 +112,10 @@ table.dataTable thead th:first-child.sorting_desc:after {
       >
         📥 Importar XLSX Produtos
       </button>
-
+        <a href="..\dash_cozinha\inventario_cozinha.php"
+           class="bg-blue-500 hover:bg-blue-600 text-center text-white font-semibold px-4 py-2 rounded">
+          🛒 Inventário Cozinha
+        </a>
         <a href="consultar_alteracoes.php"
            class="w-full sm:w-auto text-center bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded shadow font-semibold">
           📜 Histórico
@@ -121,6 +124,7 @@ table.dataTable thead th:first-child.sorting_desc:after {
            class="w-full sm:w-auto text-center bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded shadow font-semibold">
           ➕ Nova Ficha
         </a>
+        <a href="auditoria.php" class="w-full sm:w-auto text-center bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded shadow font-semibold">🕵🏻 Auditoria de Fichas</a>
       </div>
     </div>
 
