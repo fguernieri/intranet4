@@ -51,12 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Exclui previamente as metas da data escolhida (para sobrescrever)
-        $stmtDel = $connPost->prepare("DELETE FROM fMetasFabrica WHERE Data = ?");
+        $stmtDel = $connPost->prepare("DELETE FROM fMetasTap WHERE Data = ?");
         $stmtDel->bind_param("s", $dataMeta);
         $stmtDel->execute();
         $stmtDel->close();
 
-        $stmt = $connPost->prepare("INSERT INTO fMetasFabrica (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $connPost->prepare("INSERT INTO fMetasTap (Categoria, Subcategoria, Meta, Percentual, Data) VALUES (?, ?, ?, ?, ?)");
         if (!$stmt) {
             echo json_encode(['sucesso' => false, 'erro' => $connPost->error]);
             exit;
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($tableCheck->num_rows == 0) {
                 // Criar tabela se não existir
                 $createTable = "
-                CREATE TABLE `fSimulacoesFabrica` (
+                CREATE TABLE `fSimulacoesTap` (
                     `ID` int(11) NOT NULL AUTO_INCREMENT,
                     `NomeSimulacao` varchar(255) NOT NULL,
                     `UsuarioID` int(11) NOT NULL,
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ";
                 
                 if (!$connPost->query($createTable)) {
-                    throw new Exception("Erro ao criar tabela fSimulacoesFabrica: " . $connPost->error);
+                    throw new Exception("Erro ao criar tabela fSimulacoesTap: " . $connPost->error);
                 }
             }
 
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $connPost->autocommit(FALSE);
             
             // Exclui previamente a simulação do usuário com o mesmo nome
-            $stmtDel = $connPost->prepare("DELETE FROM fSimulacoesFabrica WHERE NomeSimulacao = ? AND UsuarioID = ?");
+            $stmtDel = $connPost->prepare("DELETE FROM fSimulacoesTap WHERE NomeSimulacao = ? AND UsuarioID = ?");
             if (!$stmtDel) {
                 throw new Exception("Erro ao preparar DELETE: " . $connPost->error);
             }
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $registrosExcluidos = $stmtDel->affected_rows;
             $stmtDel->close();
 
-            $stmt = $connPost->prepare("INSERT INTO fSimulacoesFabrica (NomeSimulacao, UsuarioID, Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao, DataCriacao, Ativo) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 1)");
+            $stmt = $connPost->prepare("INSERT INTO fSimulacoesTap (NomeSimulacao, UsuarioID, Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao, DataCriacao, Ativo) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 1)");
             if (!$stmt) {
                 throw new Exception("Erro ao preparar INSERT: " . $connPost->error);
             }
@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ==================== [ TRATAMENTO GET PARA SIMULAÇÕES ] ====================
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     header('Content-Type: application/json');
     
@@ -255,13 +255,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     // Listar simulações
     if ($_GET['action'] === 'listar_simulacoes') {
         // Verificar se a tabela existe
-        $tableCheck = $conn->query("SHOW TABLES LIKE 'fSimulacoesFabrica'");
+        $tableCheck = $conn->query("SHOW TABLES LIKE 'fSimulacoesTap'");
         if ($tableCheck->num_rows == 0) {
             echo json_encode(['sucesso' => true, 'simulacoes' => []]);
             exit;
         }
         
-        $stmt = $conn->prepare("SELECT DISTINCT NomeSimulacao, MAX(DataCriacao) as DataCriacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND Ativo = 1 GROUP BY NomeSimulacao ORDER BY DataCriacao DESC");
+        $stmt = $conn->prepare("SELECT DISTINCT NomeSimulacao, MAX(DataCriacao) as DataCriacao FROM fSimulacoesTap WHERE UsuarioID = ? AND Ativo = 1 GROUP BY NomeSimulacao ORDER BY DataCriacao DESC");
         $stmt->bind_param("i", $usuarioID);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -285,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     if ($_GET['action'] === 'carregar_simulacao' && isset($_GET['nome'])) {
         $nomeSimulacao = $_GET['nome'];
         
-        $stmt = $conn->prepare("SELECT Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao FROM fSimulacoesFabrica WHERE UsuarioID = ? AND NomeSimulacao = ? AND Ativo = 1");
+        $stmt = $conn->prepare("SELECT Categoria, Subcategoria, SubSubcategoria, ValorSimulacao, PercentualSimulacao FROM fSimulacoesTap WHERE UsuarioID = ? AND NomeSimulacao = ? AND Ativo = 1");
         $stmt->bind_param("is", $usuarioID, $nomeSimulacao);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -322,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     if ($_GET['action'] === 'excluir_simulacao' && isset($_GET['nome'])) {
         $nomeSimulacao = $_GET['nome'];
         
-        $stmt = $conn->prepare("UPDATE fSimulacoesFabrica SET Ativo = 0 WHERE UsuarioID = ? AND NomeSimulacao = ?");
+        $stmt = $conn->prepare("UPDATE fSimulacoesTap  SET Ativo = 0 WHERE UsuarioID = ? AND NomeSimulacao = ?");
         $stmt->bind_param("is", $usuarioID, $nomeSimulacao);
         $sucesso = $stmt->execute();
         
@@ -380,8 +380,8 @@ $sql = "
         d.VALOR,
         d.DATA_PAGAMENTO,
         c.STATUS
-    FROM fContasAPagar AS c
-    INNER JOIN fContasAPagarDetalhes AS d ON c.ID_CONTA = d.ID_CONTA
+    FROM fcontasapagartap AS c
+    INNER JOIN fcontasapagardetalhestap AS d ON c.ID_CONTA = d.ID_CONTA
     WHERE YEAR(d.DATA_PAGAMENTO) = $anoAtual
 ";
 $res = $conn->query($sql);
@@ -417,7 +417,7 @@ foreach ($linhas as $linha) {
 // IMPORTANTE: Fazer ANTES do cálculo das médias para que "Z - ENTRADA DE REPASSE" seja considerada
 $sqlOutrasRec = "
     SELECT CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA, SUM(VALOR) AS TOTAL
-    FROM fOutrasReceitas
+    FROM foutrasreceitastap
     WHERE YEAR(DATA_COMPETENCIA) = $anoAtual
     GROUP BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
     ORDER BY CATEGORIA, SUBCATEGORIA, DATA_COMPETENCIA
@@ -425,7 +425,7 @@ $sqlOutrasRec = "
 $resOutrasRec = $conn->query($sqlOutrasRec);
 
 // DEBUG: Verificar quantos registros foram encontrados
-echo "<!-- DEBUG: fOutrasReceitas query returned " . ($resOutrasRec ? $resOutrasRec->num_rows : 0) . " rows -->";
+echo "<!-- DEBUG: fOutrasReceitasTap query returned " . ($resOutrasRec ? $resOutrasRec->num_rows : 0) . " rows -->";
 
 if ($resOutrasRec) {
     while ($row = $resOutrasRec->fetch_assoc()) {
@@ -502,7 +502,7 @@ foreach ($matriz as $cat => $subs) {
 $receitaPorMes = [];
 $resRec = $conn->query("
     SELECT DATA_PAGAMENTO, SUM(VALOR_PAGO) AS TOTAL
-    FROM fContasAReceberDetalhes
+    FROM fcontasareceberdetalhestap
     WHERE STATUS = 'Pago' AND YEAR(DATA_PAGAMENTO) = $anoAtual
     GROUP BY DATA_PAGAMENTO
 ");
@@ -540,14 +540,14 @@ $sqlMetas = "
         fm1.Subcategoria, 
         fm1.Meta
     FROM 
-        fMetasFabrica fm1
+        fMetasTap fm1
     INNER JOIN (
         SELECT 
             Categoria, 
             Subcategoria, 
             MAX(Data) as MaxData
         FROM 
-            fMetasFabrica
+            fMetasTap
         GROUP BY 
             Categoria, Subcategoria
     ) fm2 
@@ -674,7 +674,6 @@ if (!empty($entradaRepassePorCatSubMes)) {
         }
     }
 }
-// ==================== [FIM DA NOVA SEÇÃO] ====================
 
 // ==================== [CÁLCULO LUCRO LÍQUIDO - PHP (ANTECIPADO)] ====================
 $mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
@@ -719,7 +718,6 @@ $atualEntradaRepasse = $atualCat['Z - ENTRADA DE REPASSE'] ?? 0; // Usar diretam
 // Incluir "Z - ENTRADA DE REPASSE" diretamente + outras receitas não operacionais
 $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntradaRepasse) - ($atualInvestInterno + $atualInvestExterno + $atualSaidaRepasse + $atualAmortizacao);
 // ==================== [FIM CÁLCULO FLUXO DE CAIXA - PHP] ====================
-
 
 
 ?>
@@ -930,10 +928,7 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
           ?>
         </td>
       </tr>
-
       
-     <!-- RECEITA BRUTA -->
-
 
 <!-- TRIBUTOS (ajustado para seguir o padrão das demais linhas principais) -->
 <?php if(isset($matrizOrdenada['TRIBUTOS'])): ?>
@@ -1021,7 +1016,6 @@ $atualFluxoCaixa = ($atualLucroLiquido + $totalAtualOutrasRecGlobal + $atualEntr
 <?php
   $mediaReceitaLiquida = $media3Rec - ($media3Cat['TRIBUTOS'] ?? 0);
   $atualReceitaLiquida = $atualRec - ($atualCat['TRIBUTOS'] ?? 0);
-
   // As variáveis de simulação ($simReceitaLiquida, $simLucroBruto, $simLucroLiquido)
   // são calculadas e preenchidas pelo JavaScript.
 ?>
