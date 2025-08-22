@@ -34,13 +34,7 @@ if ($connFinanceiro->connect_error) {
     die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
 }
 
-// ...após a conexão $conn padrão...
-require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
-$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
-$connFinanceiro->set_charset('utf8mb4');
-if ($connFinanceiro->connect_error) {
-    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
-}
+
 
     $jsonData = json_decode(file_get_contents('php://input'), true);
     
@@ -374,6 +368,12 @@ if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
 
+require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config_financeiro.php';
+$connFinanceiro = new mysqli(DB_RELATORIO_HOST, DB_RELATORIO_USER, DB_RELATORIO_PASS, DB_RELATORIO_NAME);
+$connFinanceiro->set_charset('utf8mb4');
+if ($connFinanceiro->connect_error) {
+    die("Conexão financeiro falhou: " . $connFinanceiro->connect_error);
+}
 
 // Defina o ano e mês atual (ou pegue do GET)
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
