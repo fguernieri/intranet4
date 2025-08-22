@@ -31,7 +31,6 @@ function supabase_request($table, $method = 'GET', $params = '', $body = null) {
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $params = 'select=ID_CONTA,CATEGORIA,SUBCATEGORIA,DESCRICAO_CONTA,PARCELA,VALOR,DATA_PAGAMENTO,STATUS&DATA_PAGAMENTO=gte.'.$anoAtual.'-01-01&DATA_PAGAMENTO=lte.'.$anoAtual.'-12-31';
 $linhas = supabase_request('fcontasapagartap', 'GET', $params);
-
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
