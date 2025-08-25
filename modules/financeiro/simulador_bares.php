@@ -6,7 +6,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Carrega as configurações do Supabase a partir do .ini
-$config = parse_ini_file(__DIR__ . '/supabase_config.ini');
+$config = parse_ini_file(__DIR__ . '/config.ini');
 if (!$config || !isset($config['SUPABASE_URL']) || !isset($config['SUPABASE_API_KEY'])) {
     die('Configuração do Supabase não encontrada ou incompleta.');
 }
