@@ -77,23 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_close($ch);
 }
 
-// Depois do curl_exec
-$httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-if ($result === false) {
-    $error = 'Erro cURL: ' . curl_error($ch);
-} else {
-    $decoded = json_decode($result, true);
-    // Alguns provedores retornam erro de negócio com 200/4xx/420
-    if ($httpCode !== 200 || (isset($decoded['Status']) && $decoded['Status'] < 0)) {
-        // Mostra mensagem amigável sem expor AccKey/TokenKey
-        $apiMsg = $decoded['Error'] ?? $decoded['Message'] ?? 'Erro desconhecido';
-        $params = $decoded['Parameters'] ?? [];
-        $error = "Falha na API (HTTP $httpCode): $apiMsg"
-               . (!empty($params) ? ' | Detalhes: ' . json_encode($params, JSON_UNESCAPED_UNICODE) : '');
-    } else {
-        $response = $decoded;
-    }
-}
+
 
 ?>
 <!DOCTYPE html>
@@ -113,13 +97,13 @@ if ($result === false) {
 <body>
     <h1>Consulta de Posicao de Estoque</h1>
     <form method='post'>
-        <label>AccKey: <input type='text' name='AccKey' value='<?= htmlspecialchars($_POST['AccKey'] ?? '') ?>' required></label>
-        <label>TokenKey: <input type='text' name='TokenKey' value='<?= htmlspecialchars($_POST['TokenKey'] ?? '') ?>' required></label>
+        <label>AccKey: <input type='text' name='AccKey' value='<?= htmlspecialchars($_POST['AccKey'] ?? 'bjJ4FQvmuA6AoHNDjsDU6893bastards') ?>' required></label>
+        <label>TokenKey: <input type='text' name='TokenKey' value='<?= htmlspecialchars($_POST['TokenKey'] ?? 'BHzQaSYPd0dFZPuGQzzR2vnCjwTTfH16wghmEps9HLIHq3Lbnpr6893870e56ec8') ?>' required></label>
         <label>ApiName: <input type='text' name='ApiName' value='<?= htmlspecialchars($_POST['ApiName'] ?? 'CFYCC873') ?>' required></label>
 
-        <label>LoginUsr: <input type='text' name='LoginUsr' value='<?= htmlspecialchars($_POST['LoginUsr'] ?? '') ?>' required></label>
-        <label>NomeUsr: <input type='text' name='NomeUsr' value='<?= htmlspecialchars($_POST['NomeUsr'] ?? '') ?>' required></label>
-        <label>CodEmpresa: <input type='number' name='CodEmpresa' value='<?= htmlspecialchars($_POST['CodEmpresa'] ?? '1') ?>' required></label>
+        <label>LoginUsr: <input type='text' name='LoginUsr' value='<?= htmlspecialchars($_POST['LoginUsr'] ?? 'integracaoapis@bastards.com') ?>' required></label>
+        <label>NomeUsr: <input type='text' name='NomeUsr' value='<?= htmlspecialchars($_POST['NomeUsr'] ?? 'INTEGRACAO API BASTARDS') ?>' required></label>
+        <label>CodEmpresa: <input type='number' name='CodEmpresa' value='<?= htmlspecialchars($_POST['CodEmpresa'] ?? '798') ?>' required></label>
         <label>CodFilial: <input type='number' name='CodFilial' value='<?= htmlspecialchars($_POST['CodFilial'] ?? '1') ?>' required></label>
 
         <label>DataRef (YYYYMMDD): <input type='number' name='DataRef' value='<?= htmlspecialchars($_POST['DataRef'] ?? '') ?>' required></label>

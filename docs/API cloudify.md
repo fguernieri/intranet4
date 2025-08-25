@@ -5,6 +5,23 @@ AccKey: bjJ4FQvmuA6AoHNDjsDU6893bastards
 TokenKey: BHzQaSYPd0dFZPuGQzzR2vnCjwTTfH16wghmEps9HLIHq3Lbnpr6893870e56ec8
 LoginUsr: integracaoapis@bastards.com
 NomeUsr: INTEGRACAO API BASTARDS
+CodEmpresa: 798
+CodFilial: **"1" - BDF** **"2" - WAB**
+
+## API	Nome
+CC870   Consulta - Consulta cupons de venda
+CC871	Consulta - Consulta títulos financeiro
+CC872	Consulta - Consulta saldo de conta bancária
+CC873	Consulta - Consulta posição de estoque
+CC874	Consulta - Consulta avaliações e sugestões do cardápio digital
+CC875	Consulta - Consulta cadastro de portaria
+CC876	Consulta - Consulta de pedidos
+CC877	Consulta - Consulta de pedidos - Produtos
+CC880	Consulta - Consulta de ficha técnica
+CC881	Consulta - Histórico de preço
+CC882	Consulta - Filiais
+CC883	Consulta - DRE
+
 
 ## CC870
 
