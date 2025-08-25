@@ -5,20 +5,24 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once dirname(__FILE__) . '/db_config_financeiro.php';
-if (!defined('SUPABASE_URL')) {
-    die('SUPABASE_URL não definida. Verifique o arquivo db_config_financeiro.php');
+// Carrega as configurações do Supabase a partir do .ini
+$config = parse_ini_file(__DIR__ . '/supabase_config.ini');
+if (!$config || !isset($config['SUPABASE_URL']) || !isset($config['SUPABASE_API_KEY'])) {
+    die('Configuração do Supabase não encontrada ou incompleta.');
 }
+$SUPABASE_URL = $config['SUPABASE_URL'];
+$SUPABASE_API_KEY = $config['SUPABASE_API_KEY'];
 
 // Função genérica para requisições REST Supabase
 function supabase_request($table, $method = 'GET', $params = '', $body = null) {
-    $url = SUPABASE_URL . "/rest/v1/$table" . ($params ? "?$params" : "");
+    global $SUPABASE_URL, $SUPABASE_API_KEY;
+    $url = $SUPABASE_URL . "/rest/v1/$table" . ($params ? "?$params" : "");
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
     $headers = [
-        'apikey: ' . SUPABASE_API_KEY,
-        'Authorization: Bearer ' . SUPABASE_API_KEY,
+        'apikey: ' . $SUPABASE_API_KEY,
+        'Authorization: Bearer ' . $SUPABASE_API_KEY,
         'Content-Type: application/json'
     ];
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
