@@ -51,13 +51,14 @@ function supabase_request($table, $method = 'GET', $params = '', $body = null) {
     return json_decode($response, true);
 }
 
-// ==================== [ FILTROS DE ANO/MÊS ] ====================
+// ==================== [ FILTROS DE ANO/MÊS/ORDENAÇÃO ] ====================
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
+$ordenacao = isset($_GET['ordenacao']) ? $_GET['ordenacao'] : 'nome';
 
 // ==================== [ CONSULTAS PRINCIPAIS - TAP ] ====================
 
-// 1. Despesas (fcontasapagartap + fcontasapagardetalhestap)
+// 1. Despesas (fcontasapagartap)
 $paramsDespesas = 'select=ID_CONTA,CATEGORIA,SUBCATEGORIA,DESCRICAO_CONTA,PARCELA,VALOR,DATA_PAGAMENTO,STATUS&DATA_PAGAMENTO=gte.'.$anoAtual.'-01-01&DATA_PAGAMENTO=lte.'.$anoAtual.'-12-31';
 $despesas = supabase_request('fcontasapagartap', 'GET', $paramsDespesas);
 
@@ -77,8 +78,11 @@ $metas = supabase_request('fMetasTap', 'GET', $paramsMetas);
 $paramsSimulacoes = 'select=UsuarioID,NomeSimulacao,DataCriacao,Ativo';
 $simulacoes = supabase_request('fSimulacoesTap', 'GET', $paramsSimulacoes);
 
-// Aqui você pode processar os arrays $despesas, $outrasReceitas, $receitas, $metas, $simulacoes conforme a lógica do Home.php
+// ==================== [ PROCESSAMENTO DE MATRIZ E ORDENAÇÃO ] ====================
+// Aqui você deve montar a matriz de dados igual ao Home.php, calcular médias, totais, percentuais, etc.
+// Também implemente a ordenação de subcategorias conforme $ordenacao.
 
+// ==================== [ HTML DA TABELA E FILTROS ] ====================
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -99,6 +103,14 @@ $simulacoes = supabase_request('fSimulacoesTap', 'GET', $paramsSimulacoes);
             <label>
                 Mês:
                 <input type="number" name="mes" value="<?= $mesAtual ?>" min="1" max="12" class="text-black p-1 rounded" style="width:60px;">
+            </label>
+            <label>
+                Ordenação:
+                <select name="ordenacao" class="text-black p-1 rounded">
+                    <option value="nome" <?= $ordenacao === 'nome' ? 'selected' : '' ?>>Nome</option>
+                    <option value="valor" <?= $ordenacao === 'valor' ? 'selected' : '' ?>>Valor</option>
+                    <option value="percentual" <?= $ordenacao === 'percentual' ? 'selected' : '' ?>>Percentual</option>
+                </select>
             </label>
             <button type="submit" class="bg-blue-600 px-4 py-1 rounded text-white">Filtrar</button>
         </form>
@@ -138,7 +150,94 @@ $simulacoes = supabase_request('fSimulacoesTap', 'GET', $paramsSimulacoes);
             </tbody>
         </table>
 
-        <!-- Você pode criar blocos semelhantes para receitas, outras receitas, metas e simulações -->
+        <!-- Tabela colapsada por Categoria/Subcategoria -->
+        <h2 class="text-xl font-bold mb-2">Despesas TAP (Agrupadas)</h2>
+        <table class="min-w-full bg-gray-800 rounded mb-8">
+            <thead>
+                <tr>
+                    <th class="p-2">Categoria</th>
+                    <th class="p-2">Subcategoria</th>
+                    <th class="p-2">Total</th>
+                    <th class="p-2">Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Agrupa por categoria e subcategoria
+                $agrupado = [];
+                if ($despesas) {
+                    foreach ($despesas as $linha) {
+                        $cat = $linha['CATEGORIA'] ?: 'SEM CATEGORIA';
+                        $sub = $linha['SUBCATEGORIA'] ?: 'SEM SUBCATEGORIA';
+                        if (!isset($agrupado[$cat])) $agrupado[$cat] = [];
+                        if (!isset($agrupado[$cat][$sub])) $agrupado[$cat][$sub] = ['total' => 0, 'itens' => []];
+                        $agrupado[$cat][$sub]['total'] += floatval($linha['VALOR']);
+                        $agrupado[$cat][$sub]['itens'][] = $linha;
+                    }
+                }
+                $catIdx = 0;
+                foreach ($agrupado as $cat => $subs):
+                    $catIdx++;
+                    $catId = 'cat' . $catIdx;
+                ?>
+                    <tr class="bg-gray-700 cursor-pointer" onclick="document.querySelectorAll('.<?= $catId ?>').forEach(e=>e.classList.toggle('hidden'));">
+                        <td class="p-2 font-bold"><?= htmlspecialchars($cat) ?></td>
+                        <td class="p-2"></td>
+                        <td class="p-2 font-bold"><?= number_format(array_sum(array_column($subs, 'total')), 2, ',', '.') ?></td>
+                        <td class="p-2 text-blue-400">Expandir/Recolher</td>
+                    </tr>
+                    <?php foreach ($subs as $sub => $dados): ?>
+                        <tr class="bg-gray-600 <?= $catId ?> hidden">
+                            <td class="p-2"></td>
+                            <td class="p-2 font-semibold"><?= htmlspecialchars($sub) ?></td>
+                            <td class="p-2"><?= number_format($dados['total'], 2, ',', '.') ?></td>
+                            <td class="p-2">
+                                <button type="button" onclick="document.getElementById('det-<?= md5($cat.$sub) ?>').classList.toggle('hidden');event.stopPropagation();" class="text-blue-300 underline">Detalhar</button>
+                            </td>
+                        </tr>
+                        <tr id="det-<?= md5($cat.$sub) ?>" class="bg-gray-500 <?= $catId ?> hidden">
+                            <td colspan="4" class="p-2">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th class="p-1">ID</th>
+                                            <th class="p-1">Descrição</th>
+                                            <th class="p-1">Parcela</th>
+                                            <th class="p-1">Valor</th>
+                                            <th class="p-1">Data Pagamento</th>
+                                            <th class="p-1">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($dados['itens'] as $item): ?>
+                                            <tr>
+                                                <td class="p-1"><?= htmlspecialchars($item['ID_CONTA']) ?></td>
+                                                <td class="p-1"><?= htmlspecialchars($item['DESCRICAO_CONTA']) ?></td>
+                                                <td class="p-1"><?= htmlspecialchars($item['PARCELA']) ?></td>
+                                                <td class="p-1"><?= number_format($item['VALOR'], 2, ',', '.') ?></td>
+                                                <td class="p-1"><?= htmlspecialchars($item['DATA_PAGAMENTO']) ?></td>
+                                                <td class="p-1"><?= htmlspecialchars($item['STATUS']) ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+                <?php if (empty($agrupado)): ?>
+                    <tr><td colspan="4" class="p-2 text-center">Nenhum dado encontrado.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+        <script>
+        // Fecha todos os detalhes ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('tr[id^="det-"]').forEach(e => e.classList.add('hidden'));
+        });
+        </script>
+        
+        <!-- Blocos para receitas, outras receitas, metas e simulações devem ser criados aqui, seguindo a lógica do Home.php -->
 
         <!-- Exemplo: <div id="simulacao"></div> -->
     </main>
