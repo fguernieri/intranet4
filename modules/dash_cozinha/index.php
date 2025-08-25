@@ -4,102 +4,7 @@ include __DIR__ . '/../../config/db.php';
 include __DIR__ . '/../../config/db_dw.php';
 include __DIR__ . '/../../sidebar.php';
 
-// -------------------------------
-// Matriz de Engenharia de Cardápio
-// -------------------------------
-require __DIR__ . '/../../vendor/autoload.php';
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
-$cardapioMatrizHtml = '';
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_FILES['sales_file'])
-    && $_FILES['sales_file']['error'] === UPLOAD_ERR_OK
-) {
-    // Recuperar filtros
-    $filterTap = isset($_POST['filter_tap']);
-    $filterWab = isset($_POST['filter_wab']);
-    $filterAll = isset($_POST['filter_all']);
-
-    // Diretório de uploads
-    $uploadDir = __DIR__ . '/uploads/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-    $tmpName = $_FILES['sales_file']['tmp_name'];
-    $fileName = basename($_FILES['sales_file']['name']);
-    $targetFile = $uploadDir . $fileName;
-    move_uploaded_file($tmpName, $targetFile);
-
-    // Carregar planilha sem calcular fórmulas
-    $spreadsheet = IOFactory::load($targetFile);
-    $sheetData = $spreadsheet->getActiveSheet()->toArray(null, false, true, false);
-
-    // Processar dados
-    $rows = array_slice($sheetData, 1);
-    $produtos = [];
-    foreach ($rows as $row) {
-        $nome   = $row[2] ?? '';
-        $grupo  = $row[3] ?? '';
-        $qtd    = (float) ($row[12] ?? 0);
-        $total  = (float) ($row[13] ?? 0);
-        // Aplicar filtro de grupo
-        if (!$filterAll && ($filterTap || $filterWab)) {
-            $pass = false;
-            if ($filterTap && stripos($grupo, 'TAP') !== false) {
-                $pass = true;
-            }
-            if ($filterWab && stripos($grupo, 'WAB') !== false) {
-                $pass = true;
-            }
-            if (!$pass) continue;
-        }
-        if (!isset($produtos[$nome])) {
-            $produtos[$nome] = ['qtd' => 0, 'total' => 0];
-        }
-        $produtos[$nome]['qtd']   += $qtd;
-        $produtos[$nome]['total'] += $total;
-    }
-
-    // Cálculo de médias
-    $mediaQtd   = array_sum(array_column($produtos, 'qtd')) / max(count($produtos), 1);
-    $mediaTotal = array_sum(array_column($produtos, 'total')) / max(count($produtos), 1);
-
-    // Classificação
-    $matriz = [];
-    foreach ($produtos as $nome => $dados) {
-        $pop = $dados['qtd'];
-        $luc = $dados['total'];
-        if ($pop >= $mediaQtd && $luc >= $mediaTotal) {
-            $cat = 'Estrela ⭐';
-        } elseif ($pop >= $mediaQtd && $luc < $mediaTotal) {
-            $cat = 'Vaca leiteira 🐄';
-        } elseif ($pop < $mediaQtd && $luc >= $mediaTotal) {
-            $cat = 'Quebra-cabeça 🧩';
-        } else {
-            $cat = 'Cachorro 🐶';
-        }
-        $matriz[] = ['produto'=>$nome, 'qtd'=>$pop, 'lucro'=>$luc, 'categoria'=>$cat];
-    }
-
-    // Montar tabela HTML com id e colunas clicáveis
-    $cardapioMatrizHtml .= '<table id="table-matriz" class="table-auto w-full">';
-    $cardapioMatrizHtml .= '<thead><tr>'
-        . '<th onclick="sortMatriz(0)" class="p-2 cursor-pointer">Produto</th>'
-        . '<th onclick="sortMatriz(1)" class="p-2 cursor-pointer">Qtde Vendida</th>'
-        . '<th onclick="sortMatriz(2)" class="p-2 cursor-pointer">Total Vendido (R$)</th>'
-        . '<th onclick="sortMatriz(3)" class="p-2 cursor-pointer">Categoria</th>'
-        . '</tr></thead><tbody>';
-    foreach ($matriz as $item) {
-        $cardapioMatrizHtml .= '<tr class="border-b border-gray-700 hover:bg-gray-800">'
-            . '<td class="p-2">'.htmlspecialchars($item['produto']).'</td>'
-            . '<td class="p-2">'.$item['qtd'].'</td>'
-            . '<td class="p-2">R$ '.number_format($item['lucro'],2,',','.').'</td>'
-            . '<td class="p-2">'.$item['categoria'].'</td>'
-            . '</tr>';
-    }
-    $cardapioMatrizHtml .= '</tbody></table>';
-}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -135,35 +40,6 @@ if (
     <div class="card1 text-center"><p>Margem Média (%)</p><p id="kpi-margem">--</p></div>
   </div>
   
-  <!-- Matrize de Cardápio -->
-  <section class="mb-6">
-    <form method="POST" enctype="multipart/form-data" class="mb-4 space-y-3">
-      <div class="flex items-center space-x-4">
-        <label class="inline-flex items-center">
-          <input type="checkbox" name="filter_all" value="1" class="form-checkbox" checked>
-          <span class="ml-2">Todos</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" name="filter_tap" value="1" class="form-checkbox">
-          <span class="ml-2">TAP</span>
-        </label>
-        <label class="inline-flex items-center">
-          <input type="checkbox" name="filter_wab" value="1" class="form-checkbox">
-          <span class="ml-2">WAB</span>
-        </label>
-      </div>
-      <label class="block mb-1">Envie o arquivo de vendas (.xlsx):</label>
-      <input type="file" name="sales_file" accept=".xlsx" required class="mb-2 px-3 py-2 rounded bg-gray-800 text-white" />
-      <button type="submit" class="btn-acao px-4 py-2">Gerar Matriz de Cardápio</button>
-    </form>
-    <?php if ($cardapioMatrizHtml): ?>
-      <div class="bg-gray-800 p-4 rounded">
-        <h2 class="text-xl font-bold mb-2">Matriz de Engenharia de Cardápio</h2>
-        <?= $cardapioMatrizHtml ?>
-      </div>
-    <?php endif; ?>
-  </section>
-
   <!-- Gráficos CMV e Grupo -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
     <div>
