@@ -51,21 +51,33 @@ function supabase_request($table, $method = 'GET', $params = '', $body = null) {
     return json_decode($response, true);
 }
 
-// ==================== [ AUTENTICAÇÃO E PERMISSÃO BÁSICA ] ====================
-session_start();
-if (empty($_SESSION['usuario_id']) || !isset($_SESSION['usuario_perfil']) || !in_array($_SESSION['usuario_perfil'], ['admin', 'supervisor'])) {
-    die('Acesso restrito.');
-}
-
 // ==================== [ FILTROS DE ANO/MÊS ] ====================
 $anoAtual = isset($_GET['ano']) ? (int)$_GET['ano'] : (int)date('Y');
 $mesAtual = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('n');
 
-// ==================== [ EXEMPLO DE BUSCA DE DADOS PARA O TAP ] ====================
-$params = 'select=ID_CONTA,CATEGORIA,SUBCATEGORIA,DESCRICAO_CONTA,PARCELA,VALOR,DATA_PAGAMENTO,STATUS&DATA_PAGAMENTO=gte.'.$anoAtual.'-01-01&DATA_PAGAMENTO=lte.'.$anoAtual.'-12-31';
-$linhas = supabase_request('fcontasapagartap', 'GET', $params);
+// ==================== [ CONSULTAS PRINCIPAIS - TAP ] ====================
 
-// Aqui você pode buscar outras tabelas do TAP, como receitas, metas, simulações, etc, usando supabase_request
+// 1. Despesas (fcontasapagartap + fcontasapagardetalhestap)
+$paramsDespesas = 'select=ID_CONTA,CATEGORIA,SUBCATEGORIA,DESCRICAO_CONTA,PARCELA,VALOR,DATA_PAGAMENTO,STATUS&DATA_PAGAMENTO=gte.'.$anoAtual.'-01-01&DATA_PAGAMENTO=lte.'.$anoAtual.'-12-31';
+$despesas = supabase_request('fcontasapagartap', 'GET', $paramsDespesas);
+
+// 2. Outras Receitas (foutrasreceitastap)
+$paramsOutrasRec = 'select=CATEGORIA,SUBCATEGORIA,DATA_COMPETENCIA,VALOR&DATA_COMPETENCIA=gte.'.$anoAtual.'-01-01&DATA_COMPETENCIA=lte.'.$anoAtual.'-12-31';
+$outrasReceitas = supabase_request('foutrasreceitastap', 'GET', $paramsOutrasRec);
+
+// 3. Receitas (fcontasareceberdetalhestap)
+$paramsReceitas = "select=DATA_PAGAMENTO,VALOR_PAGO,STATUS&STATUS=eq.Pago&DATA_PAGAMENTO=gte.$anoAtual-01-01&DATA_PAGAMENTO=lte.$anoAtual-12-31";
+$receitas = supabase_request('fcontasareceberdetalhestap', 'GET', $paramsReceitas);
+
+// 4. Metas (fMetasTap)
+$paramsMetas = 'select=Categoria,Subcategoria,Meta,Data&order=Data.desc';
+$metas = supabase_request('fMetasTap', 'GET', $paramsMetas);
+
+// 5. Simulações (fSimulacoesTap)
+$paramsSimulacoes = 'select=UsuarioID,NomeSimulacao,DataCriacao,Ativo';
+$simulacoes = supabase_request('fSimulacoesTap', 'GET', $paramsSimulacoes);
+
+// Aqui você pode processar os arrays $despesas, $outrasReceitas, $receitas, $metas, $simulacoes conforme a lógica do Home.php
 
 ?>
 <!DOCTYPE html>
@@ -91,7 +103,8 @@ $linhas = supabase_request('fcontasapagartap', 'GET', $params);
             <button type="submit" class="bg-blue-600 px-4 py-1 rounded text-white">Filtrar</button>
         </form>
 
-        <!-- Tabela principal (exemplo, expanda conforme sua lógica) -->
+        <!-- Exemplo de exibição de despesas -->
+        <h2 class="text-xl font-bold mb-2">Despesas TAP</h2>
         <table class="min-w-full bg-gray-800 rounded mb-8">
             <thead>
                 <tr>
@@ -106,8 +119,8 @@ $linhas = supabase_request('fcontasapagartap', 'GET', $params);
                 </tr>
             </thead>
             <tbody>
-                <?php if ($linhas): ?>
-                    <?php foreach ($linhas as $linha): ?>
+                <?php if ($despesas): ?>
+                    <?php foreach ($despesas as $linha): ?>
                         <tr>
                             <td class="p-2"><?= htmlspecialchars($linha['ID_CONTA']) ?></td>
                             <td class="p-2"><?= htmlspecialchars($linha['CATEGORIA']) ?></td>
@@ -125,7 +138,8 @@ $linhas = supabase_request('fcontasapagartap', 'GET', $params);
             </tbody>
         </table>
 
-        <!-- Aqui você pode adicionar blocos para metas, simulações, controles, gráficos, etc -->
+        <!-- Você pode criar blocos semelhantes para receitas, outras receitas, metas e simulações -->
+
         <!-- Exemplo: <div id="simulacao"></div> -->
     </main>
 </body>
