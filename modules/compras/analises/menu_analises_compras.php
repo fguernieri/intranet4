@@ -110,10 +110,9 @@ if (empty($_SESSION['usuario_id'])) {
                             <span class="text-3xl">🎸</span>
                         </div>
                         <h2 class="text-xl font-extrabold text-white mb-3 tracking-widest" style="letter-spacing:2px;">CROSS</h2>
-                        <p class="text-white text-sm mb-6 font-mono">
-                            Análise cruzada de compras<br>
-                            <span class="text-yellow-400">Bar de Rock</span> <span class="text-gray-400">|</span> Curva ABC, filtros por período,<br>
-                            busca por produtos e fornecedores
+                        <p class="text-white text-sm mb-6">
+                            Análise de compras da filial CROSS com curva ABC, 
+                            filtros por período e busca por produtos
                         </p>
                     </div>
                     <a href="analisecomprascross.php" 
