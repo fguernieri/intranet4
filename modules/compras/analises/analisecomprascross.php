@@ -406,12 +406,16 @@ foreach ($totaisFornecedores as $fornecedor => $dadosFornecedor) {
         <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <!-- Botões de navegação -->
             <div class="flex gap-3">
-                <div class="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold shadow-lg">
-                    📊 TAP (Atual)
+                <div class="bg-black text-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-yellow-400">
+                    🎸 CROSS (Atual)
                 </div>
+                <a href="analisecomprastap.php<?php echo isset($_GET['periodo']) ? '?periodo=' . $_GET['periodo'] : ''; ?>" 
+                   class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors shadow-lg border-2 border-gray-600 hover:border-gray-500">
+                    🍺 TAP
+                </a>
                 <a href="analisecompraswab.php<?php echo isset($_GET['periodo']) ? '?periodo=' . $_GET['periodo'] : ''; ?>" 
                    class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors shadow-lg border-2 border-gray-600 hover:border-gray-500">
-                    📈 WAB
+                    🥃 WAB
                 </a>
             </div>
             
