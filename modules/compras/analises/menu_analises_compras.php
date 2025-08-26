@@ -104,21 +104,21 @@ if (empty($_SESSION['usuario_id'])) {
                 </div>
 
                 <!-- Card CROSS -->
-                <div class="card-hover bg-gradient-to-br from-purple-800 to-indigo-900 rounded-xl p-6 text-center border border-purple-700">
+                <div class="card-hover bg-black rounded-xl p-6 text-center border border-gray-700 shadow-lg">
                     <div class="mb-6">
-                        <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span class="text-2xl">🔀</span>
+                        <div class="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white">
+                            <span class="text-3xl">🎸</span>
                         </div>
-                        <h2 class="text-xl font-bold text-white mb-3">CROSS</h2>
-                        <p class="text-purple-200 text-sm mb-6">
-                            Análise cruzada de compras (todas as filiais), curva ABC, 
-                            filtros por período e busca por produtos e fornecedores
+                        <h2 class="text-xl font-extrabold text-white mb-3 tracking-widest" style="letter-spacing:2px;">CROSS</h2>
+                        <p class="text-white text-sm mb-6 font-mono">
+                            Análise cruzada de compras<br>
+                            <span class="text-yellow-400">Bar de Rock</span> <span class="text-gray-400">|</span> Curva ABC, filtros por período,<br>
+                            busca por produtos e fornecedores
                         </p>
                     </div>
-                    
                     <a href="analisecomprascross.php" 
-                       class="inline-block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                        🔍 Análise CROSS
+                       class="inline-block w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg border border-white tracking-widest">
+                        🤘 Análise CROSS
                     </a>
                 </div>
 
