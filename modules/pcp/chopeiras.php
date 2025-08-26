@@ -56,6 +56,10 @@ try {
         'vw_volume_comprado_por_pedido_cliente',
         '"CLIENTE","CERVEJA","TOTAL_VOLUME"'
     );
+    $dados_media = $supabase->query(
+        'vw_media_mensal_clientes',
+        '"CLIENTE","CERVEJA","MEDIA_3_MESES","MEDIA_6_MESES","MEDIA_9_MESES"'
+    );
 } catch (Exception $e) {
     die("❌ Erro de conexão via API: " . $e->getMessage());
 }
@@ -85,9 +89,9 @@ try {
             </h1>
             <div class="flex justify-center gap-4 mb-6">
                 <a href="ordem_envase.php" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded transition">Ir para Ordem de Envase</a>
-                <a href="pcp_prod.php" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded transition">Ir para PCP Produção</a>
+                <a href="pcp_prod.php" class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold px-4 py-2 rounded transition">Ir para Planejamento de Produção</a>
             </div>
-            <!-- Conteúdo da nova página será adicionado aqui -->
+            
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-slate-800 text-sm">
                     <thead>
@@ -100,7 +104,7 @@ try {
                     </thead>
                     <tbody>
                         <?php
-                        // Organiza os dados de volume por cliente
+                        
                         $volume_por_cliente = [];
                         $media_total_por_cliente = [];
                         foreach ($dados_volume as $linha) {
@@ -115,13 +119,13 @@ try {
                             $media_total_por_cliente[$cliente] += $media_mensal;
                         }
 
-                        // ORDENAR: maior bico, depois maior litro
+                        
                         usort($dados_bicos, function($a, $b) use ($media_total_por_cliente) {
-                            // Ordena por TOTAL_BICOS (desc)
+                            
                             if ($b['TOTAL_BICOS'] != $a['TOTAL_BICOS']) {
                                 return $b['TOTAL_BICOS'] - $a['TOTAL_BICOS'];
                             }
-                            // Se empatar, ordena por média mensal (desc)
+                            
                             $mediaA = $media_total_por_cliente[$a['CLIENTE']] ?? 0;
                             $mediaB = $media_total_por_cliente[$b['CLIENTE']] ?? 0;
                             return $mediaB <=> $mediaA;
@@ -131,7 +135,7 @@ try {
                         $soma_media = 0;
                         $idx = 0;
                         foreach ($dados_bicos as $linha):
-                            // Remover clientes indesejados
+                            
                             if (in_array($linha['CLIENTE'], ['BASTARDS SC', 'BASTARDS GO'])) {
                                 continue;
                             }
@@ -142,11 +146,72 @@ try {
                                 $soma_media += $media_cliente;
                         ?>
                             <tr class="border-b border-slate-700 hover:bg-slate-700 transition">
-                                <td class="px-2 py-1 w-64 max-w-sm truncate align-top">
-                                    <button type="button" onclick="toggleSub('<?php echo $cliente_id; ?>')" class="mr-2 text-yellow-400 hover:underline focus:outline-none">
+                                <td class="px-2 py-1 w-64 max-w-sm truncate align-top flex items-center gap-2">
+                                    <!-- Botão de expansão -->
+                                    <button type="button" onclick="toggleSub('<?php echo $cliente_id; ?>')" class="text-yellow-400 hover:underline focus:outline-none">
                                         <span id="icon_<?php echo $cliente_id; ?>">&#9654;</span>
                                     </button>
                                     <?php echo htmlspecialchars($linha['CLIENTE']); ?>
+                                    <!-- Novo ícone para tooltip -->
+                                    <button type="button" onclick="toggleTooltip('<?php echo $cliente_id; ?>')" class="ml-2 text-blue-400 hover:text-blue-300 focus:outline-none" title="Ver análise avançada">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                                            <path stroke="currentColor" stroke-width="2" d="M12 16v-4M12 8h.01"/>
+                                        </svg>
+                                    </button>
+                                    <!-- Tooltip customizado -->
+                                    <div id="tooltip_<?php echo $cliente_id; ?>" class="hidden absolute z-50 bg-slate-800 border border-yellow-400 rounded shadow-lg p-4 mt-2 w-max min-w-[320px]">
+                                        <button type="button" onclick="toggleTooltip('<?php echo $cliente_id; ?>')" class="absolute top-2 right-2 text-red-400 hover:text-red-300 focus:outline-none" title="Fechar">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                                                <line x1="6" y1="18" x2="18" y2="6" stroke="currentColor" stroke-width="2"/>
+                                            </svg>
+                                        </button>
+                                        <table class="text-xs w-full mt-4">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-yellow-400 px-2 py-1">Cerveja</th>
+                                                    <th class="text-yellow-400 px-2 py-1">3 meses</th>
+                                                    <th class="text-yellow-400 px-2 py-1">6 meses</th>
+                                                    <th class="text-yellow-400 px-2 py-1">9 meses</th>
+                                                    <th class="text-yellow-400 px-2 py-1">Δ 3→6</th>
+                                                    <th class="text-yellow-400 px-2 py-1">Δ 6→9</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            <?php
+                                            // Filtra e ordena as cervejas do cliente pelo maior consumo nos últimos 3 meses
+                                            $medias_cliente = array_filter($dados_media, function($media) use ($linha) {
+                                                return $media['CLIENTE'] === $linha['CLIENTE'];
+                                            });
+                                            usort($medias_cliente, function($a, $b) {
+                                                return $b['MEDIA_3_MESES'] <=> $a['MEDIA_3_MESES'];
+                                            });
+                                            foreach ($medias_cliente as $media) {
+                                                $m3 = $media['MEDIA_3_MESES'];
+                                                $m6 = $media['MEDIA_6_MESES'];
+                                                $m9 = $media['MEDIA_9_MESES'];
+                                                $delta36 = $m6 > 0 ? round((($m3 - $m6) / $m6) * 100, 1) : 0;
+                                                $delta69 = $m9 > 0 ? round((($m6 - $m9) / $m9) * 100, 1) : 0;
+                                                ?>
+                                                <tr>
+                                                    <td class="px-2 py-1"><?php echo htmlspecialchars($media['CERVEJA']); ?></td>
+                                                    <td class="px-2 py-1 text-yellow-200"><?php echo htmlspecialchars($m3); ?></td>
+                                                    <td class="px-2 py-1 text-yellow-200"><?php echo htmlspecialchars($m6); ?></td>
+                                                    <td class="px-2 py-1 text-yellow-200"><?php echo htmlspecialchars($m9); ?></td>
+                                                    <td class="px-2 py-1 <?php echo $delta36 >= 0 ? 'text-green-400' : 'text-red-400'; ?>">
+                                                        <?php echo ($delta36 >= 0 ? '+' : '') . $delta36 . '%'; ?>
+                                                    </td>
+                                                    <td class="px-2 py-1 <?php echo $delta69 >= 0 ? 'text-green-400' : 'text-red-400'; ?>">
+                                                        <?php echo ($delta69 >= 0 ? '+' : '') . $delta69 . '%'; ?>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                            ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </td>
                                 <td class="px-2 py-1 align-top"><?php echo htmlspecialchars($linha['TOTAL_BICOS']); ?></td>
                                 <td class="px-2 py-1 align-top">
@@ -198,15 +263,6 @@ try {
                             endif;
                         endforeach;
                         ?>
-                        <!-- Remova o rodapé de soma -->
-                        <!--
-                        <tr class="font-bold bg-slate-900">
-                            <td class="px-2 py-1 text-right">Soma</td>
-                            <td class="px-2 py-1"><?php echo $soma_bicos; ?></td>
-                            <td class="px-2 py-1"><?php echo $soma_media; ?></td>
-                            <td class="px-2 py-1"></td>
-                        </tr>
-                        -->
                     </tbody>
                 </table>
             </div>
@@ -229,7 +285,17 @@ function toggleSub(id) {
         mediaCell.innerHTML = mediaCell.getAttribute('data-total');
     }
 }
-// Armazena o valor original da média mensal para cada cliente
+
+function toggleTooltip(id) {
+    const tooltip = document.getElementById('tooltip_' + id);
+    if (tooltip.classList.contains('hidden')) {
+        document.querySelectorAll('[id^="tooltip_"]').forEach(t => t.classList.add('hidden'));
+        tooltip.classList.remove('hidden');
+    } else {
+        tooltip.classList.add('hidden');
+    }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     <?php for ($i = 0; $i < $idx; $i++): ?>
         document.getElementById('media_cliente_<?php echo $i; ?>')?.setAttribute('data-total', document.getElementById('media_cliente_<?php echo $i; ?>')?.innerText);
