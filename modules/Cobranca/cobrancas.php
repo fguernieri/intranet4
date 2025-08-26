@@ -11,6 +11,7 @@ ini_set('display_errors', 0);
 ini_set('log_errors',   1);
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/auth.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/vendedor_alias.php';
 session_start();
 if (empty($_SESSION['usuario_id'])) {
     header('Location:/login.php');
@@ -23,6 +24,8 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/db_config.php';
 require_once __DIR__ . '/../../sidebar.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset('utf8mb4');
+$aliasData = getVendedorAliasMap($pdo);
+$aliasMap  = $aliasData['alias_to_nome'];
 
 $rows = [];
 if (!$conn->connect_error) {
@@ -72,7 +75,8 @@ foreach ($rows as $r) {
     $tree[$cid]['valor'] += $r['VALOR_VENCIDO'];
     $tree[$cid]['dias']   = max($tree[$cid]['dias'], $r['DIAS_VENCIDOS']);
     $tree[$cid]['venc']   = min($tree[$cid]['venc'], $r['DATA_VENCIMENTO']);
-    $tree[$cid]['vendedores'][$r['VENDEDOR']] = true;
+    $ven = resolveVendedorNome($r['VENDEDOR'], $aliasMap);
+    $tree[$cid]['vendedores'][$ven] = true;
 
     $ped =& $tree[$cid]['pedidos'][$pid];
     $ped['valor'] += $r['VALOR_VENCIDO'];
