@@ -9,11 +9,11 @@ error_reporting(E_ALL);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validar e sanitizar os dados do formulário
     $ficha_id = filter_input(INPUT_POST, 'ficha_id', FILTER_VALIDATE_INT);
-    $auditor = filter_input(INPUT_POST, 'auditor', FILTER_SANITIZE_STRING);
-    $data_auditoria = filter_input(INPUT_POST, 'data_auditoria', FILTER_SANITIZE_STRING);
-    $cozinheiro = filter_input(INPUT_POST, 'cozinheiro', FILTER_SANITIZE_STRING);
-    $status_auditoria = filter_input(INPUT_POST, 'status_auditoria', FILTER_SANITIZE_STRING);
-    $observacoes = filter_input(INPUT_POST, 'observacoes', FILTER_SANITIZE_STRING);
+    $auditor = filter_input(INPUT_POST, 'auditor', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $data_auditoria = filter_input(INPUT_POST, 'data_auditoria', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $cozinheiro = filter_input(INPUT_POST, 'cozinheiro', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $status_auditoria = filter_input(INPUT_POST, 'status_auditoria', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $observacoes = filter_input(INPUT_POST, 'observacoes', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $periodicidade = filter_input(INPUT_POST, 'periodicidade', FILTER_VALIDATE_INT) ?: 30; // Padrão: 30 dias
     
     // Validar dados obrigatórios
