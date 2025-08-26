@@ -17,10 +17,10 @@ if ($conn->connect_error) {
 }
 
 // 1) Lê filtros com validação e sanitização
-$selFilial   = filter_input(INPUT_GET, 'filial', FILTER_SANITIZE_STRING);
-$dataInicio  = filter_input(INPUT_GET, 'data_inicio', FILTER_SANITIZE_STRING);
-$dataFim     = filter_input(INPUT_GET, 'data_fim', FILTER_SANITIZE_STRING);
-$action      = filter_input(INPUT_GET, 'export', FILTER_SANITIZE_STRING);
+$selFilial   = filter_input(INPUT_GET, 'filial', FILTER_SANITIZE_SPECIAL_CHARS);
+$dataInicio  = filter_input(INPUT_GET, 'data_inicio', FILTER_SANITIZE_SPECIAL_CHARS);
+$dataFim     = filter_input(INPUT_GET, 'data_fim', FILTER_SANITIZE_SPECIAL_CHARS);
+$action      = filter_input(INPUT_GET, 'export', FILTER_SANITIZE_SPECIAL_CHARS);
 
 // Valida datas
 if ($dataInicio && $dataFim) {

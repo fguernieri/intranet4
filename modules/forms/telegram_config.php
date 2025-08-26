@@ -9,12 +9,12 @@ use Modules\Forms\Model\FormModel;
 
 // 1) Handle POST actions: adicionar, excluir destinatário, salvar template, enviar teste
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
+    $action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_SPECIAL_CHARS);
 
     // 1.1) Adicionar ou atualizar destinatário
     if ($action === 'save_recipient') {
         $chatId      = filter_input(INPUT_POST, 'chat_id', FILTER_SANITIZE_NUMBER_INT);
-        $description = trim(filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING));
+        $description = trim(filter_input(INPUT_POST, 'description', FILTER_SANITIZE_SPECIAL_CHARS));
         $assigned    = filter_input(INPUT_POST, 'forms', FILTER_DEFAULT, FILTER_REQUIRE_ARRAY) ?: [];
 
         if ($chatId && $description !== '') {
