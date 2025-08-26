@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     exit;
   }
 
-  $sqlAjax = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? ORDER BY `Nome`";
+  $sqlAjax = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? AND `Situação` = 'Ativo' ORDER BY `Nome`";
   try {
     $stmtAjax = $pdo_dw->prepare($sqlAjax);
     $stmtAjax->execute([$groupAjax]);
@@ -158,9 +158,10 @@ $hoje = date('Y-m-d');
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none }
     input[type=number] { -moz-appearance:textfield }
     .qtd-input { width:5rem; text-align:center }
+    main { overflow-y: visible; }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col p-4 sm:p-6 sm:flex-row max-h-screen">
+<body class="bg-gray-900 text-gray-100 flex flex-col p-4 sm:p-6 sm:flex-row min-h-screen">
 
   <?php include __DIR__ . '/../../sidebar.php'?>
 
