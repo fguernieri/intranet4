@@ -9,6 +9,10 @@ $pdoMain = $pdo; // conexão principal (intranet)
 require_once '../../config/db_dw.php';
 
 require_once __DIR__ . '/../../config/db.php'; // conexão de metas
+require_once __DIR__ . '/../../vendedor_alias.php';
+$aliasData = getVendedorAliasMap($pdoMain);
+$aliasMap = $aliasData['alias_to_nome'];
+$nomeToTodos = $aliasData['nome_to_todos'];
 
 
 // 3) Permissões de vendedores vindas da sessão
@@ -48,9 +52,13 @@ $whereClauses = [];
 $queryParams = [];
 
 if (!empty($filteredVend)) {
-    $ph2 = implode(',', array_fill(0, count($filteredVend), '?'));
+    $namesForFilter = [];
+    foreach ($filteredVend as $n) {
+        $namesForFilter = array_merge($namesForFilter, $nomeToTodos[$n] ?? [$n]);
+    }
+    $ph2 = implode(',', array_fill(0, count($namesForFilter), '?'));
     $whereClauses[] = "Vendedor IN ($ph2)";
-    $queryParams   = array_merge($queryParams, $filteredVend);
+    $queryParams   = array_merge($queryParams, $namesForFilter);
 }
 // filtro de data
 $whereClauses[] = "DATE(DataPedido) BETWEEN ? AND ?";
@@ -76,6 +84,10 @@ FROM PedidosComercial
 $stmt  = $pdo_dw->prepare($sql);
 $stmt->execute($queryParams);
 $pedidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+foreach ($pedidos as &$p) {
+    $p['Vendedor'] = resolveVendedorNome($p['Vendedor'], $aliasMap);
+}
+unset($p);
 
 // Montar agregação mês a mês em PHP
 $mensal = [];
@@ -154,32 +166,45 @@ $pedidosPorEstado = [];
 $clientesPorV     = [];
 
 // --- 11.1) Novo: total de cadastros por vendedor entre $startDate e $endDate ---
-$stmtCadastro = $pdo->prepare("
-  SELECT 
-    vendedor_nome, 
-    COUNT(*) AS total_cadastros
-  FROM cadastro_clientes
-  WHERE DATE(data_cadastro) BETWEEN ? AND ?
-  GROUP BY vendedor_nome
-  ORDER BY total_cadastros DESC
-");
-$stmtCadastro->execute([$startDate, $endDate]);
-$cadRows    = $stmtCadastro->fetchAll(PDO::FETCH_ASSOC);
-$cadLabels  = array_column($cadRows, 'vendedor_nome');
-$cadValues  = array_map('intval', array_column($cadRows, 'total_cadastros'));
+$sqlCad = "SELECT vendedor_nome, COUNT(*) AS total_cadastros FROM cadastro_clientes WHERE DATE(data_cadastro) BETWEEN ? AND ?";
+$paramsCad = [$startDate, $endDate];
+if (!empty($filteredVend)) {
+    $namesCad = [];
+    foreach ($filteredVend as $n) {
+        $namesCad = array_merge($namesCad, $nomeToTodos[$n] ?? [$n]);
+    }
+    $phCad = implode(',', array_fill(0, count($namesCad), '?'));
+    $sqlCad .= " AND vendedor_nome IN ($phCad)";
+    $paramsCad = array_merge($paramsCad, $namesCad);
+}
+$sqlCad .= " GROUP BY vendedor_nome ORDER BY total_cadastros DESC";
+$stmtCadastro = $pdo->prepare($sqlCad);
+$stmtCadastro->execute($paramsCad);
+$cadRows = $stmtCadastro->fetchAll(PDO::FETCH_ASSOC);
+$cadGrouped = [];
+foreach ($cadRows as $r) {
+    $nome = resolveVendedorNome($r['vendedor_nome'], $aliasMap);
+    $cadGrouped[$nome] = ($cadGrouped[$nome] ?? 0) + (int)$r['total_cadastros'];
+}
+$cadLabels = array_keys($cadGrouped);
+$cadValues = array_values($cadGrouped);
 $totalCadGeral = array_sum($cadValues);
 
 // 11.2 - Cadastro Mensal
-$stmtMensalCad = $pdo->prepare("
-  SELECT
-    DATE_FORMAT(data_cadastro, '%Y-%m') AS mes,
-    COUNT(*) AS total_cad_mes
-  FROM cadastro_clientes
-  WHERE DATE(data_cadastro) BETWEEN ? AND ?
-  GROUP BY mes
-  ORDER BY mes
-");
-$stmtMensalCad->execute([$startDate, $endDate]);
+$sqlMensalCad = "SELECT DATE_FORMAT(data_cadastro, '%Y-%m') AS mes, COUNT(*) AS total_cad_mes FROM cadastro_clientes WHERE DATE(data_cadastro) BETWEEN ? AND ?";
+$paramsMensal = [$startDate, $endDate];
+if (!empty($filteredVend)) {
+    $namesCad = [];
+    foreach ($filteredVend as $n) {
+        $namesCad = array_merge($namesCad, $nomeToTodos[$n] ?? [$n]);
+    }
+    $phCad = implode(',', array_fill(0, count($namesCad), '?'));
+    $sqlMensalCad .= " AND vendedor_nome IN ($phCad)";
+    $paramsMensal = array_merge($paramsMensal, $namesCad);
+}
+$sqlMensalCad .= " GROUP BY mes ORDER BY mes";
+$stmtMensalCad = $pdo->prepare($sqlMensalCad);
+$stmtMensalCad->execute($paramsMensal);
 $mensalCadRows = $stmtMensalCad->fetchAll(PDO::FETCH_ASSOC);
 
 // Labels no formato “MM/YYYY”
@@ -227,7 +252,7 @@ $metas_abertura = $stmt_meta->fetchAll(PDO::FETCH_KEY_PAIR);
 
 
 foreach ($pedidos as $p) {
-    $ven = $p['Vendedor'];
+    $ven = resolveVendedorNome($p['Vendedor'], $aliasMap);
     $fp  = $p['FormaPagamento'] ?? 'N/A';
     $val = (float) $p['ValorFaturado'];
     $d   = substr($p['DataPedido'], 0, 10);

@@ -64,14 +64,14 @@ if (empty($_SESSION['usuario_id'])) {
                 Selecione o tipo de análise de compras que deseja visualizar
             </p>
 
-            <div class="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
                 <!-- Card TAP -->
-                <div class="card-hover bg-gradient-to-br from-blue-800 to-blue-900 rounded-xl p-8 text-center border border-blue-700">
+                <div class="card-hover bg-gradient-to-br from-blue-800 to-blue-900 rounded-xl p-6 text-center border border-blue-700">
                     <div class="mb-6">
-                        <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span class="text-3xl">🍺</span>
+                        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🍺</span>
                         </div>
-                        <h2 class="text-2xl font-bold text-white mb-3">TAP</h2>
+                        <h2 class="text-xl font-bold text-white mb-3">TAP</h2>
                         <p class="text-blue-200 text-sm mb-6">
                             Análise de compras da filial TAP com curva ABC, 
                             filtros por período e busca por produtos
@@ -79,18 +79,18 @@ if (empty($_SESSION['usuario_id'])) {
                     </div>
                     
                     <a href="analisecomprastap.php" 
-                       class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-lg">
-                        🔍 Acessar Análise TAP
+                       class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        🔍 Análise TAP
                     </a>
                 </div>
 
                 <!-- Card WAB -->
-                <div class="card-hover bg-gradient-to-br from-red-800 to-red-900 rounded-xl p-8 text-center border border-red-700">
+                <div class="card-hover bg-gradient-to-br from-red-800 to-red-900 rounded-xl p-6 text-center border border-red-700">
                     <div class="mb-6">
-                        <div class="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span class="text-3xl">🥃</span>
+                        <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🥃</span>
                         </div>
-                        <h2 class="text-2xl font-bold text-white mb-3">WAB</h2>
+                        <h2 class="text-xl font-bold text-white mb-3">WAB</h2>
                         <p class="text-red-200 text-sm mb-6">
                             Análise de compras da filial WAB com curva ABC, 
                             filtros por período e busca por produtos
@@ -98,8 +98,45 @@ if (empty($_SESSION['usuario_id'])) {
                     </div>
                     
                     <a href="analisecompraswab.php" 
-                       class="inline-block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-lg">
-                        🔍 Acessar Análise WAB
+                       class="inline-block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        🔍 Análise WAB
+                    </a>
+                </div>
+
+                <!-- Card CROSS -->
+                <div class="card-hover bg-black rounded-xl p-6 text-center border border-gray-700 shadow-lg">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white">
+                            <span class="text-3xl">🎸</span>
+                        </div>
+                        <h2 class="text-xl font-extrabold text-white mb-3 tracking-widest" style="letter-spacing:2px;">CROSS</h2>
+                        <p class="text-white text-sm mb-6">
+                            Análise de compras da filial CROSS com curva ABC, 
+                            filtros por período e busca por produtos
+                        </p>
+                    </div>
+                    <a href="analisecomprascross.php" 
+                       class="inline-block w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg border border-white tracking-widest">
+                        🤘 Análise CROSS
+                    </a>
+                </div>
+
+                <!-- Card Aumentos de Preços -->
+                <div class="card-hover bg-gradient-to-br from-orange-800 to-red-800 rounded-xl p-6 text-center border border-orange-700">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📈</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mb-3">Aumentos</h2>
+                        <p class="text-orange-200 text-sm mb-6">
+                            Top 15 produtos com maior aumento de preço
+                            e análise de impacto financeiro
+                        </p>
+                    </div>
+                    
+                    <a href="analise_aumentos_precos.php" 
+                       class="inline-block w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        🔥 Ver Aumentos
                     </a>
                 </div>
             </div>
@@ -107,7 +144,7 @@ if (empty($_SESSION['usuario_id'])) {
             <!-- Informações adicionais -->
             <div class="mt-12 bg-gray-800 rounded-lg p-6 text-center">
                 <h3 class="text-lg font-semibold text-yellow-400 mb-3">ℹ️ Sobre as Análises</h3>
-                <div class="grid md:grid-cols-3 gap-6 text-sm text-gray-300">
+                <div class="grid md:grid-cols-4 gap-6 text-sm text-gray-300">
                     <div>
                         <h4 class="font-semibold text-blue-400 mb-2">📈 Curva ABC</h4>
                         <p>Classificação dos produtos por importância nos gastos</p>
@@ -119,6 +156,10 @@ if (empty($_SESSION['usuario_id'])) {
                     <div>
                         <h4 class="font-semibold text-green-400 mb-2">🔍 Busca</h4>
                         <p>Pesquisa em tempo real por grupos e produtos</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-orange-400 mb-2">🔥 Aumentos</h4>
+                        <p>Ranking dos maiores aumentos de preço e impacto</p>
                     </div>
                 </div>
             </div>

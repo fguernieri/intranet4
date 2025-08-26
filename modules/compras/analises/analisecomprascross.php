@@ -16,7 +16,7 @@ if (empty($_SESSION['usuario_id'])) {
     exit;
 }
 
-// Conexão com o banco igual ao acompanhamento financeiro
+
 require_once $_SERVER['DOCUMENT_ROOT'] . '/db_config.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset('utf8mb4');
@@ -59,7 +59,7 @@ $sql = "
         TOTAL, 
         fornecedor,
         STR_TO_DATE(DATA, '%d/%m/%Y') as data_formatada
-    FROM fComprasWAB
+    FROM fComprasCROSS
     WHERE $wherePeriodo
 ";
 $res = $conn->query($sql);
@@ -375,53 +375,6 @@ foreach ($totaisFornecedores as $fornecedor => $dadosFornecedor) {
             transform: scale(1.02);
             transition: all 0.2s ease;
         }
-        /* Estilos específicos para a tabela de fornecedores */
-        .fornecedor-table {
-            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.3);
-        }
-        .fornecedor-row:hover {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(30, 58, 138, 0.4);
-            transition: all 0.2s ease;
-        }
-        .dre-sub-forn td {
-            padding: 2px 4px !important;
-            line-height: 1.2;
-        }
-        .dre-sub-forn td:first-child {
-            padding-left: 8px !important;
-            text-align: left !important;
-        }
-        .dre-sub-forn:hover {
-            background: rgba(59, 130, 246, 0.1) !important;
-            transform: translateX(2px);
-        }
-        .mes-par-forn {
-            background: #1e40af !important;
-        }
-        .mes-impar-forn {
-            background: #1e3a8a !important;
-        }
-        .header-mes-par-forn {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
-            border-left: 2px solid rgba(59, 130, 246, 0.8) !important;
-            border-right: 2px solid rgba(59, 130, 246, 0.8) !important;
-        }
-        .header-mes-impar-forn {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
-            border-left: 2px solid rgba(59, 130, 246, 0.8) !important;
-            border-right: 2px solid rgba(59, 130, 246, 0.8) !important;
-        }
-        .borda-mes-forn {
-            border-left: 1px solid rgba(59, 130, 246, 0.3) !important;
-        }
-        .borda-final-mes-forn {
-            border-right: 1px solid rgba(59, 130, 246, 0.6) !important;
-        }
-        .borda-interna-forn {
-            border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 flex min-h-screen">
@@ -453,13 +406,17 @@ foreach ($totaisFornecedores as $fornecedor => $dadosFornecedor) {
         <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <!-- Botões de navegação -->
             <div class="flex gap-3">
+                <div class="bg-black text-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-yellow-400">
+                    🎸 CROSS (Atual)
+                </div>
                 <a href="analisecomprastap.php<?php echo isset($_GET['periodo']) ? '?periodo=' . $_GET['periodo'] : ''; ?>" 
                    class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors shadow-lg border-2 border-gray-600 hover:border-gray-500">
-                    📊 TAP
+                    🍺 TAP
                 </a>
-                <div class="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold shadow-lg">
-                    📈 WAB (Atual)
-                </div>
+                <a href="analisecompraswab.php<?php echo isset($_GET['periodo']) ? '?periodo=' . $_GET['periodo'] : ''; ?>" 
+                   class="bg-gray-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition-colors shadow-lg border-2 border-gray-600 hover:border-gray-500">
+                    🥃 WAB
+                </a>
             </div>
             
             <!-- Barra de busca -->
@@ -1038,7 +995,5 @@ foreach ($totaisFornecedores as $fornecedor => $dadosFornecedor) {
         });
         </script>
     </main>
-
-    <script src="https://cdn.tailwindcss.com"></script>
 </body>
 </html>

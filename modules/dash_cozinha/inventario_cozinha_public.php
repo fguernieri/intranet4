@@ -25,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
         $q = trim($quantidades[$i] ?? '');
         if ($cod === '' || $q === '') continue;
 
-        // Assunção: preservamos a entrada do usuário, apenas normalizamos ponto decimal para vírgula
-        // Substitui ponto por vírgula (ex: 1.5 -> 1,5). Se já usar vírgula, preserva.
-        $q_out = str_replace('.', ',', $q);
+        // Assunção: preservamos a entrada do usuário, apenas normalizamos vírgula decimal para ponto
+        // Substitui vírgula por ponto (ex: 1,5 -> 1.5). Se já usar ponto, preserva.
+        $q_out = str_replace(',', '.', $q);
 
         // Escapa ponto-e-vírgula acidental no código ou quantidade
         $cod_sanit = str_replace([';', "\n", "\r"], [' ', ' ', ' '], $cod);
@@ -240,7 +240,7 @@ $hoje = date('Y-m-d');
     </form>
   </main>
   <script>
-    // Gera o conteúdo do .txt com ; e vírgula decimal a partir do formulário
+    // Gera o conteúdo do .txt com ; e ponto decimal a partir do formulário
     function generateTxtContent() {
       const rows = document.querySelectorAll('tbody tr');
       const lines = ['Código de referência;Quantidade apurada'];
@@ -251,7 +251,7 @@ $hoje = date('Y-m-d');
         const cod = codEl.value.trim();
         const qtd = qtdInput.value.trim();
         if (!cod || !qtd) return;
-        const q = qtd.replace('.', ',');
+        const q = qtd.replace(',', '.');
         const codS = cod.replace(/[;\n\r]/g, ' ');
         const qS = q.replace(/[;\n\r]/g, ' ');
         lines.push(codS + ';' + qS);
@@ -275,29 +275,43 @@ $hoje = date('Y-m-d');
         const data = await resp.json();
         const tbody = document.querySelector('tbody');
         tbody.innerHTML = '';
-        data.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.className = 'hover:bg-gray-700';
-          tr.innerHTML = `
-            <td class="p-2">${row.codigo}<input type="hidden" name="codigo[]" value="${row.codigo}"></td>
-            <td class="p-2">${row.nome}</td>
-            <td class="p-2">${row.grupo}<input type="hidden" name="grupo[]" value="${row.grupo}"></td>
-            <td class="p-2">${row.unidade}<input type="hidden" name="unidade[]" value="${row.unidade}"></td>
-            <td class="p-2 text-center"><input type="text" name="quantidade[]" placeholder="0,00" class="qtd-input bg-gray-600 text-white text-xs p-1 rounded"></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao atualizar listagem');
-      }
-    });
+          data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-700';
+            tr.innerHTML = `
+              <td class="p-2">${row.codigo}<input type="hidden" name="codigo[]" value="${row.codigo}"></td>
+              <td class="p-2">${row.nome}</td>
+              <td class="p-2">${row.grupo}<input type="hidden" name="grupo[]" value="${row.grupo}"></td>
+              <td class="p-2">${row.unidade}<input type="hidden" name="unidade[]" value="${row.unidade}"></td>
+              <td class="p-2 text-center"><input type="text" name="quantidade[]" placeholder="0,00" class="qtd-input bg-gray-600 text-white text-xs p-1 rounded"></td>
+            `;
+            tbody.appendChild(tr);
+          });
+          attachRowHighlight();
+        } catch (err) {
+          console.error(err);
+          alert('Erro ao atualizar listagem');
+        }
+      });
 
     // Limpa todos os inputs de quantidade
     document.getElementById('clear-inputs').addEventListener('click', function () {
       const inputs = document.querySelectorAll('input[name="quantidade[]"]');
       inputs.forEach(i => i.value = '');
     });
+
+    function attachRowHighlight() {
+      document.querySelectorAll('input[name="quantidade[]"]').forEach(inp => {
+        inp.addEventListener('focus', () => {
+          inp.closest('tr')?.classList.add('bg-gray-700');
+        });
+        inp.addEventListener('blur', () => {
+          inp.closest('tr')?.classList.remove('bg-gray-700');
+        });
+      });
+    }
+
+    attachRowHighlight();
 
     // --- Sortable and Filter logic ---
     function compareValues(a, b, asc) {

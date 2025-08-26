@@ -6,6 +6,7 @@ ini_set('display_errors', 0); // Em produção, erros devem ir para log
 ini_set('log_errors',   1);
 
 require_once $_SERVER['DOCUMENT_ROOT'].'/auth.php';
+require_once $_SERVER['DOCUMENT_ROOT'].'/vendedor_alias.php';
 session_start();
 if (empty($_SESSION['usuario_id'])) {
     header('Location:/login.php');
@@ -17,6 +18,8 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/db_config.php';
 require_once __DIR__ . '/../../sidebar.php';
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset('utf8mb4');
+$aliasData = getVendedorAliasMap($pdo);
+$aliasMap  = $aliasData['alias_to_nome'];
 
 $total_por_vendedor = [];
 $total_por_periodo = [
@@ -41,6 +44,7 @@ if (!$conn->connect_error) {
     if ($rs = $conn->query($sql)) {
         while ($row = $rs->fetch_assoc()) {
             $vendedor = $row['VENDEDOR'] ?: '(Não Especificado)';
+            $vendedor = resolveVendedorNome($vendedor, $aliasMap);
             $cliente = $row['CLIENTE'] ?: '(Cliente Não Especificado)'; // Assumindo que CLIENTE existe na view
             $valor_vencido = (float)$row['VALOR_VENCIDO'];
             $dias_vencidos = (int)$row['DIAS_VENCIDOS'];
@@ -69,7 +73,7 @@ if (!$conn->connect_error) {
             $grand_total_aberto += $valor_vencido;
 
             // Dados de cliente por vendedor para a popup
-            $vendedor_cliente_data[$vendedor][$cliente] = 
+            $vendedor_cliente_data[$vendedor][$cliente] =
                 ($vendedor_cliente_data[$vendedor][$cliente] ?? 0.0) + $valor_vencido;
         }
         $rs->free();
