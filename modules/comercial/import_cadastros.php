@@ -2,12 +2,15 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendedor_alias.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $aliasData = getVendedorAliasMap($pdo);
+    $aliasMap  = $aliasData['alias_to_nome'];
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new RuntimeException('Método inválido.');
@@ -64,11 +67,12 @@ SQL;
         $totLido++;
 
         // executa upsert
+        $vendedorCanonico = resolveVendedorNome($rawVendedor, $aliasMap);
         $stmt->execute([
             ':data'      => $dt->format('Y-m-d'),
             ':nome'      => $rawNome,
             ':codigo'    => $rawCodigo,
-            ':vendedor'  => $rawVendedor,
+            ':vendedor'  => $vendedorCanonico,
         ]);
 
         if ($stmt->rowCount() > 0) {
