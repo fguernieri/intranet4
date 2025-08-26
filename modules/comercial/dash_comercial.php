@@ -6,8 +6,7 @@ require_once __DIR__ . '/../../auth.php';
 $pdoMain = $pdo; // conexão principal (intranet)
 
 // 2) Conexão DW — para dados de pedidos
-require_once '../../config/db_dw.php';
-
+require_once __DIR__ . '/../../config/db_dw.php';
 require_once __DIR__ . '/../../config/db.php'; // conexão de metas
 require_once __DIR__ . '/../../vendedor_alias.php';
 $aliasData = getVendedorAliasMap($pdoMain);
