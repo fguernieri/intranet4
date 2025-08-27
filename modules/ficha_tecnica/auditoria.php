@@ -160,7 +160,8 @@ if (isset($_GET['sucesso'])) {
     <!-- Tabela de Fichas Técnicas -->
     <div class="bg-gray-800 p-6 rounded shadow">
       <h2 class="text-xl font-semibold mb-4">Fichas Técnicas com Status Verde</h2>
-      <table id="tabela-auditoria" class="w-full">
+      <div class="overflow-x-auto">
+      <table id="tabela-auditoria" class="min-w-full table-auto">
         <thead>
             <tr>
               <th>Nome do Prato</th>
@@ -181,24 +182,24 @@ if (isset($_GET['sucesso'])) {
               <td>
                 <?= $ficha['proxima_auditoria'] ? date('d/m/Y', strtotime($ficha['proxima_auditoria'])) : 'N/A' ?>
               </td>
-              <td>
+              <td class="whitespace-nowrap">
                 <?php if ($ficha['resultado_auditoria'] === 'OK'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-green-700">OK</span>
+                  <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">OK</span>
                 <?php elseif ($ficha['resultado_auditoria'] === 'NOK'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-red-700">NOK</span>
+                  <span class="px-2 py-1 rounded text-xs bg-red-700 whitespace-nowrap">NOK</span>
                 <?php elseif ($ficha['resultado_auditoria'] === 'Parcial'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-yellow-700">Parcial</span>
+                  <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Parcial</span>
                 <?php else: ?>
-                  <span class="px-2 py-1 rounded text-xs bg-gray-700">Sem registro</span>
+                  <span class="px-2 py-1 rounded text-xs bg-gray-700 whitespace-nowrap">Sem registro</span>
                 <?php endif; ?>
               </td>
-              <td>
+              <td class="whitespace-nowrap">
                 <?php if ($ficha['status_auditoria'] === 'em_dia'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-green-700">Em dia</span>
+                  <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">Em dia</span>
                 <?php elseif ($ficha['status_auditoria'] === 'atrasada'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-red-700">Atrasada</span>
+                  <span class="px-2 py-1 rounded text-xs bg-red-700 whitespace-nowrap">Atrasada</span>
                 <?php else: ?>
-                  <span class="px-2 py-1 rounded text-xs bg-yellow-700">Não auditada</span>
+                  <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Não auditada</span>
                 <?php endif; ?>
               </td>
               <td>
@@ -208,6 +209,7 @@ if (isset($_GET['sucesso'])) {
           <?php endforeach; ?>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
   
