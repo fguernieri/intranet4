@@ -22,27 +22,23 @@ $cervejas_permitidas = [
     'BASTARDS RED ALE'
 ];
 
-// Constantes de conexão Supabase
-define('SUPABASE_URL', 'https://gybhszcefuxsdhpvxbnk.supabase.co/rest/v1/');
-define('SUPABASE_API_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5YmhzemNlZnV4c2RocHZ4Ym5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMTYwOTYsImV4cCI6MjA2ODU5MjA5Nn0.i3sOjUvpsimEvtO0uDGFNK92IZjcy1VIva_KEBdlZI8');
-
 // Classe para conectar via API REST do Supabase
 class SupabaseApiClient {
     private $url;
     private $key;
-
+    
     public function __construct() {
-        $this->url = rtrim(SUPABASE_URL, '/') . '/rest/v1/';
-        $this->key = SUPABASE_API_KEY;
+        $this->url = 'https://gybhszcefuxsdhpvxbnk.supabase.co/rest/v1/'; // NOVA URL
+        $this->key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5YmhzemNlZnV4c2RocHZ4Ym5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMTYwOTYsImV4cCI6MjA2ODU5MjA5Nn0.i3sOjUvpsimEvtO0uDGFNK92IZjcy1VIva_KEBdlZI8'; // NOVA CHAVE
     }
-
+    
     public function query($table, $select = '*', $order = null) {
         $url = $this->url . $table . '?select=' . urlencode($select);
-
+        
         if ($order) {
             $url .= '&order=' . urlencode($order);
         }
-
+        
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
@@ -53,15 +49,13 @@ class SupabaseApiClient {
                 ]
             ]
         ]);
-
-        $response = @file_get_contents($url, false, $context);
-
+        
+        $response = file_get_contents($url, false, $context);
+        
         if ($response === false) {
-            $error = error_get_last();
-            $http_response_header = isset($http_response_header) ? implode("\n", $http_response_header) : '';
-            throw new Exception('Erro ao fazer requisição para Supabase: ' . $error['message'] . "\nHeaders: " . $http_response_header);
+            throw new Exception('Erro ao fazer requisição para Supabase');
         }
-
+        
         return json_decode($response, true);
     }
     
