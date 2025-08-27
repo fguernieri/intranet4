@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 include __DIR__ . '/../../auth.php';
 include __DIR__ . '/../../config/db.php';
 include __DIR__ . '/../../config/db_dw.php';
-include __DIR__ . '/../../sidebar.php';
+// include __DIR__ . '/../../sidebar.php';
 
 $pdoMain = $pdo; // conexão principal (intranet)
 
