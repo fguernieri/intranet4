@@ -32,9 +32,15 @@ function getAuthorizedVendors(PDO $pdo, int $userId): array {
         ORDER BY uvp.vendedor_id
     ";
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$userId]);
-    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        // Fallback: log the error and return no vendors
+        error_log($e->getMessage());
+        return [];
+    }
 }
 
 // 3) Verifica se o usuário está autenticado
