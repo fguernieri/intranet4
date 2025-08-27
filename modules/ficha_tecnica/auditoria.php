@@ -10,6 +10,7 @@ error_reporting(E_ALL);
 $stmt = $pdo->query("SELECT ft.*, 
                       (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id) as ultima_auditoria,
                       (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) as periodicidade,
+                      (SELECT status_auditoria FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) as resultado_auditoria,
                       (SELECT DATE_ADD(
                           (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id), 
                           INTERVAL (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) DAY
@@ -161,13 +162,14 @@ if (isset($_GET['sucesso'])) {
       <h2 class="text-xl font-semibold mb-4">Fichas Técnicas com Status Verde</h2>
       <table id="tabela-auditoria" class="w-full">
         <thead>
-          <tr>
-            <th>Nome do Prato</th>
-            <th>Última Auditoria</th>
-            <th>Próxima Auditoria</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
+            <tr>
+              <th>Nome do Prato</th>
+              <th>Última Auditoria</th>
+              <th>Próxima Auditoria</th>
+              <th>Resultado</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
         </thead>
         <tbody>
           <?php foreach ($fichas as $ficha): ?>
@@ -178,6 +180,17 @@ if (isset($_GET['sucesso'])) {
               </td>
               <td>
                 <?= $ficha['proxima_auditoria'] ? date('d/m/Y', strtotime($ficha['proxima_auditoria'])) : 'N/A' ?>
+              </td>
+              <td>
+                <?php if ($ficha['resultado_auditoria'] === 'OK'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-green-700">OK</span>
+                <?php elseif ($ficha['resultado_auditoria'] === 'NOK'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-red-700">NOK</span>
+                <?php elseif ($ficha['resultado_auditoria'] === 'Parcial'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-yellow-700">Parcial</span>
+                <?php else: ?>
+                  <span class="px-2 py-1 rounded text-xs bg-gray-700">Sem registro</span>
+                <?php endif; ?>
               </td>
               <td>
                 <?php if ($ficha['status_auditoria'] === 'em_dia'): ?>
@@ -206,10 +219,10 @@ if (isset($_GET['sucesso'])) {
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
         },
-        order: [[3, 'asc']],
-        columnDefs: [
-          { orderable: false, targets: 4 }
-        ],
+          order: [[4, 'asc']],
+          columnDefs: [
+            { orderable: false, targets: 5 }
+          ],
         pageLength: 25
       });
     });
