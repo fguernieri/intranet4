@@ -1,20 +1,16 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 
-declare(strict_types=1);
+include __DIR__ . '/../../auth.php';
+include __DIR__ . '/../../config/db.php';
+include __DIR__ . '/../../config/db_dw.php';
+include __DIR__ . '/../../sidebar.php';
 
-
-// 1) Autenticação e sessão — carrega o $pdo principal
-require_once __DIR__ . '/../../auth.php';
 $pdoMain = $pdo; // conexão principal (intranet)
 
 // 2) Conexão DW — para dados de pedidos
-require_once __DIR__ . '/../../config/db_dw.php';
-require_once __DIR__ . '/../../config/db.php'; // conexão de metas
 require_once __DIR__ . '/../../vendedor_alias.php';
+
 $aliasData = getVendedorAliasMap($pdoMain);
 $aliasMap = $aliasData['alias_to_nome'];
 $nomeToTodos = $aliasData['nome_to_todos'];
