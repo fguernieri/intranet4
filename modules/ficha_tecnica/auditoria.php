@@ -7,15 +7,22 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Buscar fichas técnicas com status 'verde'
-$stmt = $pdo->query("SELECT ft.*, 
-                      (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id) as ultima_auditoria,
-                      (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) as periodicidade,
-                      (SELECT status_auditoria FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) as resultado_auditoria,
-                      (SELECT DATE_ADD(
-                          (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id), 
-                          INTERVAL (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) DAY
-                      )) as proxima_auditoria
-                    FROM ficha_tecnica ft 
+$stmt = $pdo->query("SELECT ft.*,
+                      fta.data_auditoria AS ultima_auditoria,
+                      fta.periodicidade,
+                      fta.status_auditoria AS resultado_auditoria,
+                      DATE_ADD(fta.data_auditoria, INTERVAL fta.periodicidade DAY) AS proxima_auditoria
+                    FROM ficha_tecnica ft
+                    LEFT JOIN (
+                      SELECT fta1.*
+                      FROM ficha_tecnica_auditoria fta1
+                      JOIN (
+                        SELECT ficha_tecnica_id, MAX(data_auditoria) AS max_data
+                        FROM ficha_tecnica_auditoria
+                        GROUP BY ficha_tecnica_id
+                      ) fta2 ON fta1.ficha_tecnica_id = fta2.ficha_tecnica_id
+                              AND fta1.data_auditoria = fta2.max_data
+                    ) fta ON fta.ficha_tecnica_id = ft.id
                     WHERE ft.farol = 'verde'
                     ORDER BY ft.nome_prato ASC");
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
