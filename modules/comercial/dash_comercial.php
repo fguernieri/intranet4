@@ -321,7 +321,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="body bg-gray-900 text-white min-h-screen flex">
-  <div class="flex h-screen">
+  <div class="flex h-screen w-full">
     <?php 
     include __DIR__ . '/../../sidebar.php'; 
     ?>
