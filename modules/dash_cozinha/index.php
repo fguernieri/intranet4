@@ -269,19 +269,19 @@ include __DIR__ . '/../../sidebar.php';
     const sv = await resV.json();
     const vendas = (sv && sv.vendas) ? sv.vendas : [];
 
-    // Mapa de vendas por nome (normalizado)
+    // Mapa de vendas por código (preferência) e nome normalizado
     const mapVend = new Map();
     vendas.forEach(v => {
       const key = v.codigo ? `c:${v.codigo}` : `n:${norm(v.nome)}`;
       mapVend.set(key, (mapVend.get(key)||0) + Number(v.quantidade||0));
     });
 
-    // Normaliza pratos e busca suas vendas (por nome)
+    // Normaliza pratos e busca suas vendas
     const itens = pratos.map(p => {
       const margemR = (p.preco||0) - (p.custo||0);
       const margemP = (p.preco||0) > 0 ? (margemR/(p.preco||1))*100 : 0;
-      const keyByName = `n:${norm(p.nome)}`;
-      const qtde = Number(mapVend.get(keyByName) || 0);
+      const k = p.codigo ? `c:${p.codigo}` : `n:${norm(p.nome)}`;
+      const qtde = Number(mapVend.get(k) || 0);
       return {
         nome: p.nome, grupo: p.grupo,
         custo: Number(p.custo||0), preco: Number(p.preco||0),

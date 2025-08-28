@@ -21,6 +21,7 @@ foreach ($fichas as $ficha) {
     // Se o código cloudify for nulo, definimos valores padrão
     if ($codigo === null) {
         $pratos[] = [
+            'codigo' => $codigo,
             'nome'   => $ficha['nome_prato'],
             'grupo'  => 'Não categorizado',
             'custo'  => 0,
