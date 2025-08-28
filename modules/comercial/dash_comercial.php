@@ -213,6 +213,37 @@ $labelsCad = array_map(
 );
 $seriesCad = array_column($mensalCadRows, 'total_cad_mes');
 
+// 11.2.1 - Listagem de clientes por mês (para tooltip do gráfico "Abertura de Clientes")
+$sqlMensalNomes = "SELECT DATE_FORMAT(data_cadastro, '%Y-%m') AS mes, nome_fantasia FROM cadastro_clientes WHERE DATE(data_cadastro) BETWEEN ? AND ?";
+$paramsNomes = [$startDate, $endDate];
+if (!empty($filteredVend)) {
+    $namesCad = [];
+    foreach ($filteredVend as $n) {
+        $namesCad = array_merge($namesCad, $nomeToTodos[$n] ?? [$n]);
+    }
+    $phCad = implode(',', array_fill(0, count($namesCad), '?'));
+    $sqlMensalNomes .= " AND vendedor_nome IN ($phCad)";
+    $paramsNomes = array_merge($paramsNomes, $namesCad);
+}
+$sqlMensalNomes .= " ORDER BY data_cadastro";
+$stmtMensalNomes = $pdo->prepare($sqlMensalNomes);
+$stmtMensalNomes->execute($paramsNomes);
+$rowsMensalNomes = $stmtMensalNomes->fetchAll(PDO::FETCH_ASSOC);
+
+// Mapeia para chave label "MM/YYYY" -> [nomes]
+$cadNamesByLabel = [];
+foreach ($rowsMensalNomes as $rowNome) {
+    $label = date('m/Y', strtotime(($rowNome['mes'] ?? '1970-01') . '-01'));
+    $nome  = trim((string)($rowNome['nome_fantasia'] ?? ''));
+    if ($nome === '') continue;
+    $cadNamesByLabel[$label][] = $nome;
+}
+// Alinha na mesma ordem das labels do gráfico
+$cadNamesAligned = array_map(
+    fn($label) => array_values(array_unique($cadNamesByLabel[$label] ?? [])),
+    $labelsCad
+);
+
 
 
 // Buscar metas de faturamento
@@ -522,6 +553,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           chartCadastros: {
             labels: <?= json_encode($cadLabels, JSON_THROW_ON_ERROR) ?>.map(v => v.split(' ')[0]),
             values: <?= json_encode($cadValues, JSON_THROW_ON_ERROR) ?>,
+            names:  <?= json_encode($cadNamesAligned, JSON_THROW_ON_ERROR) ?>,
             type: 'bar'
           }
         };
@@ -557,6 +589,25 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           }
 
           el.innerHTML = '';
+          // Define tooltip customizado para "Abertura de Clientes" (mostrar nomes)
+          const chartId = String(selector || '').replace('#','');
+          const hasNames = Array.isArray(options.names);
+          const currencyFmt = val => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+          const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+
+          const tooltip = (chartId === 'chartCadastros' && hasNames)
+            ? {
+                custom: ({ dataPointIndex }) => {
+                  const nomes = options.names?.[dataPointIndex] || [];
+                  if (!nomes.length) return '<div class="apexcharts-tooltip">Sem clientes</div>';
+                  const itens = nomes.map(n => `<div>${escapeHtml(n)}</div>`).join('');
+                  return `<div class="apexcharts-tooltip">${itens}</div>`;
+                }
+              }
+            : {
+                y: { formatter: currencyFmt }
+              };
+
           new ApexCharts(el, {
             chart: {
               type: options.type,
@@ -574,20 +625,13 @@ $UltimaAtualizacao = $stmt->fetchColumn();
               }
             },
             dataLabels: { enabled: false },
-            tooltip: {
-              y: {
-                formatter: val => new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                }).format(val)
-              }
-            }
+            tooltip
           }).render();
         }
 
         function sortAndRenderChart(chartId, sortBy) {
-          const { labels, values, type } = chartDataMap[chartId];
-          let combined = labels.map((label, i) => ({ label, value: values[i] }));
+          const { labels, values, type, names } = chartDataMap[chartId];
+          let combined = labels.map((label, i) => ({ label, value: values[i], names: names ? names[i] : undefined }));
 
           switch (sortBy) {
             case 'asc':        combined.sort((a, b) => a.label.localeCompare(b.label)); break;
@@ -598,6 +642,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
 
           const sortedLabels = combined.map(x => x.label);
           const sortedValues = combined.map(x => x.value);
+          const sortedNames  = combined.map(x => x.names);
 
           const toggle = document.querySelector(`.toggle-meta[data-target="${chartId}"]`);
           let metas = null;
@@ -621,7 +666,8 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           renderApex(`#${chartId}`, {
             type,
             labels: sortedLabels,
-            series: sortedValues
+            series: sortedValues,
+            names:  sortedNames
           }, metas, toggle);
         }
 
