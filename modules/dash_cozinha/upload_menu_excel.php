@@ -36,9 +36,16 @@ try {
     }
 
     $tmp = $_FILES['arquivo']['tmp_name'];
-    $spreadsheet = IOFactory::load($tmp);
+    // Usa o reader em modo "somente dados" para evitar parsing de fórmulas
+    // e aproveitar valores pré-calculados armazenados no arquivo.
+    $reader = IOFactory::createReaderForFile($tmp);
+    if (method_exists($reader, 'setReadDataOnly')) {
+        $reader->setReadDataOnly(true);
+    }
+    $spreadsheet = $reader->load($tmp);
     $sheet = $spreadsheet->getActiveSheet();
-    $rows = $sheet->toArray(null, true, true, true);
+    // calculateFormulas=false evita estourar em fórmulas não suportadas
+    $rows = $sheet->toArray(null, false, true, true);
 
     if (!$rows || count($rows) < 2) {
         throw new RuntimeException('Planilha vazia ou sem cabeçalho.');
@@ -127,4 +134,3 @@ try {
     exit;
 }
 ?>
-
