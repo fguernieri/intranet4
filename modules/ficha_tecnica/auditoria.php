@@ -7,14 +7,22 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Buscar fichas técnicas com status 'verde'
-$stmt = $pdo->query("SELECT ft.*, 
-                      (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id) as ultima_auditoria,
-                      (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) as periodicidade,
-                      (SELECT DATE_ADD(
-                          (SELECT MAX(data_auditoria) FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id), 
-                          INTERVAL (SELECT periodicidade FROM ficha_tecnica_auditoria WHERE ficha_tecnica_id = ft.id ORDER BY data_auditoria DESC LIMIT 1) DAY
-                      )) as proxima_auditoria
-                    FROM ficha_tecnica ft 
+$stmt = $pdo->query("SELECT ft.*,
+                      fta.data_auditoria AS ultima_auditoria,
+                      fta.periodicidade,
+                      fta.status_auditoria AS resultado_auditoria,
+                      DATE_ADD(fta.data_auditoria, INTERVAL fta.periodicidade DAY) AS proxima_auditoria
+                    FROM ficha_tecnica ft
+                    LEFT JOIN (
+                      SELECT fta1.*
+                      FROM ficha_tecnica_auditoria fta1
+                      JOIN (
+                        SELECT ficha_tecnica_id, MAX(data_auditoria) AS max_data
+                        FROM ficha_tecnica_auditoria
+                        GROUP BY ficha_tecnica_id
+                      ) fta2 ON fta1.ficha_tecnica_id = fta2.ficha_tecnica_id
+                              AND fta1.data_auditoria = fta2.max_data
+                    ) fta ON fta.ficha_tecnica_id = ft.id
                     WHERE ft.farol = 'verde'
                     ORDER BY ft.nome_prato ASC");
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -159,15 +167,17 @@ if (isset($_GET['sucesso'])) {
     <!-- Tabela de Fichas Técnicas -->
     <div class="bg-gray-800 p-6 rounded shadow">
       <h2 class="text-xl font-semibold mb-4">Fichas Técnicas com Status Verde</h2>
-      <table id="tabela-auditoria" class="w-full">
+      <div class="overflow-x-auto">
+      <table id="tabela-auditoria" class="min-w-full table-auto">
         <thead>
-          <tr>
-            <th>Nome do Prato</th>
-            <th>Última Auditoria</th>
-            <th>Próxima Auditoria</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
+            <tr>
+              <th>Nome do Prato</th>
+              <th>Última Auditoria</th>
+              <th>Próxima Auditoria</th>
+              <th>Resultado</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
         </thead>
         <tbody>
           <?php foreach ($fichas as $ficha): ?>
@@ -179,13 +189,24 @@ if (isset($_GET['sucesso'])) {
               <td>
                 <?= $ficha['proxima_auditoria'] ? date('d/m/Y', strtotime($ficha['proxima_auditoria'])) : 'N/A' ?>
               </td>
-              <td>
-                <?php if ($ficha['status_auditoria'] === 'em_dia'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-green-700">Em dia</span>
-                <?php elseif ($ficha['status_auditoria'] === 'atrasada'): ?>
-                  <span class="px-2 py-1 rounded text-xs bg-red-700">Atrasada</span>
+              <td class="whitespace-nowrap">
+                <?php if ($ficha['resultado_auditoria'] === 'OK'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">OK</span>
+                <?php elseif ($ficha['resultado_auditoria'] === 'NOK'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-red-700 whitespace-nowrap">NOK</span>
+                <?php elseif ($ficha['resultado_auditoria'] === 'Parcial'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Parcial</span>
                 <?php else: ?>
-                  <span class="px-2 py-1 rounded text-xs bg-yellow-700">Não auditada</span>
+                  <span class="px-2 py-1 rounded text-xs bg-gray-700 whitespace-nowrap">Sem registro</span>
+                <?php endif; ?>
+              </td>
+              <td class="whitespace-nowrap">
+                <?php if ($ficha['status_auditoria'] === 'em_dia'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">Em dia</span>
+                <?php elseif ($ficha['status_auditoria'] === 'atrasada'): ?>
+                  <span class="px-2 py-1 rounded text-xs bg-red-700 whitespace-nowrap">Atrasada</span>
+                <?php else: ?>
+                  <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Não auditada</span>
                 <?php endif; ?>
               </td>
               <td>
@@ -195,6 +216,7 @@ if (isset($_GET['sucesso'])) {
           <?php endforeach; ?>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
   
@@ -206,10 +228,10 @@ if (isset($_GET['sucesso'])) {
         language: {
           url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
         },
-        order: [[3, 'asc']],
-        columnDefs: [
-          { orderable: false, targets: 4 }
-        ],
+          order: [[4, 'asc']],
+          columnDefs: [
+            { orderable: false, targets: 5 }
+          ],
         pageLength: 25
       });
     });

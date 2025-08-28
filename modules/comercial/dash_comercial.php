@@ -1,14 +1,18 @@
 <?php
-declare(strict_types=1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// 1) Autenticação e sessão — carrega o $pdo principal
-require_once __DIR__ . '/../../auth.php';
+include __DIR__ . '/../../auth.php';
+include __DIR__ . '/../../config/db.php';
+include __DIR__ . '/../../config/db_dw.php';
+// include __DIR__ . '/../../sidebar.php';
+
 $pdoMain = $pdo; // conexão principal (intranet)
 
 // 2) Conexão DW — para dados de pedidos
-require_once __DIR__ . '/../../config/db_dw.php';
-require_once __DIR__ . '/../../config/db.php'; // conexão de metas
 require_once __DIR__ . '/../../vendedor_alias.php';
+
 $aliasData = getVendedorAliasMap($pdoMain);
 $aliasMap = $aliasData['alias_to_nome'];
 $nomeToTodos = $aliasData['nome_to_todos'];
@@ -347,8 +351,8 @@ $UltimaAtualizacao = $stmt->fetchColumn();
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js" defer></script>
 </head>
-<body class="body bg-gray-900 text-white">
-  <div class="flex h-screen">
+<body class="body bg-gray-900 text-white min-h-screen flex">
+  <div class="flex h-screen w-full">
     <?php 
     include __DIR__ . '/../../sidebar.php'; 
     ?>
