@@ -44,6 +44,7 @@ foreach ($fichas as $ficha) {
         $preco = (float)($pb['preco'] ?? 0);
         $cmv = ($preco > 0) ? ($custo / $preco) * 100 : 0;
         $pratos[] = [
+            'codigo' => $codigo,
             'nome'   => $ficha['nome_prato'],
             'grupo'  => $pb['Grupo'] ?? 'Não categorizado',
             'custo'  => $custo,
@@ -55,6 +56,7 @@ foreach ($fichas as $ficha) {
     } else {
         // Se não encontrou no Cloudify, adiciona com valores zerados
         $pratos[] = [
+            'codigo' => $codigo,
             'nome'   => $ficha['nome_prato'],
             'grupo'  => 'Não categorizado',
             'custo'  => 0,

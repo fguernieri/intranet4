@@ -245,6 +245,7 @@ include __DIR__ . '/../../sidebar.php';
   function norm(s){
     return (s||'').toLowerCase()
       .normalize('NFD').replace(/\p{Diacritic}+/gu,'')
+      .replace(/[^a-z0-9\s]/g,' ') // remove pontuação
       .replace(/\s+/g,' ').trim();
   }
 
@@ -265,9 +266,24 @@ include __DIR__ . '/../../sidebar.php';
     const inicio = document.getElementById('mat-inicio').value || d1;
     const fim    = document.getElementById('mat-fim').value    || d2;
 
-    const resV = await fetch(`sales_cc870.php?inicio=${inicio}&fim=${fim}&filial=${filial}`);
-    const sv = await resV.json();
-    const vendas = (sv && sv.vendas) ? sv.vendas : [];
+    // Busca vendas na API Cloudify; se vier vazio, cai no fallback local
+    let vendas = [];
+    try {
+      const resV = await fetch(`sales_cc870.php?inicio=${inicio}&fim=${fim}&filial=${filial}`);
+      const sv = await resV.json();
+      if (sv && Array.isArray(sv.vendas) && sv.vendas.length) vendas = sv.vendas;
+    } catch (e) {}
+    if (!vendas.length) {
+      try {
+        const resL = await fetch(`sales_local.php?inicio=${inicio}&fim=${fim}`);
+        const sl = await resL.json();
+        if (sl && Array.isArray(sl.vendas)) vendas = sl.vendas;
+      } catch (e) {}
+    }
+
+    if (!vendas.length) {
+      console.warn('Sem dados de vendas para o período/filial informado.');
+    }
 
     // Mapa de vendas por código (preferência) e nome normalizado
     const mapVend = new Map();
