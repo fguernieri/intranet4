@@ -217,35 +217,36 @@ $labelsCad = array_map(
 );
 $seriesCad = array_column($mensalCadRows, 'total_cad_mes');
 
-// 11.2.1 - Listagem de clientes por mês (para tooltip do gráfico "Abertura de Clientes")
-$sqlMensalNomes = "SELECT DATE_FORMAT(data_cadastro, '%Y-%m') AS mes, nome_fantasia FROM cadastro_clientes WHERE DATE(data_cadastro) BETWEEN ? AND ?";
-$paramsNomes = [$startDate, $endDate];
+// 11.2.1 - Listagem de clientes por vendedor (para tooltip do gráfico "Abertura de Clientes")
+$sqlCadNomesVend = "SELECT vendedor_nome, nome_fantasia FROM cadastro_clientes WHERE DATE(data_cadastro) BETWEEN ? AND ?";
+$paramsNomesVend = [$startDate, $endDate];
 if (!empty($filteredVend)) {
     $namesCad = [];
     foreach ($filteredVend as $n) {
         $namesCad = array_merge($namesCad, $nomeToTodos[$n] ?? [$n]);
     }
     $phCad = implode(',', array_fill(0, count($namesCad), '?'));
-    $sqlMensalNomes .= " AND vendedor_nome IN ($phCad)";
-    $paramsNomes = array_merge($paramsNomes, $namesCad);
+    $sqlCadNomesVend .= " AND vendedor_nome IN ($phCad)";
+    $paramsNomesVend = array_merge($paramsNomesVend, $namesCad);
 }
-$sqlMensalNomes .= " ORDER BY data_cadastro";
-$stmtMensalNomes = $pdo->prepare($sqlMensalNomes);
-$stmtMensalNomes->execute($paramsNomes);
-$rowsMensalNomes = $stmtMensalNomes->fetchAll(PDO::FETCH_ASSOC);
+$sqlCadNomesVend .= " ORDER BY vendedor_nome, nome_fantasia";
+$stmtCadNomesVend = $pdo->prepare($sqlCadNomesVend);
+$stmtCadNomesVend->execute($paramsNomesVend);
+$rowsCadNomesVend = $stmtCadNomesVend->fetchAll(PDO::FETCH_ASSOC);
 
-// Mapeia para chave label "MM/YYYY" -> [nomes]
-$cadNamesByLabel = [];
-foreach ($rowsMensalNomes as $rowNome) {
-    $label = date('m/Y', strtotime(($rowNome['mes'] ?? '1970-01') . '-01'));
-    $nome  = trim((string)($rowNome['nome_fantasia'] ?? ''));
-    if ($nome === '') continue;
-    $cadNamesByLabel[$label][] = $nome;
+// Agrupa por vendedor canônico
+$cadNamesByVendor = [];
+foreach ($rowsCadNomesVend as $rowNome) {
+    $vendRaw = (string)($rowNome['vendedor_nome'] ?? '');
+    $vend    = resolveVendedorNome($vendRaw, $aliasMap);
+    $nomeCli = trim((string)($rowNome['nome_fantasia'] ?? ''));
+    if ($nomeCli === '') continue;
+    $cadNamesByVendor[$vend][] = $nomeCli;
 }
-// Alinha na mesma ordem das labels do gráfico
-$cadNamesAligned = array_map(
-    fn($label) => array_values(array_unique($cadNamesByLabel[$label] ?? [])),
-    $labelsCad
+// Alinha na ordem dos rótulos do gráfico de cadastros por vendedor
+$cadNamesByVendorAligned = array_map(
+    fn($vend) => array_values(array_unique($cadNamesByVendor[$vend] ?? [])),
+    $cadLabels
 );
 
 
@@ -557,7 +558,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           chartCadastros: {
             labels: <?= json_encode($cadLabels, JSON_THROW_ON_ERROR) ?>.map(v => v.split(' ')[0]),
             values: <?= json_encode($cadValues, JSON_THROW_ON_ERROR) ?>,
-            names:  <?= json_encode($cadNamesAligned, JSON_THROW_ON_ERROR) ?>,
+            names:  <?= json_encode($cadNamesByVendorAligned, JSON_THROW_ON_ERROR) ?>,
             type: 'bar'
           }
         };
@@ -603,9 +604,10 @@ $UltimaAtualizacao = $stmt->fetchColumn();
             ? {
                 custom: ({ dataPointIndex }) => {
                   const nomes = options.names?.[dataPointIndex] || [];
-                  if (!nomes.length) return '<div class="apexcharts-tooltip">Sem clientes</div>';
-                  const itens = nomes.map(n => `<div>${escapeHtml(n)}</div>`).join('');
-                  return `<div class="apexcharts-tooltip">${itens}</div>`;
+                  const wrap = (html) => `<div style="max-height:220px;max-width:320px;overflow:auto;padding:8px 10px;background:#111827;color:#fff;border:1px solid #374151;border-radius:6px">${html}</div>`;
+                  if (!nomes.length) return wrap('Sem clientes');
+                  const itens = nomes.map(n => `<div>• ${escapeHtml(n)}</div>`).join('');
+                  return wrap(itens);
                 }
               }
             : {
