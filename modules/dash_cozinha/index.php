@@ -103,6 +103,67 @@ include __DIR__ . '/../../sidebar.php';
       </table>
     </div>
   </div>
+  
+  <!-- Matriz Engenharia de Cardápio -->
+  <div class="mt-8">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-xl font-semibold">Engenharia de Cardápio</h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="text-sm text-gray-300">Filial
+          <select id="mat-filial" class="bg-gray-800 border border-gray-700 rounded px-2 py-1">
+            <option value="1">1 - BDF</option>
+            <option value="2">2 - WAB</option>
+          </select>
+        </label>
+        <label class="text-sm text-gray-300">Início
+          <input type="date" id="mat-inicio" class="bg-gray-800 border border-gray-700 rounded px-2 py-1" />
+        </label>
+        <label class="text-sm text-gray-300">Fim
+          <input type="date" id="mat-fim" class="bg-gray-800 border border-gray-700 rounded px-2 py-1" />
+        </label>
+        <button id="btn-gerar-matriz" class="btn-acao">Gerar matriz</button>
+      </div>
+    </div>
+
+    <div id="matriz-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card1 no-hover">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <h3 class="font-semibold text-green-400 mb-2">Estrelas</h3>
+            <ul id="q-estrelas" class="text-sm space-y-1"></ul>
+          </div>
+          <div>
+            <h3 class="font-semibold text-amber-400 mb-2">Burros de Carga</h3>
+            <ul id="q-burros" class="text-sm space-y-1"></ul>
+          </div>
+          <div>
+            <h3 class="font-semibold text-teal-400 mb-2">Quebra-Cabeça</h3>
+            <ul id="q-puzzles" class="text-sm space-y-1"></ul>
+          </div>
+          <div>
+            <h3 class="font-semibold text-red-400 mb-2">Cachorros</h3>
+            <ul id="q-cachorros" class="text-sm space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card1 no-hover overflow-x-auto">
+        <table id="table-matriz" class="min-w-full text-xs text-left" data-sort-dir-m="asc">
+          <thead>
+            <tr class="bg-yellow-600 text-white text-sm">
+              <th class="p-2 cursor-pointer" onclick="sortMatriz(0)">Prato</th>
+              <th class="p-2 cursor-pointer" onclick="sortMatriz(1)">Vendas</th>
+              <th class="p-2 cursor-pointer" onclick="sortMatriz(2)">Margem (R$)</th>
+              <th class="p-2 cursor-pointer" onclick="sortMatriz(3)">Margem (%)</th>
+              <th class="p-2 cursor-pointer" onclick="sortMatriz(4)">Categoria</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-matriz"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -179,6 +240,100 @@ include __DIR__ . '/../../sidebar.php';
     renderDispChart('#chart-availability-7d', data.availability7d);
     renderDispChart('#chart-availability-30d',data.availability30d);
   });
+
+  // --- Matriz Engenharia de Cardápio ---
+  function norm(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}+/gu,'')
+      .replace(/\s+/g,' ').trim();
+  }
+
+  async function gerarMatriz(){
+    // Reaproveita a tabela carregada pelo dashboard (custos/preços)
+    const respDash = await fetch('dash_data.php', { cache:'no-cache' });
+    const dash = await respDash.json();
+    const pratos = dash.tabela || [];
+
+    // Datas padrão: mês atual
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth()+1).padStart(2,'0');
+    const d1 = `${y}-${m}-01`;
+    const d2 = `${y}-${m}-${String(new Date(y, hoje.getMonth()+1, 0).getDate()).padStart(2,'0')}`;
+
+    const filial = document.getElementById('mat-filial').value || '1';
+    const inicio = document.getElementById('mat-inicio').value || d1;
+    const fim    = document.getElementById('mat-fim').value    || d2;
+
+    const resV = await fetch(`sales_cc870.php?inicio=${inicio}&fim=${fim}&filial=${filial}`);
+    const sv = await resV.json();
+    const vendas = (sv && sv.vendas) ? sv.vendas : [];
+
+    // Mapa de vendas por nome (normalizado)
+    const mapVend = new Map();
+    vendas.forEach(v => {
+      const key = v.codigo ? `c:${v.codigo}` : `n:${norm(v.nome)}`;
+      mapVend.set(key, (mapVend.get(key)||0) + Number(v.quantidade||0));
+    });
+
+    // Normaliza pratos e busca suas vendas (por nome)
+    const itens = pratos.map(p => {
+      const margemR = (p.preco||0) - (p.custo||0);
+      const margemP = (p.preco||0) > 0 ? (margemR/(p.preco||1))*100 : 0;
+      const keyByName = `n:${norm(p.nome)}`;
+      const qtde = Number(mapVend.get(keyByName) || 0);
+      return {
+        nome: p.nome, grupo: p.grupo,
+        custo: Number(p.custo||0), preco: Number(p.preco||0),
+        margemR, margemP, qtde
+      };
+    });
+
+    const totalQtde = itens.reduce((s,i)=>s+i.qtde,0);
+    const avgQtde   = itens.length ? totalQtde / itens.length : 0;
+    const avgMargem = itens.length ? itens.reduce((s,i)=>s+i.margemR,0) / itens.length : 0;
+
+    const cats = { estrelas:[], burros:[], puzzles:[], cachorros:[] };
+    const tbody = document.getElementById('tbody-matriz');
+    tbody.innerHTML = '';
+
+    itens.forEach(i => {
+      const pop  = i.qtde >= avgQtde;
+      const mar  = i.margemR >= avgMargem;
+      let cat = 'Cachorros';
+      if (pop && mar) cat = 'Estrelas';
+      else if (pop && !mar) cat = 'Burros de Carga';
+      else if (!pop && mar) cat = 'Quebra-Cabeça';
+
+      const li = `${i.nome} · R$ ${i.margemR.toFixed(2)} · ${i.qtde.toFixed(0)} vendas`;
+      if (cat==='Estrelas') cats.estrelas.push(li);
+      else if (cat==='Burros de Carga') cats.burros.push(li);
+      else if (cat==='Quebra-Cabeça') cats.puzzles.push(li);
+      else cats.cachorros.push(li);
+
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-gray-700 hover:bg-gray-800';
+      tr.innerHTML = `
+        <td class="p-2">${i.nome}</td>
+        <td class="p-2">${i.qtde.toFixed(0)}</td>
+        <td class="p-2">R$ ${i.margemR.toFixed(2)}</td>
+        <td class="p-2">${i.margemP.toFixed(1)}%</td>
+        <td class="p-2">${cat}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    function renderList(id, arr){
+      const el = document.getElementById(id);
+      el.innerHTML = arr.length ? arr.slice(0,20).map(x=>`<li class=\"list-disc ml-5\">${x}</li>`).join('') : '<li class="ml-1 text-gray-400">Sem dados</li>';
+    }
+    renderList('q-estrelas', cats.estrelas);
+    renderList('q-burros',   cats.burros);
+    renderList('q-puzzles',  cats.puzzles);
+    renderList('q-cachorros',cats.cachorros);
+  }
+
+  document.getElementById('btn-gerar-matriz').addEventListener('click', gerarMatriz);
 
   // Sort table
   function sortTable(col) {
