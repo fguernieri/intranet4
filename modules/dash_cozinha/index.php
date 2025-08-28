@@ -109,18 +109,7 @@ include __DIR__ . '/../../sidebar.php';
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-xl font-semibold">Engenharia de Cardápio</h2>
       <div class="flex flex-wrap items-center gap-2">
-        <label class="text-sm text-gray-300">Filial
-          <select id="mat-filial" class="bg-gray-800 border border-gray-700 rounded px-2 py-1">
-            <option value="1">1 - BDF</option>
-            <option value="2">2 - WAB</option>
-          </select>
-        </label>
-        <label class="text-sm text-gray-300">Início
-          <input type="date" id="mat-inicio" class="bg-gray-800 border border-gray-700 rounded px-2 py-1" />
-        </label>
-        <label class="text-sm text-gray-300">Fim
-          <input type="date" id="mat-fim" class="bg-gray-800 border border-gray-700 rounded px-2 py-1" />
-        </label>
+        <input type="file" id="excel-vendas" accept=".xlsx,.xls,.csv" class="text-sm" />
         <button id="btn-gerar-matriz" class="btn-acao">Gerar matriz</button>
       </div>
     </div>
@@ -254,36 +243,21 @@ include __DIR__ . '/../../sidebar.php';
     const respDash = await fetch('dash_data.php', { cache:'no-cache' });
     const dash = await respDash.json();
     const pratos = dash.tabela || [];
-
-    // Datas padrão: mês atual
-    const hoje = new Date();
-    const y = hoje.getFullYear();
-    const m = String(hoje.getMonth()+1).padStart(2,'0');
-    const d1 = `${y}-${m}-01`;
-    const d2 = `${y}-${m}-${String(new Date(y, hoje.getMonth()+1, 0).getDate()).padStart(2,'0')}`;
-
-    const filial = document.getElementById('mat-filial').value || '1';
-    const inicio = document.getElementById('mat-inicio').value || d1;
-    const fim    = document.getElementById('mat-fim').value    || d2;
-
-    // Busca vendas na API Cloudify; se vier vazio, cai no fallback local
-    let vendas = [];
-    try {
-      const resV = await fetch(`sales_cc870.php?inicio=${inicio}&fim=${fim}&filial=${filial}`);
-      const sv = await resV.json();
-      if (sv && Array.isArray(sv.vendas) && sv.vendas.length) vendas = sv.vendas;
-    } catch (e) {}
-    if (!vendas.length) {
-      try {
-        const resL = await fetch(`sales_local.php?inicio=${inicio}&fim=${fim}`);
-        const sl = await resL.json();
-        if (sl && Array.isArray(sl.vendas)) vendas = sl.vendas;
-      } catch (e) {}
+    // Lê vendas a partir do Excel enviado
+    const fileInput = document.getElementById('excel-vendas');
+    if (!fileInput.files || !fileInput.files.length) {
+      alert('Selecione um arquivo Excel (.xlsx/.xls) com as vendas.');
+      return;
     }
-
-    if (!vendas.length) {
-      console.warn('Sem dados de vendas para o período/filial informado.');
+    const fd = new FormData();
+    fd.append('arquivo', fileInput.files[0]);
+    const up = await fetch('upload_menu_excel.php', { method:'POST', body: fd });
+    const parsed = await up.json();
+    if (!parsed || parsed.ok !== true) {
+      alert('Falha ao processar o arquivo: ' + (parsed && parsed.error ? parsed.error : 'erro desconhecido'));
+      return;
     }
+    const vendas = parsed.vendas || [];
 
     // Mapa de vendas por código (preferência) e nome normalizado
     const mapVend = new Map();
