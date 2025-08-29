@@ -212,11 +212,12 @@ if (isset($_GET['sucesso'])) {
                 <?= $ficha['proxima_auditoria'] ? date('d/m/Y', strtotime($ficha['proxima_auditoria'])) : 'N/A' ?>
               </td>
               <td class="whitespace-nowrap">
-                <?php if ($ficha['resultado_auditoria'] === 'OK'): ?>
+                <?php $resultado = isset($ficha['resultado_auditoria']) ? trim($ficha['resultado_auditoria']) : ''; ?>
+                <?php if ($resultado === 'OK'): ?>
                   <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">OK</span>
-                <?php elseif ($ficha['resultado_auditoria'] === 'NOK'): ?>
+                <?php elseif ($resultado === 'NOK'): ?>
                   <span class="px-2 py-1 rounded text-xs bg-red-700 whitespace-nowrap">NOK</span>
-                <?php elseif ($ficha['resultado_auditoria'] === 'Parcial'): ?>
+                <?php elseif (strcasecmp($resultado, 'Parcial') === 0): ?>
                   <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Parcial</span>
                 <?php else: ?>
                   <span class="px-2 py-1 rounded text-xs bg-gray-700 whitespace-nowrap">Sem registro</span>
