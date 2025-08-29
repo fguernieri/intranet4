@@ -44,13 +44,13 @@ if (empty($_SESSION['usuario_id'])) {
     /* Greeting color to match the sidebar icon yellow */
     .module-greeting { color: #fbbf24 !important; }
         .nav-button { min-width: 220px; }
-        /* Ensure regular links inside the module use the same yellow and don't appear as default blue */
+        /* Make regular links inside the module white to match sidebar appearance (avoid browser blue) */
         .module-hero a, .module-hero a:link, .module-hero a:visited {
-            color: #fbbf24 !important;
+            color: #ffffff !important;
             text-decoration: none !important;
         }
         .module-hero a:hover, .module-hero a:focus {
-            color: #f59e0b !important; /* slightly darker on hover */
+            color: #fbbf24 !important; /* show module yellow on hover */
             text-decoration: underline !important;
         }
     </style>
