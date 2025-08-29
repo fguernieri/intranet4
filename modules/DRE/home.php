@@ -1,6 +1,5 @@
 <?php
-// Página inicial do módulo DRE - inclui sidebar e link para o simulador
-require_once __DIR__ . '/../../sidebar.php';
+// Autenticação
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -9,7 +8,12 @@ if (empty($_SESSION['usuario_id'])) {
     header('Location: /login.php');
     exit;
 }
-
+if (!isset($_SESSION['usuario_perfil']) || !in_array($_SESSION['usuario_perfil'], ['admin', 'supervisor'])) {
+    echo "Acesso restrito.";
+    exit;
+}
+require_once __DIR__ . '/../../sidebar.php';
+require_once __DIR__ . '/../../config/db.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
