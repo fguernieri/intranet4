@@ -27,6 +27,28 @@ $stmt = $pdo->query("SELECT ft.*,
                     ORDER BY ft.nome_prato ASC");
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Ajuste para MySQL < 8: garantir apenas uma última auditoria por ficha.
+// A consulta acima pode gerar duplicatas quando há duas auditorias no mesmo dia.
+// Esta reconsulta usa subconsulta correlacionada (ORDER BY data, id) para
+// escolher exatamente um registro de auditoria por ficha.
+$stmt = $pdo->query("SELECT ft.*,
+                      fta.data_auditoria AS ultima_auditoria,
+                      fta.periodicidade,
+                      fta.status_auditoria AS resultado_auditoria,
+                      DATE_ADD(fta.data_auditoria, INTERVAL fta.periodicidade DAY) AS proxima_auditoria
+                    FROM ficha_tecnica ft
+                    LEFT JOIN ficha_tecnica_auditoria fta
+                      ON fta.id = (
+                        SELECT fa2.id
+                        FROM ficha_tecnica_auditoria fa2
+                        WHERE fa2.ficha_tecnica_id = ft.id
+                        ORDER BY fa2.data_auditoria DESC, fa2.id DESC
+                        LIMIT 1
+                      )
+                    WHERE ft.farol = 'verde'
+                    ORDER BY ft.nome_prato ASC");
+$fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Calcular estatísticas
 $total_fichas = count($fichas);
 $fichas_em_dia = 0;
