@@ -99,7 +99,7 @@ if (isset($_GET['sucesso'])) {
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex">
-  <div class="max-w-6xl mx-auto py-6">
+  <div class="flex h-screen w-full py-6">
     <h1 class="text-3xl font-bold text-cyan-400 text-center mb-8">Auditoria de Fichas Técnicas</h1>
     
     <?php if ($mensagem): ?>
