@@ -1,5 +1,6 @@
 <?php
 // Página inicial do módulo DRE - inclui sidebar e link para o simulador
+require_once __DIR__ . '/../../sidebar.php';
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -8,8 +9,7 @@ if (empty($_SESSION['usuario_id'])) {
     header('Location: /login.php');
     exit;
 }
-// Sidebar está na raiz do projeto
-require_once __DIR__ . '/../../sidebar.php';
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -44,6 +44,15 @@ require_once __DIR__ . '/../../sidebar.php';
     /* Greeting color to match the sidebar icon yellow */
     .module-greeting { color: #fbbf24 !important; }
         .nav-button { min-width: 220px; }
+        /* Ensure regular links inside the module use the same yellow and don't appear as default blue */
+        .module-hero a, .module-hero a:link, .module-hero a:visited {
+            color: #fbbf24 !important;
+            text-decoration: none !important;
+        }
+        .module-hero a:hover, .module-hero a:focus {
+            color: #f59e0b !important; /* slightly darker on hover */
+            text-decoration: underline !important;
+        }
     </style>
 </head>
 <body class="bg-gray-800">
