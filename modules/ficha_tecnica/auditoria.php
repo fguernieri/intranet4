@@ -189,7 +189,7 @@ if (isset($_GET['sucesso'])) {
     <!-- Tabela de Fichas Técnicas -->
     <div class="bg-gray-800 p-6 rounded shadow">
       <h2 class="text-xl font-semibold mb-4">Fichas Técnicas com Status Verde</h2>
-      <div class="overflow-x-auto flex h-screen w-full">
+      <div class="overflow-x-auto">
       <table id="tabela-auditoria" class="min-w-full table-auto">
         <thead>
             <tr>
