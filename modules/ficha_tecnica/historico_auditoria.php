@@ -69,8 +69,15 @@ $auditorias = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <span class="font-semibold"><?= date('d/m/Y', strtotime($auditoria['data_auditoria'])) ?></span>
               </div>
               <div>
-                <span class="px-2 py-1 rounded text-xs <?= $auditoria['status_auditoria'] === 'OK' ? 'bg-green-700' : 'bg-red-700' ?>">
-                  <?= $auditoria['status_auditoria'] ?>
+                <?php 
+                  $st = isset($auditoria['status_auditoria']) ? trim($auditoria['status_auditoria']) : '';
+                  $stClass = 'bg-gray-700';
+                  if ($st === 'OK') { $stClass = 'bg-green-700'; }
+                  elseif ($st === 'NOK') { $stClass = 'bg-red-700'; }
+                  elseif (strcasecmp($st, 'Parcial') === 0) { $stClass = 'bg-yellow-700'; }
+                ?>
+                <span class="px-2 py-1 rounded text-xs <?= $stClass ?>">
+                  <?= $st !== '' ? $st : 'Sem registro' ?>
                 </span>
               </div>
             </div>
