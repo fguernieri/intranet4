@@ -13,6 +13,30 @@ $stmt = $pdo->query("SELECT ft.*,
                       fta.status_auditoria AS resultado_auditoria,
                       DATE_ADD(fta.data_auditoria, INTERVAL fta.periodicidade DAY) AS proxima_auditoria
                     FROM ficha_tecnica ft
+                    LEFT JOIN (
+                      SELECT fta1.*
+                      FROM ficha_tecnica_auditoria fta1
+                      JOIN (
+                        SELECT ficha_tecnica_id, MAX(data_auditoria) AS max_data
+                        FROM ficha_tecnica_auditoria
+                        GROUP BY ficha_tecnica_id
+                      ) fta2 ON fta1.ficha_tecnica_id = fta2.ficha_tecnica_id
+                              AND fta1.data_auditoria = fta2.max_data
+                    ) fta ON fta.ficha_tecnica_id = ft.id
+                    WHERE ft.farol = 'verde'
+                    ORDER BY ft.nome_prato ASC");
+$fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Ajuste para MySQL < 8: garantir apenas uma última auditoria por ficha.
+// A consulta acima pode gerar duplicatas quando há duas auditorias no mesmo dia.
+// Esta reconsulta usa subconsulta correlacionada (ORDER BY data, id) para
+// escolher exatamente um registro de auditoria por ficha.
+$stmt = $pdo->query("SELECT ft.*,
+                      fta.data_auditoria AS ultima_auditoria,
+                      fta.periodicidade,
+                      fta.status_auditoria AS resultado_auditoria,
+                      DATE_ADD(fta.data_auditoria, INTERVAL fta.periodicidade DAY) AS proxima_auditoria
+                    FROM ficha_tecnica ft
                     LEFT JOIN ficha_tecnica_auditoria fta
                       ON fta.id = (
                         SELECT fa2.id
@@ -24,10 +48,6 @@ $stmt = $pdo->query("SELECT ft.*,
                     WHERE ft.farol = 'verde'
                     ORDER BY ft.nome_prato ASC");
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Ajuste para MySQL < 8: garantir apenas uma última auditoria por ficha.
-// A consulta acima pode gerar duplicatas quando há duas auditorias no mesmo dia.
-//
 
 // Calcular estatísticas
 $total_fichas = count($fichas);
@@ -71,7 +91,7 @@ if (isset($_GET['sucesso'])) {
   <title>Auditoria de Fichas Técnicas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
   <link rel="stylesheet" href="../../assets/css/style.css">
   <style>
     /* Observação: estilos customizados da tabela e controles do DataTables
@@ -109,7 +129,7 @@ if (isset($_GET['sucesso'])) {
     </div>
     
     <!-- Formulário de Auditoria -->
-    <div class="card1 mb-6">
+    <div class="bg-gray-800 p-6 rounded shadow mb-6">
       <h2 class="text-xl font-semibold mb-4">Registrar Nova Auditoria</h2>
       <form action="processar_auditoria.php" method="post" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,17 +187,13 @@ if (isset($_GET['sucesso'])) {
     </div>
     
     <!-- Tabela de Fichas Técnicas -->
-    <div class="mt-6">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-xl font-semibold">Fichas Técnicas com Status Verde</h2>
-        <input type="text" id="filtro-tabela" placeholder="Filtrar por nome, resultado, status..." class="w-full sm:w-1/2 px-3 py-2 rounded bg-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
-      </div>
+    <div class="bg-gray-800 p-6 rounded shadow">
       <h2 class="text-xl font-semibold mb-4">Fichas Técnicas com Status Verde</h2>
       <div class="overflow-x-auto">
       <table id="tabela-auditoria" class="min-w-full table-auto">
         <thead>
-            <tr class="bg-yellow-600 text-white text-sm">
-              <th class="p-2 cursor-pointer" onclick="sortTable(0)">Nome do Prato</th>
+            <tr>
+              <th>Nome do Prato</th>
               <th>Última Auditoria</th>
               <th>Próxima Auditoria</th>
               <th>Resultado</th>
@@ -185,17 +201,17 @@ if (isset($_GET['sucesso'])) {
               <th>Ações</th>
             </tr>
         </thead>
-        <tbody id="tabela-corpo" data-sort-dir="asc">
+        <tbody>
           <?php foreach ($fichas as $ficha): ?>
-            <tr class="border-b border-gray-700 hover:bg-gray-800">
-              <td class="p-2"><?= htmlspecialchars($ficha['nome_prato']) ?></td>
-              <td class="p-2">
+            <tr>
+              <td><?= htmlspecialchars($ficha['nome_prato']) ?></td>
+              <td>
                 <?= $ficha['ultima_auditoria'] ? date('d/m/Y', strtotime($ficha['ultima_auditoria'])) : 'Nunca auditada' ?>
               </td>
-              <td class="p-2">
+              <td>
                 <?= $ficha['proxima_auditoria'] ? date('d/m/Y', strtotime($ficha['proxima_auditoria'])) : 'N/A' ?>
               </td>
-              <td class="p-2 whitespace-nowrap">
+              <td class="whitespace-nowrap">
                 <?php $resultado = isset($ficha['resultado_auditoria']) ? trim($ficha['resultado_auditoria']) : ''; ?>
                 <?php if ($resultado === 'OK'): ?>
                   <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">OK</span>
@@ -207,7 +223,7 @@ if (isset($_GET['sucesso'])) {
                   <span class="px-2 py-1 rounded text-xs bg-gray-700 whitespace-nowrap">Sem registro</span>
                 <?php endif; ?>
               </td>
-              <td class="p-2 whitespace-nowrap">
+              <td class="whitespace-nowrap">
                 <?php if ($ficha['status_auditoria'] === 'em_dia'): ?>
                   <span class="px-2 py-1 rounded text-xs bg-green-700 whitespace-nowrap">Em dia</span>
                 <?php elseif ($ficha['status_auditoria'] === 'atrasada'): ?>
@@ -216,7 +232,7 @@ if (isset($_GET['sucesso'])) {
                   <span class="px-2 py-1 rounded text-xs bg-yellow-700 whitespace-nowrap">Não auditada</span>
                 <?php endif; ?>
               </td>
-              <td class="p-2">
+              <td>
                 <a href="historico_auditoria.php?ficha_id=<?= $ficha['id'] ?>" class="text-cyan-400 hover:text-cyan-300">Histórico</a>
               </td>
             </tr>
@@ -226,44 +242,22 @@ if (isset($_GET['sucesso'])) {
       </div>
     </div>
   </div>
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
   <script>
-    // Ordena a tabela por coluna, semelhante ao dash_cozinha
-    function sortTable(col) {
-      const table = document.getElementById('tabela-auditoria');
-      const tbody = table.tBodies[0];
-      let dir = tbody.getAttribute('data-sort-dir') === 'asc' ? 'asc' : 'desc';
-      let switching = true;
-      while (switching) {
-        switching = false;
-        const rows = table.rows;
-        for (let i = 1; i < rows.length - 1; i++) {
-          const x = rows[i].cells[col].textContent.replace(/[R$%,]/g,'').trim();
-          const y = rows[i+1].cells[col].textContent.replace(/[R$%,]/g,'').trim();
-          const a = isNaN(x) ? x.toLowerCase() : parseFloat(x);
-          const b = isNaN(y) ? y.toLowerCase() : parseFloat(y);
-          if ((dir==='asc' && a>b) || (dir==='desc' && a<b)) {
-            rows[i].parentNode.insertBefore(rows[i+1], rows[i]);
-            switching = true;
-            break;
-          }
-        }
-        if (!switching) dir = dir==='asc' ? 'desc' : 'asc';
-      }
-      tbody.setAttribute('data-sort-dir', dir);
-    }
-
-    // Filtro simples por texto
-    const filtro = document.getElementById('filtro-tabela');
-    if (filtro) {
-      filtro.addEventListener('input', function () {
-        const termo = this.value.toLowerCase();
-        const linhas = document.querySelectorAll('#tabela-auditoria tbody tr');
-        linhas.forEach(linha => {
-          const texto = linha.textContent.toLowerCase();
-          linha.style.display = texto.includes(termo) ? '' : 'none';
-        });
+    $(document).ready(function() {
+      $('#tabela-auditoria').DataTable({
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
+        },
+          order: [[4, 'asc']],
+          columnDefs: [
+            { orderable: false, targets: 5 }
+          ],
+        pageLength: 25
       });
-    }
+    });
   </script>
 </body>
 </html>
