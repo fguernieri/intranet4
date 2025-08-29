@@ -268,5 +268,6 @@ require_once __DIR__ . '/../../config/db.php';
 <script src="/modules/DRE/dre-equilibrio.js"></script>
 <script src="/modules/DRE/dre-salvar-metas.js"></script>
 <script src="/modules/DRE/dre-salvar-simulacao.js"></script>
+<script src="/modules/DRE/dre-carregar-simulacao.js"></script>
 </body>
 </html>
