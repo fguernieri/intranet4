@@ -28,6 +28,7 @@ include __DIR__ . '/../../sidebar.php';
     <a href="disp_bdf_almoco_fds.php"   class="btn-acao">Disp BDF Almoço FDS</a>
     <a href="disp_bdf_noite.php"        class="btn-acao">Disp BDF Noite</a>
     <a href="disp_wab.php"              class="btn-acao">Disp WAB</a>
+    <a href="analise_vendas.php"        class="btn-acao-azul">Análise de Vendas</a>
     <a href="inventario_cozinha.php"   class="btn-acao-verde">Inventário Cozinha</a>
     <a href="telegram_disp_config.php"  class="btn-acao-azul">Telegram</a>
   </div>
