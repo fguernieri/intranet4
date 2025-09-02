@@ -302,6 +302,55 @@ $percentualEspeciais   = $percentualEspeciais   ?? 0;
 $bonificacaoBastards   = $bonificacaoBastards   ?? 0;
 $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
+// ====== Fechamento Hermes e Renato (a partir do mesmo XLS de Vendas) ======
+// Consolida a soma da Coluna J (10ª coluna, índice 9) para os produtos especificados
+$hermesLataValor = 0.0;
+$hermesValor     = 0.0;
+$hermesTotal     = 0.0;
+
+if (!empty($dadosChoripan)) {
+    $cabHerm   = $dadosChoripan[0] ?? [];
+    $idxProdH  = array_search('Produto', $cabHerm, true);
+
+    // Função local para converter valores monetários (com R$, ponto e vírgula) para float
+    $toFloat = function($str) {
+        $s = (string)$str;
+        $s = trim($s);
+        // remove qualquer caractere que não seja dígito, vírgula, ponto, sinal
+        $s = preg_replace('/[^0-9,.-]/u', '', $s);
+        // se houver mais de uma vírgula, mantém apenas a última como decimal
+        $parts = explode(',', $s);
+        if (count($parts) > 1) {
+            $decimal = array_pop($parts);
+            $int = implode('', $parts);
+            $s = $int . '.' . $decimal;
+        } else {
+            // não tem vírgula, troca possível separador decimal ponto
+            $s = str_replace(',', '.', $s);
+        }
+        // remove espaços
+        $s = str_replace([' '], '', $s);
+        return is_numeric($s) ? (float)$s : 0.0;
+    };
+
+    foreach (array_slice($dadosChoripan, 1) as $linha) {
+        $produto = ($idxProdH !== false && $idxProdH !== null) ? (string)($linha[$idxProdH] ?? '') : '';
+        if ($produto === '') { continue; }
+        $valorStr = (string)($linha[9] ?? '0'); // Coluna J
+        $valorNum = $toFloat($valorStr);
+
+        if (strcasecmp($produto, 'HERMES E RENATO-LATA 350ML') === 0) {
+            $hermesLataValor += $valorNum;
+        } elseif (strcasecmp($produto, 'HERMES E RENATO') === 0) {
+            $hermesValor += $valorNum;
+        }
+    }
+}
+
+$hermesTotal = (float)$hermesLataValor + (float)$hermesValor;
+$hermesRepassePercent = 10.0; // valor inicial padrão, ajustável via input (JS)
+$hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100), 2);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -739,7 +788,66 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
           </div>
         </div>
       </div>
+      
+      <!-- HERMES E RENATO -->
+      <div class="card-section">
+        <div class="card-header">
+          <h1 class="section-title text-2xl">🥃 Fechamento Hermes e Renato</h1>
+        </div>
+        <div class="card-body">
+          <div id="card-hermes" class="space-y-4">
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Total (Coluna J)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>HERMES E RENATO-LATA 350ML</td>
+                    <td>R$ <?= number_format((float)$hermesLataValor, 2, ',', '.') ?></td>
+                  </tr>
+                  <tr>
+                    <td>HERMES E RENATO</td>
+                    <td>R$ <?= number_format((float)$hermesValor, 2, ',', '.') ?></td>
+                  </tr>
+                  <tr class="total-row">
+                    <td>Total</td>
+                    <td>R$ <?= number_format((float)$hermesTotal, 2, ',', '.') ?></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+              <div class="form-group">
+                <label for="percent_hermes" class="form-label">Repasse (%)</label>
+                <input
+                  type="number"
+                  id="percent_hermes"
+                  step="0.01"
+                  value="<?= htmlspecialchars((string)$hermesRepassePercent) ?>"
+                  oninput="atualizarRepasseHermes()"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Repasse</label>
+                <div class="text-xl font-semibold text-yellow-400">
+                  R$ <span id="repasse-hermes-text"><?= number_format((float)$hermesRepasseValor, 2, ',', '.') ?></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button onclick="copiarHermesEmail()" class="btn-secondary">📧 Copiar para E-mail</button>
+              <button onclick="exportarHermesPNG()" class="btn-primary">🖼️ Exportar PNG</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- CHORIPAN -->
       <div class="card-section">
@@ -827,6 +935,7 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 <script>
 const litrosBastards = <?= (int)$litrosBastards ?>;
 const litrosEspeciais = <?= (int)$litrosEspeciais ?>;
+const hermesTotal = <?= json_encode((float)$hermesTotal) ?>;
 
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
@@ -1048,6 +1157,121 @@ function exportarGodSavePNG() {
     });
 }
 document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
+document.getElementById('percent_hermes') && atualizarRepasseHermes();
+
+function atualizarRepasseHermes() {
+    const pct = parseFloat(document.getElementById('percent_hermes')?.value) || 0;
+    const valor = (hermesTotal || 0) * (pct / 100);
+    const span = document.getElementById('repasse-hermes-text');
+    if (span) {
+        span.textContent = (valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+}
+
+function copiarHermesEmail() {
+    const cardOriginal = document.getElementById('card-hermes');
+    if (!cardOriginal) {
+        alert('Sem conteúdo do Hermes e Renato para copiar.');
+        return;
+    }
+    const card = cardOriginal.cloneNode(true);
+    // Remove controles
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
+
+    card.querySelectorAll('table').forEach(table => {
+        table.removeAttribute('class');
+        const linhas = table.querySelectorAll('tr');
+        linhas.forEach((linha, i) => {
+            const celulas = linha.children;
+            for (const celula of celulas) {
+                celula.removeAttribute('class');
+                celula.removeAttribute('style');
+                if (i === 0) {
+                    celula.setAttribute("style", estiloHeader);
+                } else if (
+                    linha.innerText.toUpperCase().includes("TOTAL") ||
+                    linha.innerText.toUpperCase().includes("REPASSE")
+                ) {
+                    celula.setAttribute("style", estiloTotal);
+                } else {
+                    celula.setAttribute("style", estiloCelula);
+                }
+            }
+        });
+    });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNode(container);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+
+    document.body.removeChild(container);
+    alert('Conteúdo do Hermes e Renato copiado! Agora é só colar no e-mail.');
+}
+
+function exportarHermesPNG() {
+    const cardOriginal = document.getElementById('card-hermes');
+    if (!cardOriginal) {
+        alert('Sem conteúdo do Hermes e Renato para exportar.');
+        return;
+    }
+    const card = cardOriginal.cloneNode(true);
+    // Remove controles
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
+
+    card.querySelectorAll('table').forEach(table => {
+        table.removeAttribute('class');
+        const linhas = table.querySelectorAll('tr');
+        linhas.forEach((linha, i) => {
+            const celulas = linha.children;
+            for (const celula of celulas) {
+                celula.removeAttribute('class');
+                celula.removeAttribute('style');
+                if (i === 0) {
+                    celula.setAttribute("style", estiloHeader);
+                } else if (
+                    linha.innerText.toUpperCase().includes("TOTAL") ||
+                    linha.innerText.toUpperCase().includes("REPASSE")
+                ) {
+                    celula.setAttribute("style", estiloTotal);
+                } else {
+                    celula.setAttribute("style", estiloCelula);
+                }
+            }
+        });
+    });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    html2canvas(card).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'hermes_renato.png';
+        link.click();
+        document.body.removeChild(container);
+    });
+}
 
 function copiarResumoEmail() {
     const tabelaOriginal = document.getElementById('bulldog');
