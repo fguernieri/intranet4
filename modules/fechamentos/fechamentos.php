@@ -801,7 +801,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                 <thead>
                   <tr>
                     <th>Produto</th>
-                    <th>Total (Coluna J)</th>
+                    <th>R$ Total</th>
                   </tr>
                 </thead>
                 <tbody>
