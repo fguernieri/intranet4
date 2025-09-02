@@ -204,8 +204,18 @@ include __DIR__ . '/../../sidebar.php';
             .map(tr => Array.from(tr.cells).map((td, i) => {
               const raw = td.textContent.trim();
               if ([3,4,5,6,7].includes(i)) {
-                const cleaned = raw.replace(/[R$%]/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-                const num = parseFloat(cleaned);
+                let s = raw.replace(/[R$%\s]/g, '').trim();
+                if (/[,]\d{1,2}$/.test(s)) {
+                  // vírgula como decimal: remove pontos (milhar) e troca vírgula por ponto
+                  s = s.replace(/\./g, '').replace(/,/g, '.');
+                } else if (/[.]\d{1,2}$/.test(s)) {
+                  // ponto como decimal: remove vírgulas (milhar)
+                  s = s.replace(/,/g, '');
+                } else {
+                  // fallback: normaliza vírgula para ponto
+                  s = s.replace(/,/g, '.');
+                }
+                const num = parseFloat(s);
                 return isNaN(num) ? raw : num;
               }
               return raw;
