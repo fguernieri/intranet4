@@ -191,6 +191,37 @@ include __DIR__ . '/../../sidebar.php';
     renderDispChart('#chart-availability',    data.availability);
     renderDispChart('#chart-availability-7d', data.availability7d);
     renderDispChart('#chart-availability-30d',data.availability30d);
+
+    // Exporta a tabela filtrada (apenas linhas visíveis) para XLSX
+    const btnExport = document.getElementById('export-xlsx');
+    if (btnExport && typeof XLSX !== 'undefined') {
+      btnExport.addEventListener('click', () => {
+        try {
+          const table = document.getElementById('tabela-sortable');
+          const headers = Array.from(table.tHead.rows[0].cells).map(th => th.textContent.trim());
+          const rows = Array.from(table.tBodies[0].rows)
+            .filter(tr => tr.style.display !== 'none')
+            .map(tr => Array.from(tr.cells).map((td, i) => {
+              const raw = td.textContent.trim();
+              if ([3,4,5,6,7].includes(i)) {
+                const cleaned = raw.replace(/[R$%]/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? raw : num;
+              }
+              return raw;
+            }));
+
+          const aoa = [headers, ...rows];
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Detalhamento');
+          XLSX.writeFile(wb, 'detalhamento.xlsx');
+        } catch (e) {
+          console.error('Falha ao exportar XLSX:', e);
+          alert('Não foi possível exportar o XLSX.');
+        }
+      });
+    }
   });
 
   // Sort table
