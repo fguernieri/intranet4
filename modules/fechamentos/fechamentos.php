@@ -817,6 +817,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                     <td>Total</td>
                     <td>R$ <?= number_format((float)$hermesTotal, 2, ',', '.') ?></td>
                   </tr>
+                  <tr class="total-row">
+                    <td class="text-center" colspan="2">
+                      REPASSE <span id="repasse-hermes-percent-text"><?= htmlspecialchars((string)$hermesRepassePercent) ?></span>% =
+                      R$ <span id="repasse-hermes-text"><?= number_format((float)$hermesRepasseValor, 2, ',', '.') ?></span>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -833,12 +839,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                   class="form-control"
                 />
               </div>
-              <div class="form-group">
-                <label class="form-label">Repasse</label>
-                <div class="text-xl font-semibold text-yellow-400">
-                  R$ <span id="repasse-hermes-text"><?= number_format((float)$hermesRepasseValor, 2, ',', '.') ?></span>
-                </div>
-              </div>
+              
             </div>
 
             <div class="btn-group">
@@ -1163,8 +1164,12 @@ function atualizarRepasseHermes() {
     const pct = parseFloat(document.getElementById('percent_hermes')?.value) || 0;
     const valor = (hermesTotal || 0) * (pct / 100);
     const span = document.getElementById('repasse-hermes-text');
+    const spanPct = document.getElementById('repasse-hermes-percent-text');
     if (span) {
         span.textContent = (valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (spanPct) {
+        spanPct.textContent = (pct || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     }
 }
 
@@ -1174,40 +1179,40 @@ function copiarHermesEmail() {
         alert('Sem conteúdo do Hermes e Renato para copiar.');
         return;
     }
-    const card = cardOriginal.cloneNode(true);
-    // Remove controles
-    card.querySelectorAll('input, button').forEach(el => el.remove());
+    const table = cardOriginal.querySelector('table')?.cloneNode(true);
+    if (!table) {
+        alert('Tabela do Hermes e Renato não encontrada.');
+        return;
+    }
 
     const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
     const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
     const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
 
-    card.querySelectorAll('table').forEach(table => {
-        table.removeAttribute('class');
-        const linhas = table.querySelectorAll('tr');
-        linhas.forEach((linha, i) => {
-            const celulas = linha.children;
-            for (const celula of celulas) {
-                celula.removeAttribute('class');
-                celula.removeAttribute('style');
-                if (i === 0) {
-                    celula.setAttribute("style", estiloHeader);
-                } else if (
-                    linha.innerText.toUpperCase().includes("TOTAL") ||
-                    linha.innerText.toUpperCase().includes("REPASSE")
-                ) {
-                    celula.setAttribute("style", estiloTotal);
-                } else {
-                    celula.setAttribute("style", estiloCelula);
-                }
+    table.removeAttribute('class');
+    const linhasC = table.querySelectorAll('tr');
+    linhasC.forEach((linha, i) => {
+        const celulas = linha.children;
+        for (const celula of celulas) {
+            celula.removeAttribute('class');
+            celula.removeAttribute('style');
+            if (i === 0) {
+                celula.setAttribute("style", estiloHeader);
+            } else if (
+                linha.innerText.toUpperCase().includes("TOTAL") ||
+                linha.innerText.toUpperCase().includes("REPASSE")
+            ) {
+                celula.setAttribute("style", estiloTotal);
+            } else {
+                celula.setAttribute("style", estiloCelula);
             }
-        });
+        }
     });
 
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
-    container.appendChild(card);
+    container.appendChild(table);
     document.body.appendChild(container);
 
     const range = document.createRange();
@@ -1228,43 +1233,43 @@ function exportarHermesPNG() {
         alert('Sem conteúdo do Hermes e Renato para exportar.');
         return;
     }
-    const card = cardOriginal.cloneNode(true);
-    // Remove controles
-    card.querySelectorAll('input, button').forEach(el => el.remove());
+    const table = cardOriginal.querySelector('table')?.cloneNode(true);
+    if (!table) {
+        alert('Tabela do Hermes e Renato não encontrada.');
+        return;
+    }
 
     const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
     const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
     const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
 
-    card.querySelectorAll('table').forEach(table => {
-        table.removeAttribute('class');
-        const linhas = table.querySelectorAll('tr');
-        linhas.forEach((linha, i) => {
-            const celulas = linha.children;
-            for (const celula of celulas) {
-                celula.removeAttribute('class');
-                celula.removeAttribute('style');
-                if (i === 0) {
-                    celula.setAttribute("style", estiloHeader);
-                } else if (
-                    linha.innerText.toUpperCase().includes("TOTAL") ||
-                    linha.innerText.toUpperCase().includes("REPASSE")
-                ) {
-                    celula.setAttribute("style", estiloTotal);
-                } else {
-                    celula.setAttribute("style", estiloCelula);
-                }
+    table.removeAttribute('class');
+    const linhasP = table.querySelectorAll('tr');
+    linhasP.forEach((linha, i) => {
+        const celulas = linha.children;
+        for (const celula of celulas) {
+            celula.removeAttribute('class');
+            celula.removeAttribute('style');
+            if (i === 0) {
+                celula.setAttribute("style", estiloHeader);
+            } else if (
+                linha.innerText.toUpperCase().includes("TOTAL") ||
+                linha.innerText.toUpperCase().includes("REPASSE")
+            ) {
+                celula.setAttribute("style", estiloTotal);
+            } else {
+                celula.setAttribute("style", estiloCelula);
             }
-        });
+        }
     });
 
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
-    container.appendChild(card);
+    container.appendChild(table);
     document.body.appendChild(container);
 
-    html2canvas(card).then(canvas => {
+    html2canvas(table).then(canvas => {
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = 'hermes_renato.png';
