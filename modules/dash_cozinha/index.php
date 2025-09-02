@@ -213,6 +213,41 @@ include __DIR__ . '/../../sidebar.php';
 
           const aoa = [headers, ...rows];
           const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+          // Aplica formatação PT-BR para decimais com vírgula
+          if (ws['!ref']) {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r + 1; R <= range.e.r; ++R) { // pula o cabeçalho
+              // Colunas moeda: Custo(3), Preço(4), Margem R$(6)
+              [3,4,6].forEach(C => {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = ws[addr];
+                if (!cell) return;
+                if (typeof cell.v === 'string') {
+                  const num = parseFloat(cell.v.replace(/\./g, '').replace(/,/g, '.'));
+                  if (!isNaN(num)) cell.v = num;
+                }
+                cell.t = 'n';
+                cell.z = '[$-pt-BR]#,##0.00';
+              });
+              // Colunas percentuais: CMV(5) e Margem %(7)
+              [5,7].forEach(C => {
+                const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = ws[addr];
+                if (!cell) return;
+                let val = cell.v;
+                if (typeof val === 'string') {
+                  val = parseFloat(val.replace(/\./g, '').replace(/,/g, '.'));
+                }
+                if (typeof val === 'number' && !isNaN(val)) {
+                  cell.v = val / 100; // Excel espera fração para %
+                  cell.t = 'n';
+                  cell.z = '[$-pt-BR]0.0%';
+                }
+              });
+            }
+          }
+
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, 'Detalhamento');
           XLSX.writeFile(wb, 'detalhamento.xlsx');
