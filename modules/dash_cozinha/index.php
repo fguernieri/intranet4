@@ -240,7 +240,7 @@ include __DIR__ . '/../../sidebar.php';
                 cell.t = 'n';
                 cell.z = '[$-pt-BR]#,##0.00';
               });
-              // Colunas percentuais: CMV(5) e Margem %(7)
+              // Colunas percentuais (como número, sem %): CMV(5) e Margem %(7)
               [5,7].forEach(C => {
                 const addr = XLSX.utils.encode_cell({ r: R, c: C });
                 const cell = ws[addr];
@@ -250,9 +250,10 @@ include __DIR__ . '/../../sidebar.php';
                   val = parseFloat(val.replace(/\./g, '').replace(/,/g, '.'));
                 }
                 if (typeof val === 'number' && !isNaN(val)) {
-                  cell.v = val / 100; // Excel espera fração para %
+                  // mantém valor em base 100 (ex.: 23.5) e formata com vírgula
+                  cell.v = val;
                   cell.t = 'n';
-                  cell.z = '[$-pt-BR]0.0%';
+                  cell.z = '[$-pt-BR]0.0';
                 }
               });
             }
