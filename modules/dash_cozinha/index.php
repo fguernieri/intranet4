@@ -16,6 +16,7 @@ include __DIR__ . '/../../sidebar.php';
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col sm:flex-row">
 <main class="flex-1 p-4 sm:p-10 pt-20 sm:pt-10">
@@ -78,11 +79,19 @@ include __DIR__ . '/../../sidebar.php';
         placeholder="Filtrar por multiplos termos; separe com ;"
         class="w-full sm:w-1/2 px-3 py-2 rounded bg-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
       >
-      <button
-        id="toggle-detalhamento"
-        class="btn-acao px-2 py-1 text-sm"
-        type="button"
-      >Ocultar</button>
+      <div class="flex gap-2">
+        <button
+          id="toggle-detalhamento"
+          class="btn-acao px-2 py-1 text-sm"
+          type="button"
+        >Ocultar</button>
+        <button
+          id="export-xlsx"
+          class="btn-acao-verde px-2 py-1 text-sm"
+          type="button"
+          title="Exporta apenas as linhas visíveis"
+        >Exportar XLSX</button>
+      </div>
     </div>
     <div id="detalhamento-container" class="overflow-x-auto">
       <table id="tabela-sortable" class="min-w-full text-xs text-left">
