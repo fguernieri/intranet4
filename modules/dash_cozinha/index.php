@@ -75,7 +75,7 @@ include __DIR__ . '/../../sidebar.php';
       <input
         type="text"
         id="filtro-tabela"
-        placeholder="Filtrar pratos, grupos, custos..."
+        placeholder="Filtrar por multiplos termos; separe com ;"
         class="w-full sm:w-1/2 px-3 py-2 rounded bg-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
       >
       <button
@@ -88,11 +88,12 @@ include __DIR__ . '/../../sidebar.php';
       <table id="tabela-sortable" class="min-w-full text-xs text-left">
         <thead>
           <tr class="bg-yellow-600 text-white text-sm">
-            <th class="p-2 cursor-pointer" onclick="sortTable(0)">Prato</th>
-            <th class="p-2 cursor-pointer" onclick="sortTable(1)">Grupo</th>
-            <th class="p-2 cursor-pointer" onclick="sortTable(2)">Custo</th>
+            <th class="p-2 cursor-pointer" onclick="sortTable(0)">Codigo</th>
+            <th class="p-2 cursor-pointer" onclick="sortTable(1)">Prato</th>
+            <th class="p-2 cursor-pointer" onclick="sortTable(2)">Grupo</th>
+            <th class="p-2 cursor-pointer" onclick="sortTable(3)">Custo</th>
             <th class="p-2 cursor-pointer" onclick="sortTable(3)">Preço</th>
-            <th class="p-2 cursor-pointer" onclick="sortTable(4)">CMV&nbsp;(%)</th>
+            <th class="p-2 cursor-pointer" onclick="sortTable(5)">CMV&nbsp;(%)</th>
             <th class="p-2 cursor-pointer" onclick="sortTable(5)">Margem&nbsp;(R$)</th>
             <th class="p-2 cursor-pointer" onclick="sortTable(6)">Margem&nbsp;(%)</th>
           </tr>
@@ -131,6 +132,7 @@ include __DIR__ . '/../../sidebar.php';
       const margemP = p.preco > 0 ? (margemR / p.preco * 100) : 0;
       return `
         <tr class="border-b border-gray-700 hover:bg-gray-800">
+          <td class="p-2">${p.codigo ?? ''}</td>
           <td class="p-2">${p.nome}</td>
           <td class="p-2">${p.grupo}</td>
           <td class="p-2">R$ ${p.custo.toFixed(2)}</td>
@@ -140,6 +142,12 @@ include __DIR__ . '/../../sidebar.php';
           <td class="p-2">${margemP.toFixed(1)}%</td>
         </tr>`;
     }).join('');
+
+    // Ajusta os cabeçalhos para ordenar pela coluna correta
+    const ths = document.querySelectorAll('#tabela-sortable thead th');
+    ths.forEach((th, idx) => {
+      th.onclick = () => sortTable(idx);
+    });
 
     // Função genérica para chart de disponibilidade
     function renderDispChart(selector, obj) {
@@ -200,13 +208,15 @@ include __DIR__ . '/../../sidebar.php';
     table.tBodies[0].setAttribute('data-sort-dir', dir);
   }
   
-  // Filtro em tempo real da tabela
+  // Filtro em tempo real da tabela com múltiplos termos (separe com ";"; também aceita "," e "|")
   document.getElementById('filtro-tabela').addEventListener('input', function () {
-    const termo = this.value.toLowerCase();
+    const raw = this.value.toLowerCase();
+    const termos = raw.split(/[;|,]+/).map(s => s.trim()).filter(Boolean);
     const linhas = document.querySelectorAll('#tabela-pratos tr');
     linhas.forEach(linha => {
       const textoLinha = linha.textContent.toLowerCase();
-      linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+      const match = termos.length === 0 || termos.some(t => textoLinha.includes(t));
+      linha.style.display = match ? '' : 'none';
     });
   });
   
@@ -242,4 +252,3 @@ include __DIR__ . '/../../sidebar.php';
 </script>
 </body>
 </html>
-
