@@ -92,7 +92,7 @@ try {
 
 // Filtragem e ordenação igual ao seu código atual...
 $cervejas_permitidas = [
-    'WELT PILSEN',
+    'BASTARDS PILSEN',
     'DOG SAVE THE BEER',
     'ZE DO MORRO',
     'HECTOR 5 ROUNDS',
@@ -105,7 +105,7 @@ $cervejas_permitidas = [
     'MARK THE SHADOW',
     'CRIATURA DO PANTANO',
     'XP 094 HOP HEADS',
-    'WELT RED ALE'
+    'BASTARDS RED ALE'
 ];
 
 // Filtra INOX e PET só para cervejas disponíveis em tanque
