@@ -21,6 +21,7 @@ $format = strtolower($_GET['format'] ?? ''); // csv | json | print
 
 $items = [];
 $pedido_meta = null;
+$autoprint = isset($_GET['autoprint']) && $_GET['autoprint'];
 if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDERS_TABLE')) {
   $base = rtrim(SUPABASE_URL, '/');
   if ($pedido !== '') {
@@ -69,7 +70,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
           'numero_pedido' => $r['numero_pedido'] ?? $pedido,
           'data' => $r['data'] ?? null,
           'usuario' => $r['usuario'] ?? null,
-          'filial' => $r['filial'] ?? $filial
+          'filial' => $r['filial'] ?? $filial,
+          'setor' => $r['setor'] ?? ''
         ];
       }
     }
@@ -89,8 +91,8 @@ if ($format === 'csv') {
   header('Content-Type: text/csv; charset=utf-8');
   header('Content-Disposition: attachment; filename="' . $filename . '"');
     $out = fopen('php://output', 'w');
-    // header row
-    fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO']);
+  // header row (including setor)
+  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR']);
     foreach ($items as $it) {
         fputcsv($out, [
             $it['data'] ?? '',
@@ -100,7 +102,8 @@ if ($format === 'csv') {
             $it['observacao'] ?? '',
             $it['numero_pedido'] ?? '',
             $it['filial'] ?? '',
-            $it['usuario'] ?? ''
+      $it['usuario'] ?? '',
+      $it['setor'] ?? ''
         ]);
     }
     fclose($out);
@@ -108,8 +111,10 @@ if ($format === 'csv') {
 }
 
 if ($format === 'json') {
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['meta' => $pedido_meta, 'items' => $items], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+  header('Content-Type: application/json; charset=utf-8');
+  // ensure meta includes setor when available
+  if ($pedido_meta && !isset($pedido_meta['setor'])) $pedido_meta['setor'] = '';
+  echo json_encode(['meta' => $pedido_meta, 'items' => $items], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -134,6 +139,7 @@ if ($format === 'json') {
         <p class="text-sm text-gray-300">Data: <strong><?= htmlspecialchars($pedido_meta['data']) ?></strong></p>
         <p class="text-sm text-gray-300">Usuário: <strong><?= htmlspecialchars($pedido_meta['usuario']) ?></strong></p>
         <p class="text-sm text-gray-300">Filial: <strong><?= htmlspecialchars($pedido_meta['filial']) ?></strong></p>
+        <p class="text-sm text-gray-300">Setor: <strong><?= htmlspecialchars($pedido_meta['setor'] ?? '') ?></strong></p>
       <?php else: ?>
         <?php if ($pedido === ''): ?>
           <p class="text-sm text-gray-300">Filial: <strong><?= htmlspecialchars($filial ?: 'Todas') ?></strong></p>
@@ -147,6 +153,7 @@ if ($format === 'json') {
     <div class="mb-4">
       <a class="inline-block bg-green-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&format=csv">Download CSV</a>
       <a class="inline-block bg-blue-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&format=json">Download JSON</a>
+      <a class="inline-block bg-indigo-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&autoprint=1" target="_blank">Baixar PDF</a>
       <button onclick="window.print()" class="inline-block bg-gray-700 px-4 py-2 rounded">Imprimir</button>
       <a href="order.php?filial=<?= urlencode($pedido_meta['filial'] ?? '') ?>" class="ml-2 text-sm text-gray-400">Voltar</a>
     </div>
@@ -154,10 +161,10 @@ if ($format === 'json') {
     <?php if (!empty($items)): ?>
       <div class="bg-gray-800 p-4 rounded">
         <table class="w-full text-sm">
-          <thead class="text-left text-yellow-400"><tr><th>Data</th><th>Produto</th><th>Unidade</th><th>Qtde</th><th>Obs</th><th>Usuario</th></tr></thead>
+          <thead class="text-left text-yellow-400"><tr><th>Data</th><th>Produto</th><th>Unidade</th><th>Qtde</th><th>Obs</th><th>Usuario</th><th>Setor</th></tr></thead>
           <tbody>
             <?php foreach ($items as $it): ?>
-              <tr class="border-b border-gray-700"><td class="py-2"><?= htmlspecialchars($it['data'] ?? '') ?></td><td><?= htmlspecialchars($it['produto'] ?? '') ?></td><td><?= htmlspecialchars($it['und'] ?? '') ?></td><td><?= htmlspecialchars($it['qtde'] ?? '') ?></td><td><?= htmlspecialchars($it['observacao'] ?? '') ?></td><td><?= htmlspecialchars($it['usuario'] ?? '') ?></td></tr>
+              <tr class="border-b border-gray-700"><td class="py-2"><?= htmlspecialchars($it['data'] ?? '') ?></td><td><?= htmlspecialchars($it['produto'] ?? '') ?></td><td><?= htmlspecialchars($it['und'] ?? '') ?></td><td><?= htmlspecialchars($it['qtde'] ?? '') ?></td><td><?= htmlspecialchars($it['observacao'] ?? '') ?></td><td><?= htmlspecialchars($it['usuario'] ?? '') ?></td><td><?= htmlspecialchars($it['setor'] ?? '') ?></td></tr>
             <?php endforeach; ?>
           </tbody>
         </table>
@@ -167,5 +174,15 @@ if ($format === 'json') {
     <?php endif; ?>
 
   </main>
+  <?php if ($autoprint): ?>
+  <script>
+    // auto-print for PDF export then close after short delay
+    window.addEventListener('load', function(){
+      setTimeout(function(){ window.print(); }, 200);
+      // optional: close window after print (may be blocked by some browsers)
+      window.onafterprint = function(){ setTimeout(function(){ window.close(); }, 200); };
+    });
+  </script>
+  <?php endif; ?>
 </body>
 </html>
