@@ -225,12 +225,17 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
           // focus the insumo field
           const ins = clone.querySelector('input[name="new_insumo[]"]');
           if(ins) ins.focus();
+          // ensure quantity field starts empty (avoid browser autofill defaulting to 1)
+          const newQt = clone.querySelector('input[name="new_qtde[]"]');
+          if (newQt) newQt.value = '';
         }
 
         addNewBtn.addEventListener('click', addNewRow);
 
-        // Add one empty row by default
-        addNewRow();
+  // Reset all existing quantity inputs to 0 on page load to avoid stale/autofill values
+  document.querySelectorAll('input[name^="quantidade"]').forEach(i => { try { i.value = '0'; } catch(e){} });
+  // Add one empty new-item row by default
+  addNewRow();
 
         // Before submit, validate new rows: all required and numeric qtde
         document.getElementById('bar-order-form').addEventListener('submit', function(e){
@@ -366,7 +371,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             const qt = document.querySelector('input[name="quantidade['+key+']"]');
             const obs = document.querySelector('input[name="observacao['+key+']"]');
             const uni = document.querySelector('input[name="produto_unidade['+key+']"]');
-            const qv = qt ? parseFloat(qt.value) : 0;
+            const qv = qt ? Number(qt.value || 0) : 0;
             if (qv > 0){
               rows.push({produto: name, und: uni ? uni.value : '', qtde: qv, observacao: obs ? obs.value : ''});
             }
@@ -374,12 +379,16 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
           // new items
           const newIns = Array.from(document.querySelectorAll('input[name="new_insumo[]"]'));
+          const newCats = Array.from(document.querySelectorAll('select[name="new_categoria[]"]'));
+          const newUnis = Array.from(document.querySelectorAll('input[name="new_unidade[]"]'));
+          const newQtds = Array.from(document.querySelectorAll('input[name="new_qtde[]"]'));
+          const newObss = Array.from(document.querySelectorAll('input[name="new_obs[]"]'));
           newIns.forEach((el, idx) => {
-            const nome = el.value.trim();
-            const cat = (document.querySelectorAll('select[name="new_categoria[]"]')[idx] || {}).value || '';
-            const uni = (document.querySelectorAll('input[name="new_unidade[]"]')[idx] || {}).value || '';
-            const qt = parseFloat((document.querySelectorAll('input[name="new_qtde[]"]')[idx] || {}).value || 0);
-            const obs = (document.querySelectorAll('input[name="new_obs[]"]')[idx] || {}).value || '';
+            const nome = (el.value || '').trim();
+            const cat = (newCats[idx] || {}).value || '';
+            const uni = (newUnis[idx] || {}).value || '';
+            const qt = Number((newQtds[idx] || {}).value || 0);
+            const obs = (newObss[idx] || {}).value || '';
             if (nome && qt > 0){
               rows.push({produto: nome + (cat?(' ('+cat+')'):''), und: uni, qtde: qt, observacao: obs});
             }

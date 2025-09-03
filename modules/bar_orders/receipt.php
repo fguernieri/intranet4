@@ -73,6 +73,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
           <p class="text-sm text-gray-300">Data: <strong><?= htmlspecialchars($pedido_meta['data']) ?></strong></p>
           <p class="text-sm text-gray-300">Usuario: <strong><?= htmlspecialchars($pedido_meta['usuario']) ?></strong></p>
           <p class="text-sm text-gray-300">Filial: <strong><?= htmlspecialchars($pedido_meta['filial']) ?></strong></p>
+          <p class="text-sm text-gray-300">Setor: <strong><?= htmlspecialchars($pedido_meta['setor'] ?? '') ?></strong></p>
         <?php else: ?>
           <div class="bg-yellow-700 text-black p-3 rounded">Não foi possível recuperar os detalhes do pedido.</div>
         <?php endif; ?>
@@ -80,6 +81,10 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
 
       <?php if (!empty($items)): ?>
         <div class="bg-gray-800 p-4 rounded">
+          <div class="mb-4">
+            <a class="inline-block bg-indigo-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&autoprint=1" target="_blank">Baixar PDF</a>
+            <button onclick="window.print()" class="inline-block bg-gray-700 px-4 py-2 rounded">Imprimir</button>
+          </div>
           <table class="w-full text-sm">
             <thead class="text-left text-yellow-400"><tr><th>Produto</th><th>Unidade</th><th>Qtde</th><th>Obs</th></tr></thead>
             <tbody>
