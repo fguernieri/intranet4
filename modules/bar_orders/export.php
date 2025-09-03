@@ -88,25 +88,28 @@ if ($format === 'csv') {
     $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
     $filename = sprintf('pedidos_%s_%s.csv', $label, $range);
   }
+  // Use semicolon-separated CSV with UTF-8 BOM so Excel opens columns correctly on Windows
   header('Content-Type: text/csv; charset=utf-8');
   header('Content-Disposition: attachment; filename="' . $filename . '"');
-    $out = fopen('php://output', 'w');
-  // header row (including setor)
-  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR']);
-    foreach ($items as $it) {
-        fputcsv($out, [
-            $it['data'] ?? '',
-            $it['produto'] ?? '',
-            $it['und'] ?? '',
-            $it['qtde'] ?? '',
-            $it['observacao'] ?? '',
-            $it['numero_pedido'] ?? '',
-            $it['filial'] ?? '',
+  $out = fopen('php://output', 'w');
+  // write UTF-8 BOM
+  fwrite($out, "\xEF\xBB\xBF");
+  // header row (including setor) using semicolon delimiter
+  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
+  foreach ($items as $it) {
+    fputcsv($out, [
+      $it['data'] ?? '',
+      $it['produto'] ?? '',
+      $it['und'] ?? '',
+      $it['qtde'] ?? '',
+      $it['observacao'] ?? '',
+      $it['numero_pedido'] ?? '',
+      $it['filial'] ?? '',
       $it['usuario'] ?? '',
       $it['setor'] ?? ''
-        ]);
-    }
-    fclose($out);
+    ], ';');
+  }
+  fclose($out);
     exit;
 }
 
@@ -168,10 +171,12 @@ if ($format === 'xlsx') {
     $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
     $filename = sprintf('pedidos_%s_%s.csv', $label, $range);
   }
+  // fallback CSV with semicolon delimiter and BOM
   header('Content-Type: text/csv; charset=utf-8');
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $out = fopen('php://output', 'w');
-  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR']);
+  fwrite($out, "\xEF\xBB\xBF");
+  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
       $it['data'] ?? '',
@@ -183,7 +188,7 @@ if ($format === 'xlsx') {
       $it['filial'] ?? '',
       $it['usuario'] ?? '',
       $it['setor'] ?? ''
-    ]);
+    ], ';');
   }
   fclose($out);
   exit;
