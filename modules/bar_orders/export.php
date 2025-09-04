@@ -94,12 +94,13 @@ if ($format === 'csv') {
   $out = fopen('php://output', 'w');
   // write UTF-8 BOM
   fwrite($out, "\xEF\xBB\xBF");
-  // header row (including setor) using semicolon delimiter
-  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
+  // header row (including setor and categoria) using semicolon delimiter
+  fputcsv($out, ['DATA', 'PRODUTO', 'CATEGORIA', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
       $it['data'] ?? '',
       $it['produto'] ?? '',
+      $it['categoria'] ?? '',
       $it['und'] ?? '',
       $it['qtde'] ?? '',
       $it['observacao'] ?? '',
@@ -129,13 +130,14 @@ if ($format === 'xlsx') {
     try {
       $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
       $sheet = $spreadsheet->getActiveSheet();
-      $headers = ['DATA','PRODUTO','UND','QTDE','OBSERVACAO','NUMERO_PEDIDO','FILIAL','USUARIO','SETOR'];
+      $headers = ['DATA','PRODUTO','CATEGORIA','UND','QTDE','OBSERVACAO','NUMERO_PEDIDO','FILIAL','USUARIO','SETOR'];
       $sheet->fromArray($headers, null, 'A1');
       $row = 2;
       foreach ($items as $it) {
         $sheet->fromArray([
           $it['data'] ?? '',
           $it['produto'] ?? '',
+          $it['categoria'] ?? '',
           $it['und'] ?? '',
           $it['qtde'] ?? '',
           $it['observacao'] ?? '',
@@ -176,11 +178,12 @@ if ($format === 'xlsx') {
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $out = fopen('php://output', 'w');
   fwrite($out, "\xEF\xBB\xBF");
-  fputcsv($out, ['DATA', 'PRODUTO', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
+  fputcsv($out, ['DATA', 'PRODUTO', 'CATEGORIA', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
       $it['data'] ?? '',
       $it['produto'] ?? '',
+      $it['categoria'] ?? '',
       $it['und'] ?? '',
       $it['qtde'] ?? '',
       $it['observacao'] ?? '',
