@@ -109,11 +109,11 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
             <label class="block text-sm mb-1">Data início</label>
-            <input type="date" name="start" class="w-full p-2 bg-gray-900 rounded text-sm">
+            <input type="date" name="start" class="w-full p-2 bg-gray-900 rounded text-sm" value="<?= htmlspecialchars($_GET['start'] ?? date('Y-m-d'), ENT_QUOTES) ?>">
           </div>
           <div>
             <label class="block text-sm mb-1">Data fim</label>
-            <input type="date" name="end" class="w-full p-2 bg-gray-900 rounded text-sm">
+            <input type="date" name="end" class="w-full p-2 bg-gray-900 rounded text-sm" value="<?= htmlspecialchars($_GET['end'] ?? date('Y-m-d'), ENT_QUOTES) ?>">
           </div>
         </div>
 
