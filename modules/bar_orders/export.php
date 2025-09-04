@@ -130,21 +130,19 @@ if ($format === 'xlsx') {
     try {
       $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
       $sheet = $spreadsheet->getActiveSheet();
-      $headers = ['DATA','PRODUTO','CATEGORIA','UND','QTDE','OBSERVACAO','NUMERO_PEDIDO','FILIAL','USUARIO','SETOR'];
+      // For Excel the requested column order is: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL
+      $headers = ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL'];
       $sheet->fromArray($headers, null, 'A1');
       $row = 2;
       foreach ($items as $it) {
         $sheet->fromArray([
-          $it['data'] ?? '',
           $it['produto'] ?? '',
           $it['categoria'] ?? '',
           $it['und'] ?? '',
           $it['qtde'] ?? '',
           $it['observacao'] ?? '',
-          $it['numero_pedido'] ?? '',
-          $it['filial'] ?? '',
-          $it['usuario'] ?? '',
-          $it['setor'] ?? ''
+          $it['setor'] ?? '',
+          $it['filial'] ?? ''
         ], null, 'A' . $row);
         $row++;
       }
@@ -173,24 +171,22 @@ if ($format === 'xlsx') {
     $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
     $filename = sprintf('pedidos_%s_%s.csv', $label, $range);
   }
-  // fallback CSV with semicolon delimiter and BOM
+  // fallback CSV with semicolon delimiter and BOM (match Excel ordering)
   header('Content-Type: text/csv; charset=utf-8');
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $out = fopen('php://output', 'w');
   fwrite($out, "\xEF\xBB\xBF");
-  fputcsv($out, ['DATA', 'PRODUTO', 'CATEGORIA', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
+  // columns: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL
+  fputcsv($out, ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
-      $it['data'] ?? '',
       $it['produto'] ?? '',
       $it['categoria'] ?? '',
       $it['und'] ?? '',
       $it['qtde'] ?? '',
       $it['observacao'] ?? '',
-      $it['numero_pedido'] ?? '',
-      $it['filial'] ?? '',
-      $it['usuario'] ?? '',
-      $it['setor'] ?? ''
+      $it['setor'] ?? '',
+      $it['filial'] ?? ''
     ], ';');
   }
   fclose($out);
