@@ -197,6 +197,61 @@ if ($format === 'xlsx') {
   exit;
 }
 
+// server-side PDF generation (if requested). Falls back to autoprint view when Dompdf not available.
+if ($format === 'pdf') {
+  $autoload = __DIR__ . '/../../vendor/autoload.php';
+  if (file_exists($autoload)) {
+    require_once $autoload;
+    if (class_exists('\Dompdf\Dompdf')) {
+      // build simple printable HTML for the PDF
+      $title = $pedido ? 'Pedido ' . htmlspecialchars($pedido) : 'Pedidos exportados';
+      $html = '<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:DejaVu Sans, Arial, Helvetica, sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #444;padding:6px;text-align:left}th{background:#eee}</style></head><body>';
+      $html .= '<h2>' . $title . '</h2>';
+      if ($pedido_meta) {
+        $html .= '<p><strong>Pedido:</strong> ' . htmlspecialchars($pedido_meta['numero_pedido']) . '<br>';
+        $html .= '<strong>Data:</strong> ' . htmlspecialchars($pedido_meta['data']) . ' &nbsp; <strong>Usuário:</strong> ' . htmlspecialchars($pedido_meta['usuario']) . '<br>';
+        $html .= '<strong>Filial:</strong> ' . htmlspecialchars($pedido_meta['filial']) . ' &nbsp; <strong>Setor:</strong> ' . htmlspecialchars($pedido_meta['setor'] ?? '') . '</p>';
+      }
+      $html .= '<table><thead><tr><th>Data</th><th>Produto</th><th>Categoria</th><th>Unidade</th><th>Qtde</th><th>Obs</th><th>Usuário</th><th>Setor</th></tr></thead><tbody>';
+      foreach ($items as $it) {
+        $html .= '<tr>';
+        $html .= '<td>' . htmlspecialchars($it['data'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['produto'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['categoria'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['und'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['qtde'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['observacao'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['usuario'] ?? '') . '</td>';
+        $html .= '<td>' . htmlspecialchars($it['setor'] ?? '') . '</td>';
+        $html .= '</tr>';
+      }
+      $html .= '</tbody></table></body></html>';
+
+      try {
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $filename = $pedido ? ('pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.pdf') : 'pedidos.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        echo $dompdf->output();
+        exit;
+      } catch (Exception $e) {
+        // fall through to autoprint fallback below
+      }
+    }
+  }
+  // fallback: open printable view which will trigger browser print dialog
+  $params = [];
+  if ($pedido !== '') $params[] = 'pedido=' . urlencode($pedido);
+  if ($filial !== '') $params[] = 'filial=' . urlencode($filial);
+  $params[] = 'autoprint=1';
+  $loc = 'export.php' . ($params ? ('?' . implode('&', $params)) : '');
+  header('Location: ' . $loc);
+  exit;
+}
+
 // printable HTML default
 ?>
 <!doctype html>
