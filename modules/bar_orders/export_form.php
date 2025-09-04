@@ -192,15 +192,15 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
           previewContainer.id = 'inline-preview';
           previewContainer.className = 'mt-6 bg-gray-800 p-4 rounded hidden';
           previewContainer.innerHTML = `
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-yellow-400 font-semibold">Pré-visualização do Pedido</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="color:#f6c90e;font-weight:600;font-size:13px">Pré-visualização do Pedido</div>
               <div>
-                <button id="inline-pdf" class="bg-indigo-600 px-3 py-1 rounded mr-2 text-sm">Baixar PDF (cliente)</button>
-                <button id="inline-print" class="bg-green-600 px-3 py-1 rounded mr-2 text-sm">Imprimir</button>
-                <button id="inline-close" class="bg-red-600 px-3 py-1 rounded text-sm">Fechar</button>
+                <button id="inline-pdf" style="background:#4f46e5;color:#fff;padding:6px 10px;border-radius:6px;margin-right:6px;font-size:12px">Baixar PDF (cliente)</button>
+                <button id="inline-print" style="background:#16a34a;color:#fff;padding:6px 10px;border-radius:6px;margin-right:6px;font-size:12px">Imprimir</button>
+                <button id="inline-close" style="background:#dc2626;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px">Fechar</button>
               </div>
             </div>
-            <div id="inline-preview-content" class="bg-white text-black p-4 overflow-auto" style="max-height:60vh"></div>
+            <div id="inline-preview-content" class="bg-white text-black p-3 overflow-auto" style="max-height:60vh;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.15;border-radius:4px"></div>
           `;
           // insert after the form
           const formEl = document.querySelector('form[action="export.php"]');
@@ -234,41 +234,41 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
                 const filialTop = meta.filial || formValues.filial || '';
                 if (pedidosSet.size > 1) {
                   // render full table with Pedido, Data, Produto, Categoria, Und, Qtde, Obs, Usuário, Filial, Setor
-                  html += '<div style="max-width:1100px;margin:0 auto;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11px">';
-                  html += '<h2 style="text-align:center;font-size:14px;margin:6px 0">LISTA DE PEDIDOS</h2>';
-                  if (filialTop) html += '<div style="text-align:center;font-size:12px;color:#333;margin-bottom:8px"><strong>Filial:</strong> ' + escapeHtml(filialTop) + '</div>';
-                  // smaller font and fixed table layout so long texts wrap
-                  html += '<table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed">';
+                  html += '<div style="max-width:1100px;margin:0 auto;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:10px">';
+                  html += '<h2 style="text-align:center;font-size:13px;margin:4px 0">LISTA DE PEDIDOS</h2>';
+                  if (filialTop) html += '<div style="text-align:center;font-size:11px;color:#333;margin-bottom:6px"><strong>Filial:</strong> ' + escapeHtml(filialTop) + '</div>';
+                  // compact table with fixed layout so long texts wrap nicely
+                  html += '<table class="pdf-table" style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">';
                   html += '<thead><tr>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:10%">Data</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:40%">Produto</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:10%">Categoria</th>';
-                  html += '<th style="text-align:right;border-bottom:1px solid #ddd;padding:6px;width:8%">Qtde</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:7%">Und</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:15%">Obs</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:5%">Usuário</th>';
-                  html += '<th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:5%">Setor</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:10%">Data</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:40%">Produto</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:12%">Categoria</th>';
+                  html += '<th style="text-align:right;border-bottom:1px solid #e6e6e6;padding:4px;width:8%">Qtde</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:6%">Und</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:16%">Obs</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:4%">Usuário</th>';
+                  html += '<th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:4px;width:4%">Setor</th>';
                   html += '</tr></thead><tbody>';
                   for (const it of items) {
                     html += '<tr>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(formatDate(it.data || '')) + '</td>';
-                    html += '<td class="produto" style="padding:6px;border-bottom:1px dotted #e6e6e6;word-break:break-word;overflow-wrap:anywhere;white-space:normal">' + escapeHtml(it.produto || '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.categoria || '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6;text-align:right">' + escapeHtml(String(it.qtde ?? '')) + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.und || '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6;word-break:break-word;overflow-wrap:anywhere;white-space:normal">' + escapeHtml(it.observacao || '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.usuario || '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.setor || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(formatDate(it.data || '')) + '</td>';
+                    html += '<td class="produto" style="padding:4px;border-bottom:1px dotted #e9e9e9;word-break:break-word;overflow-wrap:anywhere;white-space:normal">' + escapeHtml(it.produto || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.categoria || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9;text-align:right">' + escapeHtml(String(it.qtde ?? '')) + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.und || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9;word-break:break-word;overflow-wrap:anywhere;white-space:normal">' + escapeHtml(it.observacao || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.usuario || '') + '</td>';
+                    html += '<td style="padding:4px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.setor || '') + '</td>';
                     html += '</tr>';
                   }
                   html += '</tbody></table>';
-                  html += '<div style="margin-top:10px;font-size:11px;color:#333">Total linhas: ' + escapeHtml(String(items.length)) + '</div>';
+                  html += '<div style="margin-top:8px;font-size:10px;color:#333">Total linhas: ' + escapeHtml(String(items.length)) + '</div>';
                   html += '</div>';
                 } else {
                   // nice receipt-style layout for single pedido
                   html += '<div style="max-width:900px;margin:0 auto;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:11px">';
-                  html += '<div style="text-align:center;padding:6px 0;border-bottom:1px solid #ddd;margin-bottom:8px">';
-                  html += '<h2 style="margin:0;font-size:14px">RECIBO/ORDEM</h2>';
+                  html += '<div style="text-align:center;padding:6px 0;border-bottom:1px solid #e6e6e6;margin-bottom:8px">';
+                  html += '<h2 style="margin:0;font-size:14px">RECIBO / ORDEM</h2>';
                   html += '<div style="font-size:11px;color:#444">' + escapeHtml(window.location.hostname || '') + '</div>';
                   html += '</div>';
                   // show filial at top (left) and other meta on right
@@ -278,17 +278,17 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
                   html += '<strong>Setor:</strong> ' + escapeHtml(meta.setor || '') + '</div>';
                   html += '</div>';
                   html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
-                  html += '<thead><tr><th style="text-align:left;border-bottom:1px solid #ddd;padding:6px">Produto</th><th style="text-align:right;border-bottom:1px solid #ddd;padding:6px;width:60px">Qtd</th><th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;width:60px">Und</th></tr></thead><tbody>';
+                  html += '<thead><tr><th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:6px">Produto</th><th style="text-align:right;border-bottom:1px solid #e6e6e6;padding:6px;width:60px">Qtd</th><th style="text-align:left;border-bottom:1px solid #e6e6e6;padding:6px;width:60px">Und</th></tr></thead><tbody>';
                   for (const it of items) {
                     html += '<tr>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.produto || '') + (it.categoria ? (' <small style="color:#666">(' + escapeHtml(it.categoria) + ')</small>') : '') + (it.observacao ? ('<div style="color:#444;font-size:11px">' + escapeHtml(it.observacao) + '</div>') : '') + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6;text-align:right">' + escapeHtml(String(it.qtde ?? '')) + '</td>';
-                    html += '<td style="padding:6px;border-bottom:1px dotted #e6e6e6">' + escapeHtml(it.und || '') + '</td>';
+                    html += '<td style="padding:6px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.produto || '') + (it.categoria ? (' <small style="color:#666">(' + escapeHtml(it.categoria) + ')</small>') : '') + (it.observacao ? ('<div style="color:#444;font-size:11px;margin-top:4px">' + escapeHtml(it.observacao) + '</div>') : '') + '</td>';
+                    html += '<td style="padding:6px;border-bottom:1px dotted #e9e9e9;text-align:right">' + escapeHtml(String(it.qtde ?? '')) + '</td>';
+                    html += '<td style="padding:6px;border-bottom:1px dotted #e9e9e9">' + escapeHtml(it.und || '') + '</td>';
                     html += '</tr>';
                   }
                   html += '</tbody></table>';
-                  html += '<div style="margin-top:10px;font-size:11px;color:#333">Total itens: ' + escapeHtml(String(items.length)) + '</div>';
-                  html += '<div style="margin-top:18px;font-size:10px;color:#666;border-top:1px solid #eee;padding-top:8px">Gerado por sistema — ' + escapeHtml((new Date()).toLocaleDateString()) + '</div>';
+                  html += '<div style="margin-top:8px;font-size:11px;color:#333">Total itens: ' + escapeHtml(String(items.length)) + '</div>';
+                  html += '<div style="margin-top:12px;font-size:10px;color:#666;border-top:1px solid #f1f1f1;padding-top:8px">Gerado por sistema — ' + escapeHtml((new Date()).toLocaleDateString()) + '</div>';
                   html += '</div>';
                 }
                 contentEl.innerHTML = html;
