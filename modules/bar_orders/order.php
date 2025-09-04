@@ -107,6 +107,13 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                 if ($c !== '') $categories[] = $c;
               }
               $categories = array_values(array_unique($categories));
+              // build a list of units from the loaded insumos for new-item unit select
+              $units = [];
+              foreach ($insumos as $r) {
+                $u = trim($r['unidade'] ?? '');
+                if ($u !== '') $units[] = $u;
+              }
+              $units = array_values(array_unique($units));
             ?>
 
             <div class="mb-4">
@@ -136,6 +143,10 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
                   <?php foreach ($insumos as $it):
                     $cod = htmlspecialchars($it['codigo'] ?? '', ENT_QUOTES);
+                  <style>
+                    /* visually uppercase text inputs and selects; JS will ensure submitted values are uppercased */
+                    input[type="text"], textarea, select { text-transform: uppercase; }
+                  </style>
                     $ins = htmlspecialchars($it['insumo'] ?? '', ENT_QUOTES);
                     $uni = htmlspecialchars($it['unidade'] ?? '', ENT_QUOTES);
                   ?>
@@ -198,7 +209,12 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             </select>
           </div>
           <div class="col-span-2">
-            <input type="text" name="new_unidade[]" class="w-full p-2 bg-gray-800 rounded text-sm" required placeholder="Unidade">
+            <select name="new_unidade[]" class="w-full p-2 bg-gray-800 rounded text-sm" required>
+              <option value="">-- Unidade --</option>
+              <?php foreach ($units as $u): ?>
+                <option value="<?= htmlspecialchars($u, ENT_QUOTES) ?>"><?= htmlspecialchars($u) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="col-span-2">
             <input type="number" name="new_qtde[]" class="w-full p-2 bg-gray-800 rounded text-sm" required step="1" min="1" placeholder="Qtde">
@@ -462,6 +478,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
         // show loading on confirm and submit the form
         confirmSend.addEventListener('click', ()=>{
           // pack items
+          ensureUppercaseAll();
           packItemsToJson();
           // disable buttons and show spinner
           confirmSend.disabled = true;
@@ -472,10 +489,57 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
         // fallback: if user submits the form without using confirm button, pack items on submit event
         document.getElementById('bar-order-form').addEventListener('submit', function(e){
+          ensureUppercaseAll();
           packItemsToJson();
           return true;
         });
 
+        // ensure text inputs/selects are uppercase both visually (CSS) and value-wise before submit
+        function ensureUppercaseAll(){
+          // inputs and textareas
+          Array.from(document.querySelectorAll('input[type="text"], textarea')).forEach(el=>{
+            if (el.value) el.value = String(el.value).toUpperCase();
+          });
+          // select elements: uppercase their selected value if present
+          Array.from(document.querySelectorAll('select')).forEach(el=>{
+            try { if (el.value) el.value = String(el.value).toUpperCase(); } catch(e){}
+          });
+          // also uppercase hidden product fields
+          Array.from(document.querySelectorAll('input[name^="produto_nome"], input[name^="produto_unidade"], input[name^="produto_categoria"]')).forEach(el=>{ if (el.value) el.value = String(el.value).toUpperCase(); });
+        }
+
+        // live uppercase on new item inputs for better UX
+        document.addEventListener('input', function(e){
+          const t = e.target;
+          if (!t) return;
+          if ((t.tagName === 'INPUT' && t.type === 'text') || t.tagName === 'TEXTAREA'){
+            // avoid changing caret position complexity: replace value with uppercase
+            const pos = t.selectionStart; t.value = t.value.toUpperCase(); try{ t.setSelectionRange(pos,pos); }catch(e){}
+          }
+        });
+
+        // uppercase selects immediately on change (so values are uppercase in UI)
+        document.querySelectorAll('select').forEach(s => {
+          s.addEventListener('change', function(){ try{ this.value = String(this.value).toUpperCase(); }catch(e){} });
+        });
+
+        // Uppercase existing items in the table and hidden fields immediately on load
+        function uppercaseExistingItems(){
+          // hidden meta fields
+          document.querySelectorAll('input[name^="produto_nome"], input[name^="produto_unidade"], input[name^="produto_categoria"]').forEach(el=>{ if (el.value) el.value = String(el.value).toUpperCase(); });
+          // table rows: uppercase displayed insumo, categoria, unidade
+          document.querySelectorAll('.insumo-row').forEach(r => {
+            const tds = r.querySelectorAll('td');
+            if (tds[1]) tds[1].innerText = String(tds[1].innerText || '').toUpperCase();
+            if (tds[2]) tds[2].innerText = String(tds[2].innerText || '').toUpperCase();
+            if (tds[3]) tds[3].innerText = String(tds[3].innerText || '').toUpperCase();
+            // observation input
+            const obs = r.querySelector('input[name^="observacao"]');
+            if (obs && obs.value) obs.value = String(obs.value).toUpperCase();
+          });
+        }
+        // run once on DOM ready
+        setTimeout(uppercaseExistingItems, 50);
         
       </script>
     </body>
