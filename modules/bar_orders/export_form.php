@@ -126,7 +126,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
           <button id="export-btn" type="submit" class="bg-green-600 px-4 py-2 rounded">Exportar</button>
           <button id="preview-btn" type="button" class="bg-yellow-500 px-4 py-2 rounded text-sm">Pré-visualizar</button>
           <button id="pdf-only-btn" type="button" class="bg-indigo-600 px-4 py-2 rounded text-sm">Baixar PDF</button>
-          <a href="receipt.php" class="bg-gray-700 px-4 py-2 rounded text-sm">Ver recibos</a>
+          <a href="list.php" class="bg-gray-700 px-4 py-2 rounded text-sm">Ver recibos</a>
         </div>
       </form>
 
