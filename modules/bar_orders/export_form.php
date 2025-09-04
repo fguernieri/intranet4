@@ -194,11 +194,6 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
           previewContainer.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <div style="color:#f6c90e;font-weight:600;font-size:13px">Pré-visualização do Pedido</div>
-              <div>
-                <button id="inline-pdf" style="background:#4f46e5;color:#fff;padding:6px 10px;border-radius:6px;margin-right:6px;font-size:12px">Baixar PDF (cliente)</button>
-                <button id="inline-print" style="background:#16a34a;color:#fff;padding:6px 10px;border-radius:6px;margin-right:6px;font-size:12px">Imprimir</button>
-                <button id="inline-close" style="background:#dc2626;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px">Fechar</button>
-              </div>
             </div>
             <div id="inline-preview-content" class="bg-white text-black p-3 overflow-auto" style="max-height:60vh;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.15;border-radius:4px"></div>
           `;
@@ -293,74 +288,6 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY')) {
                 }
                 contentEl.innerHTML = html;
                 container.classList.remove('hidden');
-                // attach print/close handlers
-                document.getElementById('inline-close').onclick = ()=> container.classList.add('hidden');
-                // client-side PDF via html2pdf (no server install)
-                document.getElementById('inline-pdf').onclick = async ()=> {
-                  const el = contentEl;
-                  // load html2pdf from CDN if not present
-                  function loadScript(src){
-                    return new Promise((resolve, reject)=>{
-                      if (window.html2pdf) return resolve();
-                      const s = document.createElement('script');
-                      s.src = src;
-                      s.onload = resolve;
-                      s.onerror = reject;
-                      document.head.appendChild(s);
-                    });
-                  }
-                  try {
-                    await loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js');
-                    // try to create a friendly filename: pedido_FILIAL_timestamp.pdf
-                    const metaEl = data.meta || {};
-                    const pid = metaEl.numero_pedido || (items[0] && items[0].numero_pedido) || '';
-                    const filialName = metaEl.filial || (items[0] && items[0].filial) || '';
-                    const ts = (new Date()).toISOString().replace(/[:\.]/g,'');
-                    const filename = (filialName ? (filialName + '_') : '') + ts + '.pdf';
-                    // create a temporary full-size container so html2pdf captures all rows (not the scrollable small box)
-                    const tmp = document.createElement('div');
-                    tmp.style.background = '#fff';
-                    tmp.style.color = '#000';
-                    tmp.style.padding = '0';
-                    // set width to A4 in mm via CSS so html2pdf uses correct page width
-                    tmp.style.width = '210mm';
-                    tmp.style.boxSizing = 'border-box';
-                    // build a clean HTML wrapper with print-friendly CSS to avoid cuts
-                    const safeHtml = `
-                      <html><head><meta charset="utf-8"><style>
-                        @page { size: A4 portrait; margin: 10mm }
-                        body { font-family: Arial, Helvetica, sans-serif; color:#000; margin:0; padding:10mm; font-size:9px; line-height:1.1 }
-                        table{ width:100%; border-collapse:collapse; font-size:9px; word-break:break-word }
-                        thead { display: table-header-group }
-                        tr { page-break-inside: avoid }
-                        th, td { padding:4px; border:1px solid #ddd; vertical-align:top; word-break:break-word; overflow-wrap:anywhere }
-                        th { background:#f3f3f3; text-align:left }
-                        .filial-top { text-align:center; font-size:12px; margin-bottom:6px }
-                        .no-print { display:none }
-                        img { max-width:100%; height:auto }
-                      </style></head><body>` + el.innerHTML + `</body></html>`;
-                    tmp.innerHTML = safeHtml;
-                    document.body.appendChild(tmp);
-                    try {
-                      // use jsPDF A4 configuration to output A4 PDF and use CSS pagebreak rules
-                      html2pdf().from(tmp).set({filename: filename, margin:10, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}, html2canvas:{scale:2}, pagebreak: { mode: ['css','legacy'] }}).save().finally(()=> tmp.remove());
-                    } catch (err) {
-                      tmp.remove();
-                      throw err;
-                    }
-                  } catch (err) {
-                    alert('Não foi possível gerar PDF no cliente: ' + (err.message || err));
-                  }
-                };
-                document.getElementById('inline-print').onclick = ()=> {
-                  // open printable JSON-rendered HTML in a new window for printing
-                  const w = window.open('', '_blank');
-                  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preview</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#eee}</style></head><body>');
-                  w.document.write(contentEl.innerHTML);
-                  w.document.write('</body></html>');
-                  w.document.close();
-                  setTimeout(()=>{ w.focus(); w.print(); }, 300);
-                };
               } catch (err) {
                 alert('Erro ao carregar preview: ' + (err.message || err));
               }
