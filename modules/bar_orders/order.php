@@ -51,6 +51,10 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <title>Pedido - <?= htmlspecialchars($filial, ENT_QUOTES) ?></title>
       <link href="/assets/css/style.css" rel="stylesheet">
+      <style>
+        /* visually uppercase text inputs and selects; JS will ensure submitted values are uppercased */
+        input[type="text"], textarea, select { text-transform: uppercase; }
+      </style>
       <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-gray-900 text-gray-100 flex min-h-screen">
@@ -143,10 +147,6 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
                   <?php foreach ($insumos as $it):
                     $cod = htmlspecialchars($it['codigo'] ?? '', ENT_QUOTES);
-                  <style>
-                    /* visually uppercase text inputs and selects; JS will ensure submitted values are uppercased */
-                    input[type="text"], textarea, select { text-transform: uppercase; }
-                  </style>
                     $ins = htmlspecialchars($it['insumo'] ?? '', ENT_QUOTES);
                     $uni = htmlspecialchars($it['unidade'] ?? '', ENT_QUOTES);
                   ?>
