@@ -37,6 +37,7 @@ if ($items_json) {
             $payload[] = [
                 'data' => date('Y-m-d H:i:s'),
                 'produto' => $row['produto'] ?? '',
+                'categoria' => $row['categoria'] ?? '',
                 'und' => $row['und'] ?? '',
                 'qtde' => $q,
                 'observacao' => $row['observacao'] ?? '',
