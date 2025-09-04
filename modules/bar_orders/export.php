@@ -261,13 +261,22 @@ if ($format === 'pdf') {
 }
 
 // printable HTML default
+// compute a download-friendly base name to use as document title for printable fallback
+$download_base = '';
+if ($pedido !== '') {
+  $download_base = 'pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido);
+} else {
+  $timestamp = isset($timestamp) ? $timestamp : date('Ymd_Hi');
+  $label = ($filial !== '') ? preg_replace('/[^A-Za-z0-9_-]/', '_', $filial) : 'all_filiais';
+  $download_base = sprintf('%s_%s', $label, $timestamp);
+}
 ?>
 <!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Exportar Pedido <?= htmlspecialchars($pedido) ?></title>
+  <title><?= htmlspecialchars($download_base) ?></title>
   <link href="/assets/css/style.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
