@@ -81,12 +81,12 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
 // If export format requested, output directly
 if ($format === 'csv') {
   // send CSV download
+  $timestamp = date('Ymd_Hi');
   if ($pedido !== '') {
     $filename = 'pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.csv';
   } else {
     $label = ($filial !== '') ? preg_replace('/[^A-Za-z0-9_-]/', '_', $filial) : 'all_filiais';
-    $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
-    $filename = sprintf('pedidos_%s_%s.csv', $label, $range);
+    $filename = sprintf('%s_%s.csv', $label, $timestamp);
   }
   // Use semicolon-separated CSV with UTF-8 BOM so Excel opens columns correctly on Windows
   header('Content-Type: text/csv; charset=utf-8');
@@ -153,9 +153,9 @@ if ($format === 'xlsx') {
       if ($pedido !== '') {
         $filename = 'pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.xlsx';
       } else {
+        $timestamp = date('Ymd_Hi');
         $label = ($filial !== '') ? preg_replace('/[^A-Za-z0-9_-]/', '_', $filial) : 'all_filiais';
-        $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
-        $filename = sprintf('pedidos_%s_%s.xlsx', $label, $range);
+        $filename = sprintf('%s_%s.xlsx', $label, $timestamp);
       }
       header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -170,9 +170,9 @@ if ($format === 'xlsx') {
   if ($pedido !== '') {
     $filename = 'pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.csv';
   } else {
+    $timestamp = date('Ymd_Hi');
     $label = ($filial !== '') ? preg_replace('/[^A-Za-z0-9_-]/', '_', $filial) : 'all_filiais';
-    $range = ($start || $end) ? ($start . '_' . $end) : 'all_dates';
-    $filename = sprintf('pedidos_%s_%s.csv', $label, $range);
+    $filename = sprintf('%s_%s.csv', $label, $timestamp);
   }
   // fallback CSV with semicolon delimiter and BOM (match Excel ordering)
   header('Content-Type: text/csv; charset=utf-8');
@@ -234,7 +234,13 @@ if ($format === 'pdf') {
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        $filename = $pedido ? ('pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.pdf') : 'pedidos.pdf';
+        if ($pedido !== '') {
+          $filename = 'pedido_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $pedido) . '.pdf';
+        } else {
+          $timestamp = date('Ymd_Hi');
+          $label = ($filial !== '') ? preg_replace('/[^A-Za-z0-9_-]/', '_', $filial) : 'all_filiais';
+          $filename = sprintf('%s_%s.pdf', $label, $timestamp);
+        }
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         echo $dompdf->output();
