@@ -403,7 +403,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
           // new items
           const newIns = Array.from(document.querySelectorAll('input[name="new_insumo[]"]'));
           const newCats = Array.from(document.querySelectorAll('select[name="new_categoria[]"]'));
-          const newUnis = Array.from(document.querySelectorAll('input[name="new_unidade[]"]'));
+          const newUnis = Array.from(document.querySelectorAll('select[name="new_unidade[]"]'));
           const newQtds = Array.from(document.querySelectorAll('input[name="new_qtde[]"]'));
           const newObss = Array.from(document.querySelectorAll('input[name="new_obs[]"]'));
           newIns.forEach((el, idx) => {
