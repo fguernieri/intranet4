@@ -72,9 +72,11 @@ if (empty($items_json)) {
         $obs  = $_POST['observacao'][$cod] ?? '';
         if ($q <= 0) continue;
 
+        $categoria = $_POST['produto_categoria'][$cod] ?? '';
         $payload[] = [
             'data' => date('Y-m-d H:i:s'),
             'produto' => $nome,
+            'categoria' => $categoria,
             'und' => $uni,
             'qtde' => $q,
             'observacao' => $obs,
@@ -92,7 +94,7 @@ if (empty($items_json)) {
     $new_qtdes = $_POST['new_qtde'] ?? [];
     $new_obs = $_POST['new_obs'] ?? [];
 
-    for ($i = 0; $i < count($new_insumos); $i++) {
+        for ($i = 0; $i < count($new_insumos); $i++) {
         $nome = trim($new_insumos[$i] ?? '');
         $cat = trim($new_categorias[$i] ?? '');
         $uni = trim($new_unidades[$i] ?? '');
@@ -105,6 +107,7 @@ if (empty($items_json)) {
         $payload[] = [
             'data' => date('Y-m-d H:i:s'),
             'produto' => $nome,
+            'categoria' => $cat,
             'und' => $uni,
             'qtde' => $q,
             'observacao' => $obs,
