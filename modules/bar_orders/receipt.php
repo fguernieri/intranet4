@@ -66,7 +66,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
   <main class="flex-1 p-6">
     <div class="max-w-4xl mx-auto w-full">
       <header class="mb-6">
-        <a href="order.php?filial=<?= urlencode($pedido_meta['filial'] ?? '') ?>" class="text-sm text-gray-400">&larr; Voltar</a>
+  <a href="index.php" class="text-sm text-gray-400">&larr; Voltar</a>
         <h1 class="text-2xl font-bold">Recibo do Pedido</h1>
         <?php if ($pedido_meta): ?>
           <p class="text-sm text-gray-300">Pedido: <strong><?= htmlspecialchars($pedido_meta['numero_pedido']) ?></strong></p>
