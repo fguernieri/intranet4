@@ -94,20 +94,20 @@ if ($format === 'csv') {
   $out = fopen('php://output', 'w');
   // write UTF-8 BOM
   fwrite($out, "\xEF\xBB\xBF");
-  // header row (including setor and categoria) using semicolon delimiter
-  fputcsv($out, ['DATA', 'PRODUTO', 'CATEGORIA', 'UND', 'QTDE', 'OBSERVACAO', 'NUMERO_PEDIDO', 'FILIAL', 'USUARIO', 'SETOR'], ';');
+  // header row in requested Excel order for CSV exports
+  fputcsv($out, ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL','USUARIO','NUMERO_PEDIDO','DATA'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
-      $it['data'] ?? '',
       $it['produto'] ?? '',
       $it['categoria'] ?? '',
       $it['und'] ?? '',
       $it['qtde'] ?? '',
       $it['observacao'] ?? '',
-      $it['numero_pedido'] ?? '',
+      $it['setor'] ?? '',
       $it['filial'] ?? '',
       $it['usuario'] ?? '',
-      $it['setor'] ?? ''
+      $it['numero_pedido'] ?? '',
+      $it['data'] ?? ''
     ], ';');
   }
   fclose($out);
@@ -130,8 +130,8 @@ if ($format === 'xlsx') {
     try {
       $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
       $sheet = $spreadsheet->getActiveSheet();
-      // For Excel the requested column order is: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL
-      $headers = ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL'];
+      // For Excel the requested column order is: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL - USUARIO - PEDIDO - DATA
+      $headers = ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL','USUARIO','NUMERO_PEDIDO','DATA'];
       $sheet->fromArray($headers, null, 'A1');
       $row = 2;
       foreach ($items as $it) {
@@ -142,7 +142,10 @@ if ($format === 'xlsx') {
           $it['qtde'] ?? '',
           $it['observacao'] ?? '',
           $it['setor'] ?? '',
-          $it['filial'] ?? ''
+          $it['filial'] ?? '',
+          $it['usuario'] ?? '',
+          $it['numero_pedido'] ?? '',
+          $it['data'] ?? ''
         ], null, 'A' . $row);
         $row++;
       }
@@ -176,8 +179,8 @@ if ($format === 'xlsx') {
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $out = fopen('php://output', 'w');
   fwrite($out, "\xEF\xBB\xBF");
-  // columns: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL
-  fputcsv($out, ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL'], ';');
+  // columns for Excel fallback CSV: PRODUTO - CATEGORIA - UND - QTDE - OBS - SETOR - FILIAL - USUARIO - PEDIDO - DATA
+  fputcsv($out, ['PRODUTO','CATEGORIA','UND','QTDE','OBS','SETOR','FILIAL','USUARIO','NUMERO_PEDIDO','DATA'], ';');
   foreach ($items as $it) {
     fputcsv($out, [
       $it['produto'] ?? '',
@@ -186,7 +189,10 @@ if ($format === 'xlsx') {
       $it['qtde'] ?? '',
       $it['observacao'] ?? '',
       $it['setor'] ?? '',
-      $it['filial'] ?? ''
+      $it['filial'] ?? '',
+      $it['usuario'] ?? '',
+      $it['numero_pedido'] ?? '',
+      $it['data'] ?? ''
     ], ';');
   }
   fclose($out);
