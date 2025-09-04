@@ -91,7 +91,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <div class="bg-yellow-700 text-white p-3 rounded mb-4">Nenhum insumo carregado. Verifique a conexão com o Supabase e as credenciais em modules/bar_orders/config.php</div>
           <?php endif; ?>
 
-          <form id="bar-order-form" method="post" action="save_order.php">
+          <form id="bar-order-form" method="post" action="save_order.php" autocomplete="off">
             <input type="hidden" name="filial" value="<?= htmlspecialchars($filial, ENT_QUOTES) ?>">
             <input type="hidden" name="usuario" value="<?= htmlspecialchars($usuario, ENT_QUOTES) ?>">
             <!-- setor chosen by user (populated by modal) -->
@@ -144,12 +144,13 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                     <td class="p-1"><?= $ins ?></td>
                     <td class="p-1"><?= htmlspecialchars($it['categoria'] ?? '') ?></td>
                     <td class="p-1"><?= $uni ?></td>
-                    <td class="p-1"><input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0" value="0" class="w-20 p-1 bg-gray-800 rounded text-sm"></td>
+                    <td class="p-1"><input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0" value="" autocomplete="off" class="w-20 p-1 bg-gray-800 rounded text-sm"></td>
                     <td class="p-1"><input type="text" name="observacao[<?= $cod ?>]" maxlength="200" class="w-full p-1 bg-gray-800 rounded text-sm"></td>
 
                     <input type="hidden" name="produto_codigo[<?= $cod ?>]" value="<?= $cod ?>">
                     <input type="hidden" name="produto_nome[<?= $cod ?>]" value="<?= $ins ?>">
                     <input type="hidden" name="produto_unidade[<?= $cod ?>]" value="<?= $uni ?>">
+                    <input type="hidden" name="produto_categoria[<?= $cod ?>]" value="<?= htmlspecialchars($it['categoria'] ?? '') ?>">
 
                   </tr>
 
@@ -232,8 +233,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
         addNewBtn.addEventListener('click', addNewRow);
 
-  // Reset all existing quantity inputs to 0 on page load to avoid stale/autofill values
-  document.querySelectorAll('input[name^="quantidade"]').forEach(i => { try { i.value = '0'; } catch(e){} });
+  // Reset all existing quantity inputs to empty on page load to avoid stale/autofill values
+  document.querySelectorAll('input[name^="quantidade"]').forEach(i => { try { i.value = ''; i.autocomplete = 'off'; } catch(e){} });
   // Add one empty new-item row by default
   addNewRow();
 
@@ -361,7 +362,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
       </div>
 
       <script>
-        function gatherPreviewItems(){
+  function gatherPreviewItems(){
           const rows = [];
           // existing items: iterate over produto_nome hidden inputs
           const nomes = document.querySelectorAll('input[name^="produto_nome"]');
@@ -371,9 +372,10 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             const qt = document.querySelector('input[name="quantidade['+key+']"]');
             const obs = document.querySelector('input[name="observacao['+key+']"]');
             const uni = document.querySelector('input[name="produto_unidade['+key+']"]');
-            const qv = qt ? Number(qt.value || 0) : 0;
+            const cat = document.querySelector('input[name="produto_categoria['+key+']"]');
+            const qv = qt ? parseFloat(qt.value) || 0 : 0;
             if (qv > 0){
-              rows.push({produto: name, und: uni ? uni.value : '', qtde: qv, observacao: obs ? obs.value : ''});
+              rows.push({produto: name, categoria: cat ? cat.value : '', und: uni ? uni.value : '', qtde: qv, observacao: obs ? obs.value : ''});
             }
           });
 
@@ -387,10 +389,10 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             const nome = (el.value || '').trim();
             const cat = (newCats[idx] || {}).value || '';
             const uni = (newUnis[idx] || {}).value || '';
-            const qt = Number((newQtds[idx] || {}).value || 0);
+            const qt = parseFloat((newQtds[idx] || {}).value) || 0;
             const obs = (newObss[idx] || {}).value || '';
             if (nome && qt > 0){
-              rows.push({produto: nome + (cat?(' ('+cat+')'):''), und: uni, qtde: qt, observacao: obs});
+              rows.push({produto: nome, categoria: cat, und: uni, qtde: qt, observacao: obs});
             }
           });
           return rows;
@@ -409,9 +411,9 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             previewBody.innerHTML = '<div class="p-3 bg-yellow-700 text-black rounded">Nenhum item adicionado para este pedido.</div>';
             return;
           }
-          let html = '<table class="w-full"><thead class="text-left text-yellow-400"><tr><th>Produto</th><th>Unidade</th><th>Qtde</th><th>Obs</th></tr></thead><tbody>';
+          let html = '<table class="w-full"><thead class="text-left text-yellow-400"><tr><th>Produto</th><th>Categoria</th><th>Unidade</th><th>Qtde</th><th>Obs</th></tr></thead><tbody>';
           items.forEach(it => {
-            html += '<tr class="border-b border-gray-700"><td class="py-2">'+escapeHtml((it.produto||''))+'</td><td>'+escapeHtml(it.und||'')+'</td><td>'+escapeHtml(String(it.qtde))+'</td><td>'+escapeHtml(it.observacao||'')+'</td></tr>';
+            html += '<tr class="border-b border-gray-700"><td class="py-2">'+escapeHtml((it.produto||''))+'</td><td>'+escapeHtml(it.categoria||'')+'</td><td>'+escapeHtml(it.und||'')+'</td><td>'+escapeHtml(String(it.qtde))+'</td><td>'+escapeHtml(it.observacao||'')+'</td></tr>';
           });
           html += '</tbody></table>';
           previewBody.innerHTML = html;
