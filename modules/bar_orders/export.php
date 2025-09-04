@@ -264,7 +264,7 @@ if ($format === 'pdf') {
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100">
-  <?php require_once __DIR__ . '/../../sidebar.php'; ?>
+  <?php if (!$autoprint) require_once __DIR__ . '/../../sidebar.php'; ?>
   <main class="p-6 max-w-4xl mx-auto">
     <header class="mb-4">
       <h1 class="text-2xl font-bold"><?php echo $pedido ? 'Exportar Pedido' : 'Exportar Pedidos por Filtro'; ?></h1>

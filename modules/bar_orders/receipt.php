@@ -82,7 +82,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
       <?php if (!empty($items)): ?>
         <div class="bg-gray-800 p-4 rounded">
           <div class="mb-4">
-            <a class="inline-block bg-indigo-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&autoprint=1" target="_blank">Baixar PDF</a>
+            <a class="inline-block bg-indigo-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&format=pdf" target="_blank">Baixar PDF</a>
             <a class="inline-block bg-teal-600 px-4 py-2 rounded mr-2" href="export.php?pedido=<?= urlencode($pedido) ?>&format=xlsx">Download XLSX</a>
             <button onclick="window.print()" class="inline-block bg-gray-700 px-4 py-2 rounded">Imprimir</button>
           </div>

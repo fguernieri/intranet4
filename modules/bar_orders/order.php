@@ -364,18 +364,23 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
       <script>
   function gatherPreviewItems(){
           const rows = [];
-          // existing items: iterate over produto_nome hidden inputs
-          const nomes = document.querySelectorAll('input[name^="produto_nome"]');
-          nomes.forEach(n => {
-            const name = n.value;
-            const key = n.getAttribute('name').match(/\[(.*)\]/)?.[1] || '';
-            const qt = document.querySelector('input[name="quantidade['+key+']"]');
-            const obs = document.querySelector('input[name="observacao['+key+']"]');
-            const uni = document.querySelector('input[name="produto_unidade['+key+']"]');
-            const cat = document.querySelector('input[name="produto_categoria['+key+']"]');
+          // existing items: iterate rows directly to avoid issues when codigo is empty
+          const rowEls = document.querySelectorAll('.insumo-row');
+          rowEls.forEach(r => {
+            // skip hidden/filtered rows
+            if (r.offsetParent === null) return;
+            const nameHidden = r.querySelector('input[name^="produto_nome"]');
+            const uniHidden = r.querySelector('input[name^="produto_unidade"]');
+            const catHidden = r.querySelector('input[name^="produto_categoria"]');
+            const qt = r.querySelector('input[name^="quantidade"]');
+            const obs = r.querySelector('input[name^="observacao"]');
+            const name = nameHidden ? nameHidden.value : (r.dataset.insumo || '');
+            const uni = uniHidden ? uniHidden.value : '';
+            const cat = catHidden ? catHidden.value : (r.dataset.categoria || '');
             const qv = qt ? parseFloat(qt.value) || 0 : 0;
-            if (qv > 0){
-              rows.push({produto: name, categoria: cat ? cat.value : '', und: uni ? uni.value : '', qtde: qv, observacao: obs ? obs.value : ''});
+            const obv = obs ? obs.value : '';
+            if (qv > 0) {
+              rows.push({produto: name, categoria: cat, und: uni, qtde: qv, observacao: obv});
             }
           });
 
