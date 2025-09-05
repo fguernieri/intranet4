@@ -1,7 +1,20 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
+// If the request asks for JSON, make output JSON-safe (no HTML error dump)
+$req_format = strtolower($_GET['format'] ?? '');
+if ($req_format === 'json') {
+  // avoid PHP printing HTML warnings which break JSON parsing on client
+  ini_set('display_errors', 0);
+  error_reporting(E_ALL);
+  header('Content-Type: application/json; charset=utf-8');
+}
 if (empty($_SESSION['usuario_id'])) {
+    if ($req_format === 'json') {
+        header('Content-Type: application/json', true, 401);
+        echo json_encode(['error' => 'Unauthorized']);
+        exit;
+    }
     header('Location: /login.php');
     exit;
 }
