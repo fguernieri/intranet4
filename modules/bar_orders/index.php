@@ -85,7 +85,8 @@ if (empty($bars)) {
       <header class="mb-6">
         <h1 class="text-2xl font-bold">Pedidos de Bar</h1>
         <p class="text-gray-400 text-sm">Usuário: <?= htmlspecialchars($usuario) ?></p>
-        <div class="mt-3">
+        <div class="mt-3 space-x-2">
+          <a href="manage_orders.php" class="inline-block bg-yellow-500 text-black px-3 py-2 rounded hover:bg-yellow-400">GERENCIADOR DE PEDIDOS</a>
           <a href="export_form.php" class="inline-block bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-500">Exportar pedido</a>
         </div>
       </header>
