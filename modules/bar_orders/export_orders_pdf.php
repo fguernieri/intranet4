@@ -88,12 +88,16 @@ foreach ($items as $it) {
   $key = ($it['numero_pedido'] ?? '') . '||' . ($it['produto'] ?? '');
   $m = $metas[$key] ?? [];
   $forn = trim((string)($m['fornecedor'] ?? '')) ?: 'Sem Fornecedor';
+  $data_entrega = $m['data_entrega'] ?? '';
+  if (!$data_entrega) {
+    $data_entrega = date('Y-m-d');
+  }
   $groups[$forn][] = [
     'pedido' => $it['numero_pedido'] ?? '',
     'data' => $it['data'] ?? '',
     'produto' => $it['produto'] ?? '',
     'qtde' => $it['qtde'] ?? '',
-    'data_entrega' => $m['data_entrega'] ?? '',
+    'data_entrega' => $data_entrega,
     'obs' => $m['obs_comprador'] ?? ''
   ];
 }
@@ -105,15 +109,31 @@ $totalItems = 0;
 foreach ($groups as $forn => $rows) {
   $html .= '<div class="block">';
   $html .= '<h2>Fornecedor: ' . htmlspecialchars($forn) . ' (Itens: ' . count($rows) . ')</h2>';
-  $html .= '<table><thead><tr><th>Pedido</th><th>Produto</th><th class="center">Qtde</th><th>Data Entrega</th><th>Obs Comprador</th></tr></thead><tbody>';
+  // Textos informativos por filial
+  $filial_texts = [
+    'BAR DA FABRICA' => 'BAR DA FABRICA BASTARDS Comendador Lustosa 69<br>Taproom: 39.866.345/0001-68<br>RECEBIMENTOS: 8:30 as 11:30 e 13:30 as 18hrs',
+    'WE ARE BASTARDS' => 'WE ARE BASTARDS PUB <br>Iguaçu 2296<br>WAB 30.307.697/000109 (BAR)<br>BAW 30.042.812/0001-60 (COZ)<br>RECEBIMENTOS: 10 as 11:30 e 13:30 as 18hrs',
+    'CROSS' => 'CROSSROADS<br>Iguaçu 2310<br>CROSS 01.906.570/0001-08<br>RECEBIMENTOS: 10 as 11:30 e 13:30 as 18hrs',
+    'BAR DO MEIO' => 'BAR DO MEIO <br>Iguaçu 2304<br>BDM 54.382.100/0001-59<br>RECEBIMENTOS: 10 as 11:30 e 13:30 as 18hrs',
+  ];
+  if (isset($filial_texts[$filial])) {
+    $html .= '<div class="meta" style="margin-bottom:8px;font-size:13px;color:#222">' . $filial_texts[$filial] . '</div>';
+  }
+    $html .= '<table><thead><tr>'
+      . '<th style="width:18%">Pedido</th>'
+      . '<th style="width:32%">Produto</th>'
+      . '<th class="center" style="width:10%">Qtde</th>'
+      . '<th style="width:20%">Data Entrega</th>'
+      . '<th style="width:20%">Obs Comprador</th>'
+      . '</tr></thead><tbody>';
   foreach ($rows as $r) {
-    $html .= '<tr>';
-    $html .= '<td>' . htmlspecialchars($r['pedido']) . '</td>';
-    $html .= '<td>' . htmlspecialchars($r['produto']) . '</td>';
-    $html .= '<td class="center">' . htmlspecialchars($r['qtde']) . '</td>';
-    $html .= '<td>' . htmlspecialchars($r['data_entrega']) . '</td>';
-    $html .= '<td>' . htmlspecialchars($r['obs']) . '</td>';
-    $html .= '</tr>';
+      $html .= '<tr>'
+        . '<td style="width:18%">' . htmlspecialchars($r['pedido']) . '</td>'
+        . '<td style="width:32%">' . htmlspecialchars($r['produto']) . '</td>'
+        . '<td class="center" style="width:10%">' . htmlspecialchars($r['qtde']) . '</td>'
+        . '<td style="width:20%">' . htmlspecialchars($r['data_entrega']) . '</td>'
+        . '<td style="width:20%">' . htmlspecialchars($r['obs']) . '</td>'
+        . '</tr>';
     $totalItems++;
   }
   $html .= '</tbody></table>';

@@ -22,7 +22,7 @@ $error = null;
 if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDERS_TABLE')) {
     $base = rtrim(SUPABASE_URL, '/');
     // fetch recent rows (items) and group by numero_pedido client-side
-    $url = "{$base}/rest/v1/" . SUPABASE_ORDERS_TABLE . "?select=numero_pedido,data,usuario,filial,setor,qtde,produto&order=data.desc&limit=1000";
+  $url = "{$base}/rest/v1/" . SUPABASE_ORDERS_TABLE . "?select=numero_pedido,data,usuario,filial,setor,qtde,produto&order=data.desc";
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -90,7 +90,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && defined('SUPABASE_ORDE
     <div class="max-w-7xl mx-auto w-full">
       <header class="mb-6 flex items-center justify-between">
         <div>
-          <a href="index.php" class="text-sm text-gray-400">&larr; Voltar</a>
+          <a href="export_form.php" class="text-sm text-gray-400">&larr; Voltar</a>
           <h1 class="text-2xl font-bold">Pedidos</h1>
           <p class="text-gray-400 text-sm">Usuário: <?= htmlspecialchars($usuario) ?></p>
         </div>
