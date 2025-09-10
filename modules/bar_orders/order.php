@@ -21,7 +21,8 @@ $insumos = [];
 if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   $base = rtrim(SUPABASE_URL, '/');
   $sel = 'codigo,insumo,categoria,unidade,filial';
-  $url = "{$base}/rest/v1/insumos?select={$sel}&filial=eq." . urlencode($filial) . "&order=insumo";
+  // order by category first, then insumo
+  $url = "{$base}/rest/v1/insumos?select={$sel}&filial=eq." . urlencode($filial) . "&order=categoria,insumo";
   $ch = curl_init($url);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -111,6 +112,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                 if ($c !== '') $categories[] = $c;
               }
               $categories = array_values(array_unique($categories));
+              // sort categories alphabetically (case-insensitive)
+              sort($categories, SORT_STRING | SORT_FLAG_CASE);
               // build a list of units from the loaded insumos for new-item unit select
               $units = [];
               foreach ($insumos as $r) {
@@ -118,6 +121,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                 if ($u !== '') $units[] = $u;
               }
               $units = array_values(array_unique($units));
+              // sort units alphabetically (case-insensitive)
+              sort($units, SORT_STRING | SORT_FLAG_CASE);
             ?>
 
             <div class="mb-4">
