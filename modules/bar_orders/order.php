@@ -381,24 +381,24 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   function gatherPreviewItems(){
           const rows = [];
           // existing items: iterate rows directly to avoid issues when codigo is empty
-          const rowEls = document.querySelectorAll('.insumo-row');
-          rowEls.forEach(r => {
-            // skip hidden/filtered rows
-            if (r.offsetParent === null) return;
-            const nameHidden = r.querySelector('input[name^="produto_nome"]');
-            const uniHidden = r.querySelector('input[name^="produto_unidade"]');
-            const catHidden = r.querySelector('input[name^="produto_categoria"]');
-            const qt = r.querySelector('input[name^="quantidade"]');
-            const obs = r.querySelector('input[name^="observacao"]');
-            const name = nameHidden ? nameHidden.value : (r.dataset.insumo || '');
-            const uni = uniHidden ? uniHidden.value : '';
-            const cat = catHidden ? catHidden.value : (r.dataset.categoria || '');
-            const qv = qt ? parseFloat(qt.value) || 0 : 0;
-            const obv = obs ? obs.value : '';
-            if (qv > 0) {
-              rows.push({produto: name, categoria: cat, und: uni, qtde: qv, observacao: obv});
-            }
-          });
+                  const rowEls = document.querySelectorAll('.insumo-row');
+                  rowEls.forEach(r => {
+                    // REMOVED: do not skip hidden/filtered rows — collect all filled items so filters
+                    // don't prevent items from being sent. We still only include rows with qtde > 0.
+                    const nameHidden = r.querySelector('input[name^="produto_nome"]');
+                    const uniHidden = r.querySelector('input[name^="produto_unidade"]');
+                    const catHidden = r.querySelector('input[name^="produto_categoria"]');
+                    const qt = r.querySelector('input[name^="quantidade"]');
+                    const obs = r.querySelector('input[name^="observacao"]');
+                    const name = nameHidden ? nameHidden.value : (r.dataset.insumo || '');
+                    const uni = uniHidden ? uniHidden.value : '';
+                    const cat = catHidden ? catHidden.value : (r.dataset.categoria || '');
+                    const qv = qt ? parseFloat(qt.value) || 0 : 0;
+                    const obv = obs ? obs.value : '';
+                    if (qv > 0) {
+                      rows.push({produto: name, categoria: cat, und: uni, qtde: qv, observacao: obv});
+                    }
+                  });
 
           // new items
           const newIns = Array.from(document.querySelectorAll('input[name="new_insumo[]"]'));
