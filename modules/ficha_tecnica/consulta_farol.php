@@ -8,25 +8,38 @@ $codigo = isset($_GET['cod_cloudify']) ? trim($_GET['cod_cloudify']) : '';
 $ficha_intranet = [];
 $ficha_cloudify = [];
 $status = 'cinza';
+$fichaId = null;
+$baseOrigem = 'WAB';
+$validBases = ['WAB', 'BDF'];
 
 if ($codigo !== '') {
-    // Ficha INTRANET
-    $sql_intranet = "
-        SELECT codigo AS codigo_insumo, descricao AS nome_insumo, unidade, quantidade
-        FROM ingredientes
-        WHERE ficha_id = (
-            SELECT id FROM ficha_tecnica WHERE codigo_cloudify = :codigo
-        )";
-    $stmt = $pdo->prepare($sql_intranet);
-    $stmt->execute([':codigo' => $codigo]);
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $ficha_intranet[$row['codigo_insumo']] = $row;
+    $stmtFicha = $pdo->prepare('SELECT id, base_origem FROM ficha_tecnica WHERE codigo_cloudify = :codigo LIMIT 1');
+    $stmtFicha->execute([':codigo' => $codigo]);
+    $dadosFicha = $stmtFicha->fetch(PDO::FETCH_ASSOC);
+
+    if ($dadosFicha) {
+        $fichaId = (int) $dadosFicha['id'];
+        $baseOrigem = strtoupper($dadosFicha['base_origem'] ?? 'WAB');
+        if (!in_array($baseOrigem, $validBases, true)) {
+            $baseOrigem = 'WAB';
+        }
+
+        $sql_intranet = "
+            SELECT codigo AS codigo_insumo, descricao AS nome_insumo, unidade, quantidade
+            FROM ingredientes
+            WHERE ficha_id = :ficha_id";
+        $stmt = $pdo->prepare($sql_intranet);
+        $stmt->execute([':ficha_id' => $fichaId]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $ficha_intranet[$row['codigo_insumo']] = $row;
+        }
     }
 
     // Ficha CLOUDIFY
+    $tabelaInsumos = $baseOrigem === 'BDF' ? 'insumos_bastards_bdf' : 'insumos_bastards_wab';
     $sql_cloud = "
         SELECT `CODIGO` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde` AS quantidade
-        FROM insumos_bastards
+        FROM `$tabelaInsumos`
         WHERE `Cód. ref.` = :codigo";
     $stmt2 = $pdo_dw->prepare($sql_cloud);
     $stmt2->execute([':codigo' => $codigo]);
