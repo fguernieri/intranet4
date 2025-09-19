@@ -38,7 +38,12 @@ try {
     $modo_preparo    = $_POST['modo_preparo'];
     $responsavel     = $_POST['usuario']; // este vai para ficha
     $codigo_cloudify = $_POST['codigo_cloudify'] ?? null;
+    $base_origem     = strtoupper($_POST['base_origem'] ?? 'WAB');
     $usuario_logado  = $_SESSION['usuario_nome'] ?? 'sistema'; // este vai para histórico
+
+    if (!in_array($base_origem, ['WAB', 'BDF'], true)) {
+        throw new Exception('Base de origem inválida. Selecione WAB ou BDF.');
+    }
 
     $ingredientes = $_POST['descricao'] ?? [];
     $codigos      = $_POST['codigo'] ?? [];
@@ -72,16 +77,17 @@ try {
     }
 
     // 📝 Inserir ficha técnica
-    $stmt = $pdo->prepare("INSERT INTO ficha_tecnica 
-        (nome_prato, rendimento, modo_preparo, imagem, usuario, codigo_cloudify)
-        VALUES (:nome, :rendimento, :modo, :imagem, :usuario, :cloudify)");
+    $stmt = $pdo->prepare("INSERT INTO ficha_tecnica
+        (nome_prato, rendimento, modo_preparo, imagem, usuario, codigo_cloudify, base_origem)
+        VALUES (:nome, :rendimento, :modo, :imagem, :usuario, :cloudify, :base)");
     $stmt->execute([
         ':nome'      => $nome,
         ':rendimento'=> $rendimento,
         ':modo'      => $modo_preparo,
         ':imagem'    => $imagem_nome,
         ':usuario'   => $responsavel,
-        ':cloudify'  => $codigo_cloudify
+        ':cloudify'  => $codigo_cloudify,
+        ':base'      => $base_origem
     ]);
 
     $ficha_id = $pdo->lastInsertId();

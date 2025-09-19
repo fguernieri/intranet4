@@ -55,6 +55,11 @@ try {
     $responsavel = $_POST['usuario']; // <-- campo do formulário
     $usuario_logado = $_SESSION['usuario_nome'] ?? 'sistema'; // <-- nome do usuário logado
     $cloudify   = $_POST['codigo_cloudify'] ?? '';
+    $base_origem = strtoupper($_POST['base_origem'] ?? 'WAB');
+
+    if (!in_array($base_origem, ['WAB', 'BDF'], true)) {
+        throw new Exception('Base de origem inválida.');
+    }
 
     $descricao  = $_POST['descricao'];
     $quantidade = $_POST['quantidade'];
@@ -98,11 +103,11 @@ try {
     }
 
     // Atualizar ficha técnica
-    $stmt = $pdo->prepare("UPDATE ficha_tecnica SET 
-        nome_prato = :nome, rendimento = :rendimento, modo_preparo = :modo, 
-        imagem = :imagem, usuario = :responsavel, codigo_cloudify = :codigo, 
-        ativo_wab = :ativo_wab, ativo_bdf_noite = :ativo_bdf_noite, ativo_bdf_almoco = :ativo_bdf_almoco, 
-        ativo_bdf_almoco_fds = :ativo_bdf_almoco_fds 
+    $stmt = $pdo->prepare("UPDATE ficha_tecnica SET
+        nome_prato = :nome, rendimento = :rendimento, modo_preparo = :modo,
+        imagem = :imagem, usuario = :responsavel, codigo_cloudify = :codigo, base_origem = :base_origem,
+        ativo_wab = :ativo_wab, ativo_bdf_noite = :ativo_bdf_noite, ativo_bdf_almoco = :ativo_bdf_almoco,
+        ativo_bdf_almoco_fds = :ativo_bdf_almoco_fds
         WHERE id = :id");
         
     $stmt->execute([
@@ -112,6 +117,7 @@ try {
         ':imagem'     => $imagem_nome,
         ':responsavel'=> $responsavel,
         ':codigo'     => $cloudify,
+        ':base_origem'=> $base_origem,
         ':ativo_wab'  => $ativo_wab,
         ':ativo_bdf_almoco'     => $ativo_bdf_almoco,
         ':ativo_bdf_almoco_fds' => $ativo_bdf_almoco_fds,
@@ -126,6 +132,7 @@ try {
         'modo_preparo'    => $modo,
         'usuario'         => $responsavel, // aqui continua como "usuario" pois é o nome do campo na tabela
         'codigo_cloudify' => $cloudify,
+        'base_origem'     => $base_origem,
         'ativo_wab'       => $ativo_wab,
         'ativo_bdf_almoco'     => $ativo_bdf_almoco,
         'ativo_bdf_almoco_fds' => $ativo_bdf_almoco_fds,

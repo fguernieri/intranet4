@@ -1,5 +1,21 @@
 ## 🆕 Novidades da versão 1.5.2
 
+## 🆕 Divisão das bases WAB/BDF
+
+- Todas as importações (XLSX de produtos e CSV de insumos) agora pedem que você escolha entre as bases **WAB** ou **BDF** antes de enviar o arquivo.
+- O cadastro e a edição de fichas técnicas incluem a seleção da base de origem, garantindo que consultas, comparações e cálculos usem os dados corretos.
+- As telas de consulta, comparação e visualização passam a respeitar a base armazenada na ficha técnica ao buscar informações no DW.
+
+### ⚙️ Preparação do banco de dados
+
+Antes de usar os novos recursos, execute uma única vez o script abaixo para criar as tabelas espelhadas no DW, copiar os dados atuais e adicionar o campo `base_origem` na tabela `ficha_tecnica`:
+
+```bash
+php scripts/create_dw_split_tables.php
+```
+
+> O script é idempotente: ele cria as tabelas `ProdutosBares_WAB/BDF` e `insumos_bastards_wab/bdf` caso não existam, replica os dados apenas quando a tabela está vazia e adiciona a coluna `base_origem` com valor padrão `WAB`.
+
 A versão **v1.5.2** aplica o **UX Layout Guide v1.6** em todo o sistema com foco em responsividade e acessibilidade. Nenhuma funcionalidade foi alterada — apenas o layout foi melhorado para oferecer melhor experiência em diferentes dispositivos.
 
 ### 🎨 Ajustes visuais aplicados:

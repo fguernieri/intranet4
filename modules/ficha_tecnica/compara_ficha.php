@@ -14,17 +14,26 @@ $nome_intranet = '-';
 $nome_cloudify = '-';
 $farol_status = 'gray';
 $id_ficha = null;
+$baseOrigem = 'WAB';
+$validBases = ['WAB', 'BDF'];
 
 if ($codigo_prato !== '') {
     // Intranet
-    $stmt = $pdo->prepare("SELECT id, nome_prato FROM ficha_tecnica WHERE codigo_cloudify = :codigo");
+    $stmt = $pdo->prepare("SELECT id, nome_prato, base_origem FROM ficha_tecnica WHERE codigo_cloudify = :codigo");
     $stmt->execute([':codigo' => $codigo_prato]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $nome_intranet = $row['nome_prato'] ?? '-';
     $id_ficha = $row['id'] ?? null;
+    if ($row && isset($row['base_origem'])) {
+        $baseOrigem = strtoupper($row['base_origem']);
+        if (!in_array($baseOrigem, $validBases, true)) {
+            $baseOrigem = 'WAB';
+        }
+    }
 
     // Cloudify
-    $stmt2 = $pdo_dw->prepare("SELECT DISTINCT `Produto` FROM insumos_bastards WHERE `Cód. ref.` = :codigo");
+    $tabelaInsumos = $baseOrigem === 'BDF' ? 'insumos_bastards_bdf' : 'insumos_bastards_wab';
+    $stmt2 = $pdo_dw->prepare("SELECT DISTINCT `Produto` FROM `$tabelaInsumos` WHERE `Cód. ref.` = :codigo");
     $stmt2->execute([':codigo' => $codigo_prato]);
     $nome_cloudify = $stmt2->fetchColumn() ?: '-';
 
@@ -42,7 +51,7 @@ if ($codigo_prato !== '') {
 
     // Busca Cloudify (corrigido: usa Cód. ref..1 para insumo)
     $sql_cloud = "SELECT `CODIGO` AS codigo_insumo, `Insumo` AS nome_insumo, `Und.` AS unidade, `Qtde` AS quantidade
-                  FROM insumos_bastards
+                  FROM `$tabelaInsumos`
                   WHERE `Cód. ref.` = :codigo";
     $stmt2 = $pdo_dw->prepare($sql_cloud);
     $stmt2->execute([':codigo' => $codigo_prato]);
@@ -125,6 +134,7 @@ if ($codigo_prato !== '') {
           <div>
             <h2 class="text-xl font-semibold mb-1 text-yellow-400">Intranet</h2>
             <p class="mb-2 text-gray-300 font-medium">Prato: <?= htmlspecialchars($nome_intranet) ?></p>
+            <p class="mb-2 text-gray-400 text-sm">Base: <?= htmlspecialchars($baseOrigem) ?></p>
             <table class="w-full text-sm bg-zinc-900 text-white shadow rounded-lg">
               <thead class="bg-gray-700">
                 <tr>
@@ -150,6 +160,7 @@ if ($codigo_prato !== '') {
           <div>
             <h2 class="text-xl font-semibold mb-1 text-yellow-400">Cloudify</h2>
             <p class="mb-2 text-gray-300 font-medium">Prato: <?= htmlspecialchars($nome_cloudify) ?></p>
+            <p class="mb-2 text-gray-400 text-sm">Base: <?= htmlspecialchars($baseOrigem) ?></p>
             <table class="w-full text-sm bg-zinc-900 text-white shadow rounded-lg">
               <thead class="bg-gray-700">
                 <tr>
