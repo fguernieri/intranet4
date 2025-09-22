@@ -48,7 +48,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   }
   
   // Carrega médias de consumo da view
-  $sel_media = 'cod_ref,media_consumo';
+  $sel_media = 'cod_ref,media_consumo,filial,produto';
   $url_media = "{$base}/rest/v1/vw_media_consumo_simples?select={$sel_media}&filial=eq." . urlencode($filial);
   $ch_media = curl_init($url_media);
   curl_setopt($ch_media, CURLOPT_RETURNTRANSFER, true);
@@ -70,6 +70,50 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
       }
     }
   }
+  
+  // Se não encontrou médias com filtro de filial, tenta sem filtro
+  if (empty($medias_consumo)) {
+    $url_media_all = "{$base}/rest/v1/vw_media_consumo_simples?select={$sel_media}";
+    $ch_media_all = curl_init($url_media_all);
+    curl_setopt($ch_media_all, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch_media_all, CURLOPT_HTTPHEADER, [
+      'apikey: ' . SUPABASE_KEY,
+      'Authorization: Bearer ' . SUPABASE_KEY,
+      'Content-Type: application/json'
+    ]);
+    $resp_media_all = curl_exec($ch_media_all);
+    $err_media_all = curl_error($ch_media_all);
+    $code_media_all = curl_getinfo($ch_media_all, CURLINFO_HTTP_CODE);
+    curl_close($ch_media_all);
+    
+    if (!$err_media_all && $code_media_all >= 200 && $code_media_all < 300) {
+      $rows_media_all = json_decode($resp_media_all, true) ?: [];
+      foreach ($rows_media_all as $rm) {
+        if (isset($rm['cod_ref']) && isset($rm['media_consumo'])) {
+          // Filtra apenas os códigos que existem nos insumos desta filial
+          $codigo_existe = false;
+          foreach ($insumos as $insumo) {
+            if ($insumo['codigo'] == $rm['cod_ref']) {
+              $codigo_existe = true;
+              break;
+            }
+          }
+          if ($codigo_existe) {
+            $medias_consumo[$rm['cod_ref']] = number_format($rm['media_consumo'], 2, ',', '.');
+          }
+        }
+      }
+    }
+  }
+  
+  // Debug temporário - remova após confirmar funcionamento
+  if ($err_media) {
+    error_log("Erro na consulta de médias: " . $err_media);
+  }
+  if ($code_media < 200 || $code_media >= 300) {
+    error_log("HTTP Code médias: " . $code_media . " - Response: " . $resp_media);
+  }
+  error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
 }
 
 ?>
@@ -126,8 +170,14 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
           <?php if (empty($medias_consumo) && !empty($insumos)): ?>
             <div class="bg-blue-700 text-white p-3 rounded mb-4">
-              <strong>Aviso:</strong> Médias de consumo não carregadas. 
-              Verifique se a view <code>vw_media_consumo_simples</code> existe no Supabase ou se há dados de movimentação.
+              <strong>Aviso:</strong> Médias de consumo não carregadas (<?= count($medias_consumo) ?> encontradas). 
+              <br><small>Filial: <?= htmlspecialchars($filial) ?></small>
+              <br><small>Verifique se a view <code>vw_media_consumo_simples</code> existe no Supabase e se há dados de movimentação para esta filial.</small>
+              <br><small>URL consultada: <?= htmlspecialchars($url_media ?? 'N/A') ?></small>
+            </div>
+          <?php elseif (!empty($medias_consumo)): ?>
+            <div class="bg-green-700 text-white p-3 rounded mb-4">
+              <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo carregadas para a filial <?= htmlspecialchars($filial) ?>.
             </div>
           <?php endif; ?>
 
