@@ -19,6 +19,7 @@ $filial = isset($_GET['filial']) ? urldecode($_GET['filial']) : '';
 
 $insumos = [];
 $medias_consumo = [];
+$estoques = [];
 
 if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   $base = rtrim(SUPABASE_URL, '/');
@@ -106,6 +107,30 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     }
   }
   
+  // Carrega dados de estoque da tabela destoquetap
+  $sel_estoque = 'cod_ref,estoque_total,nome';
+  $url_estoque = "{$base}/rest/v1/destoquetap?select={$sel_estoque}";
+  $ch_estoque = curl_init($url_estoque);
+  curl_setopt($ch_estoque, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch_estoque, CURLOPT_HTTPHEADER, [
+    'apikey: ' . SUPABASE_KEY,
+    'Authorization: Bearer ' . SUPABASE_KEY,
+    'Content-Type: application/json'
+  ]);
+  $resp_estoque = curl_exec($ch_estoque);
+  $err_estoque = curl_error($ch_estoque);
+  $code_estoque = curl_getinfo($ch_estoque, CURLINFO_HTTP_CODE);
+  curl_close($ch_estoque);
+  
+  if (!$err_estoque && $code_estoque >= 200 && $code_estoque < 300) {
+    $rows_estoque = json_decode($resp_estoque, true) ?: [];
+    foreach ($rows_estoque as $re) {
+      if (isset($re['cod_ref']) && isset($re['estoque_total'])) {
+        $estoques[$re['cod_ref']] = floatval($re['estoque_total']);
+      }
+    }
+  }
+  
   // Debug temporário - remova após confirmar funcionamento
   if ($err_media) {
     error_log("Erro na consulta de médias: " . $err_media);
@@ -113,7 +138,14 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   if ($code_media < 200 || $code_media >= 300) {
     error_log("HTTP Code médias: " . $code_media . " - Response: " . $resp_media);
   }
+  if ($err_estoque) {
+    error_log("Erro na consulta de estoques: " . $err_estoque);
+  }
+  if ($code_estoque < 200 || $code_estoque >= 300) {
+    error_log("HTTP Code estoques: " . $code_estoque . " - Response: " . $resp_estoque);
+  }
   error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
+  error_log("Total estoques carregados: " . count($estoques));
 }
 
 ?>
@@ -177,7 +209,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             </div>
           <?php elseif (!empty($medias_consumo)): ?>
             <div class="bg-green-700 text-white p-3 rounded mb-4">
-              <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo carregadas para a filial <?= htmlspecialchars($filial) ?>.
+              <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo e <?= count($estoques) ?> estoques carregados para a filial <?= htmlspecialchars($filial) ?>.
+              <br><small>Sugestões de compra calculadas automaticamente: <strong>Média - Estoque</strong></small>
             </div>
           <?php endif; ?>
 
@@ -231,7 +264,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   <div class="mb-4 overflow-y-auto max-h-[63vh] bg-gray-800 p-2 rounded">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-yellow-400">
-      <tr><th class="p-1">Código</th><th class="p-1">Insumo</th><th class="p-1">Categoria</th><th class="p-1">Unidade</th><th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th><th class="p-1">Qtde</th><th class="p-1">Obs</th></tr>
+      <tr><th class="p-1">Código</th><th class="p-1">Insumo</th><th class="p-1">Categoria</th><th class="p-1">Unidade</th><th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th><th class="p-1" title="Estoque atual do produto">Estoque ⓘ</th><th class="p-1" title="Sugestão de compra: Média - Estoque">Sugestão ⓘ</th><th class="p-1">Qtde</th><th class="p-1">Obs</th></tr>
                 </thead>
                 <tbody id="insumo-list">
 
@@ -239,10 +272,22 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                     $cod = htmlspecialchars($it['codigo'] ?? '', ENT_QUOTES);
                     $ins = htmlspecialchars($it['insumo'] ?? '', ENT_QUOTES);
                     $uni = htmlspecialchars($it['unidade'] ?? '', ENT_QUOTES);
+                    
+                    // Média
                     $media_val = isset($medias_consumo[$cod]) ? $medias_consumo[$cod] : '';
                     $media_display = $media_val !== '' ? $media_val : '<span class="text-gray-500">N/A</span>';
-                    // Para preencher o campo quantidade, converta a média para float (removendo vírgula)
-                    $media_input = $media_val !== '' ? str_replace(['.', ','], ['', '.'], $media_val) : '';
+                    $media_float = $media_val !== '' ? floatval(str_replace(['.', ','], ['', '.'], $media_val)) : 0;
+                    
+                    // Estoque
+                    $estoque_val = isset($estoques[$cod]) ? $estoques[$cod] : 0;
+                    $estoque_display = number_format($estoque_val, 2, ',', '.');
+                    
+                    // Sugestão de Compra = Média - Estoque (mínimo 0)
+                    $sugestao_val = max(0, $media_float - $estoque_val);
+                    $sugestao_display = number_format($sugestao_val, 2, ',', '.');
+                    
+                    // Para preencher o campo quantidade, usa a sugestão
+                    $qtde_input = $sugestao_val > 0 ? number_format($sugestao_val, 2, '.', '') : '';
                   ?>
                   <tr class="insumo-row bg-gray-900 hover:bg-gray-700" data-insumo="<?= $ins ?>" data-categoria="<?= htmlspecialchars($it['categoria'] ?? '', ENT_QUOTES) ?>">
                     <td class="p-1"><?= $cod ?></td>
@@ -250,9 +295,11 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                     <td class="p-1"><?= htmlspecialchars($it['categoria'] ?? '') ?></td>
                     <td class="p-1"><?= $uni ?></td>
                     <td class="p-1 text-green-400 font-mono text-xs"><?= $media_display ?></td>
+                    <td class="p-1 text-blue-400 font-mono text-xs"><?= $estoque_display ?></td>
+                    <td class="p-1 text-orange-400 font-mono text-xs font-bold"><?= $sugestao_display ?></td>
                     <td class="p-1">
                       <input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0"
-                        value="<?= $media_input ?>"
+                        value="<?= $qtde_input ?>"
                         autocomplete="off" class="w-20 p-1 bg-gray-800 rounded text-sm">
                     </td>
                     <td class="p-1"><input type="text" name="observacao[<?= $cod ?>]" maxlength="200" class="w-full p-1 bg-gray-800 rounded text-sm"></td>
@@ -386,50 +433,55 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
           return true;
         });
 
-        const searchInput = document.getElementById('search-in');
-        const categoryChips = Array.from(document.querySelectorAll('.category-chip'));
+        // Inicialização dos filtros - Mover para depois que o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', function() {
+          const searchInput = document.getElementById('search-in');
+          const categoryChips = Array.from(document.querySelectorAll('.category-chip'));
 
-        // track selected categories (initially all)
-        const selectedCats = new Set(categoryChips.map(b => b.dataset.category));
+          // track selected categories (initially all)
+          const selectedCats = new Set(categoryChips.map(b => b.dataset.category));
 
-        function applyFilters(){
-          const term = searchInput.value.toLowerCase();
-          document.querySelectorAll('.insumo-row').forEach(r=>{
-            const name = (r.dataset.insumo || '').toLowerCase();
-            const cat = (r.dataset.categoria || '');
-            const matchesText = name.includes(term);
-            const matchesCat = selectedCats.size === 0 || selectedCats.has(cat);
-            r.style.display = (matchesText && matchesCat) ? '' : 'none';
+          function applyFilters(){
+            const term = searchInput.value.toLowerCase();
+            document.querySelectorAll('.insumo-row').forEach(r=>{
+              const name = (r.dataset.insumo || '').toLowerCase();
+              const cat = (r.dataset.categoria || '');
+              const matchesText = name.includes(term);
+              const matchesCat = selectedCats.size === 0 || selectedCats.has(cat);
+              r.style.display = (matchesText && matchesCat) ? '' : 'none';
+            });
+          }
+
+          // search input
+          if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+          }
+
+          // category chips toggle
+          categoryChips.forEach(btn => {
+            btn.addEventListener('click', () => {
+              const cat = btn.dataset.category;
+              if (selectedCats.has(cat)) {
+                selectedCats.delete(cat);
+                btn.classList.remove('bg-yellow-500','text-gray-900');
+                btn.classList.add('bg-gray-800','text-gray-200');
+                btn.setAttribute('aria-pressed','false');
+              } else {
+                selectedCats.add(cat);
+                btn.classList.add('bg-yellow-500','text-gray-900');
+                btn.classList.remove('bg-gray-800','text-gray-200');
+                btn.setAttribute('aria-pressed','true');
+              }
+              applyFilters();
+            });
+            // set initial visual state to 'selected'
+            btn.classList.add('bg-yellow-500','text-gray-900');
+            btn.classList.remove('bg-gray-800','text-gray-200');
           });
-        }
 
-        // search input
-        searchInput.addEventListener('input', applyFilters);
-
-        // category chips toggle
-        categoryChips.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const cat = btn.dataset.category;
-            if (selectedCats.has(cat)) {
-              selectedCats.delete(cat);
-              btn.classList.remove('bg-yellow-500','text-gray-900');
-              btn.classList.add('bg-gray-800','text-gray-200');
-              btn.setAttribute('aria-pressed','false');
-            } else {
-              selectedCats.add(cat);
-              btn.classList.add('bg-yellow-500','text-gray-900');
-              btn.classList.remove('bg-gray-800','text-gray-200');
-              btn.setAttribute('aria-pressed','true');
-            }
-            applyFilters();
-          });
-          // set initial visual state to 'selected'
-          btn.classList.add('bg-yellow-500','text-gray-900');
-          btn.classList.remove('bg-gray-800','text-gray-200');
+          // initial apply
+          applyFilters();
         });
-
-        // initial apply
-        applyFilters();
 
         // --- setor modal handling ---
         (function(){
