@@ -48,9 +48,18 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     }
   }
   
-  // Carrega médias de consumo da view
+  // Define as tabelas baseadas na filial
+  $view_media = 'vw_media_consumo_simples';  // TAP por padrão
+  $tabela_estoque = 'destoquetap';            // TAP por padrão
+  
+  if ($filial === 'WE ARE BASTARDS') {
+    $view_media = 'vw_media_consumo_wab';
+    $tabela_estoque = 'destoquewab';
+  }
+  
+  // Carrega médias de consumo da view (dinâmica baseada na filial)
   $sel_media = 'cod_ref,media_consumo,filial,produto';
-  $url_media = "{$base}/rest/v1/vw_media_consumo_simples?select={$sel_media}&filial=eq." . urlencode($filial);
+  $url_media = "{$base}/rest/v1/{$view_media}?select={$sel_media}&filial=eq." . urlencode($filial);
   $ch_media = curl_init($url_media);
   curl_setopt($ch_media, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch_media, CURLOPT_HTTPHEADER, [
@@ -74,7 +83,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   
   // Se não encontrou médias com filtro de filial, tenta sem filtro
   if (empty($medias_consumo)) {
-    $url_media_all = "{$base}/rest/v1/vw_media_consumo_simples?select={$sel_media}";
+    $url_media_all = "{$base}/rest/v1/{$view_media}?select={$sel_media}";
     $ch_media_all = curl_init($url_media_all);
     curl_setopt($ch_media_all, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch_media_all, CURLOPT_HTTPHEADER, [
@@ -107,9 +116,9 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     }
   }
   
-  // Carrega dados de estoque da tabela destoquetap
+  // Carrega dados de estoque da tabela (dinâmica baseada na filial)
   $sel_estoque = 'cod_ref,estoque_total,nome';
-  $url_estoque = "{$base}/rest/v1/destoquetap?select={$sel_estoque}";
+  $url_estoque = "{$base}/rest/v1/{$tabela_estoque}?select={$sel_estoque}";
   $ch_estoque = curl_init($url_estoque);
   curl_setopt($ch_estoque, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch_estoque, CURLOPT_HTTPHEADER, [
@@ -144,6 +153,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   if ($code_estoque < 200 || $code_estoque >= 300) {
     error_log("HTTP Code estoques: " . $code_estoque . " - Response: " . $resp_estoque);
   }
+  error_log("Filial: {$filial} - View: {$view_media} - Tabela: {$tabela_estoque}");
   error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
   error_log("Total estoques carregados: " . count($estoques));
 }
@@ -204,12 +214,13 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <div class="bg-blue-700 text-white p-3 rounded mb-4">
               <strong>Aviso:</strong> Médias de consumo não carregadas (<?= count($medias_consumo) ?> encontradas). 
               <br><small>Filial: <?= htmlspecialchars($filial) ?></small>
-              <br><small>Verifique se a view <code>vw_media_consumo_simples</code> existe no Supabase e se há dados de movimentação para esta filial.</small>
+              <br><small>Verifique se a view <code><?= htmlspecialchars($view_media ?? 'N/A') ?></code> existe no Supabase e se há dados de movimentação para esta filial.</small>
               <br><small>URL consultada: <?= htmlspecialchars($url_media ?? 'N/A') ?></small>
             </div>
           <?php elseif (!empty($medias_consumo)): ?>
             <div class="bg-green-700 text-white p-3 rounded mb-4">
               <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo e <?= count($estoques) ?> estoques carregados para a filial <?= htmlspecialchars($filial) ?>.
+              <br><small>Tabelas: <code><?= htmlspecialchars($view_media) ?></code> e <code><?= htmlspecialchars($tabela_estoque) ?></code></small>
               <br><small>Sugestões de compra calculadas automaticamente: <strong>Média - Estoque</strong></small>
             </div>
           <?php endif; ?>
