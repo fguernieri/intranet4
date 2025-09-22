@@ -18,8 +18,12 @@ $usuario = $_SESSION['usuario_nome'] ?? '';
 $filial = isset($_GET['filial']) ? urldecode($_GET['filial']) : '';
 
 $insumos = [];
+$medias_consumo = [];
+
 if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   $base = rtrim(SUPABASE_URL, '/');
+  
+  // Carrega insumos
   $sel = 'codigo,insumo,categoria,unidade,filial';
   // order by category first, then insumo
   $url = "{$base}/rest/v1/insumos?select={$sel}&filial=eq." . urlencode($filial) . "&order=categoria,insumo";
@@ -39,6 +43,30 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     foreach ($rows as $r) {
       if (isset($r['filial']) && $r['filial'] === $filial) {
         $insumos[] = $r;
+      }
+    }
+  }
+  
+  // Carrega médias de consumo da view
+  $sel_media = 'cod_ref,media_consumo';
+  $url_media = "{$base}/rest/v1/vw_media_consumo_simples?select={$sel_media}&filial=eq." . urlencode($filial);
+  $ch_media = curl_init($url_media);
+  curl_setopt($ch_media, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch_media, CURLOPT_HTTPHEADER, [
+    'apikey: ' . SUPABASE_KEY,
+    'Authorization: Bearer ' . SUPABASE_KEY,
+    'Content-Type: application/json'
+  ]);
+  $resp_media = curl_exec($ch_media);
+  $err_media = curl_error($ch_media);
+  $code_media = curl_getinfo($ch_media, CURLINFO_HTTP_CODE);
+  curl_close($ch_media);
+  
+  if (!$err_media && $code_media >= 200 && $code_media < 300) {
+    $rows_media = json_decode($resp_media, true) ?: [];
+    foreach ($rows_media as $rm) {
+      if (isset($rm['cod_ref']) && isset($rm['media_consumo'])) {
+        $medias_consumo[$rm['cod_ref']] = number_format($rm['media_consumo'], 2, ',', '.');
       }
     }
   }
@@ -96,6 +124,13 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <div class="bg-yellow-700 text-white p-3 rounded mb-4">Nenhum insumo carregado. Verifique a conexão com o Supabase e as credenciais em modules/bar_orders/config.php</div>
           <?php endif; ?>
 
+          <?php if (empty($medias_consumo) && !empty($insumos)): ?>
+            <div class="bg-blue-700 text-white p-3 rounded mb-4">
+              <strong>Aviso:</strong> Médias de consumo não carregadas. 
+              Verifique se a view <code>vw_media_consumo_simples</code> existe no Supabase ou se há dados de movimentação.
+            </div>
+          <?php endif; ?>
+
           <form id="bar-order-form" method="post" action="save_order.php" autocomplete="off">
             <input type="hidden" name="filial" value="<?= htmlspecialchars($filial, ENT_QUOTES) ?>">
             <input type="hidden" name="usuario" value="<?= htmlspecialchars($usuario, ENT_QUOTES) ?>">
@@ -146,7 +181,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   <div class="mb-4 overflow-y-auto max-h-[63vh] bg-gray-800 p-2 rounded">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-yellow-400">
-      <tr><th class="p-1">Código</th><th class="p-1">Insumo</th><th class="p-1">Categoria</th><th class="p-1">Unidade</th><th class="p-1">Qtde</th><th class="p-1">Obs</th></tr>
+      <tr><th class="p-1">Código</th><th class="p-1">Insumo</th><th class="p-1">Categoria</th><th class="p-1">Unidade</th><th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th><th class="p-1">Qtde</th><th class="p-1">Obs</th></tr>
                 </thead>
                 <tbody id="insumo-list">
 
@@ -154,13 +189,22 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                     $cod = htmlspecialchars($it['codigo'] ?? '', ENT_QUOTES);
                     $ins = htmlspecialchars($it['insumo'] ?? '', ENT_QUOTES);
                     $uni = htmlspecialchars($it['unidade'] ?? '', ENT_QUOTES);
+                    $media_val = isset($medias_consumo[$cod]) ? $medias_consumo[$cod] : '';
+                    $media_display = $media_val !== '' ? $media_val : '<span class="text-gray-500">N/A</span>';
+                    // Para preencher o campo quantidade, converta a média para float (removendo vírgula)
+                    $media_input = $media_val !== '' ? str_replace(['.', ','], ['', '.'], $media_val) : '';
                   ?>
                   <tr class="insumo-row bg-gray-900 hover:bg-gray-700" data-insumo="<?= $ins ?>" data-categoria="<?= htmlspecialchars($it['categoria'] ?? '', ENT_QUOTES) ?>">
                     <td class="p-1"><?= $cod ?></td>
                     <td class="p-1"><?= $ins ?></td>
                     <td class="p-1"><?= htmlspecialchars($it['categoria'] ?? '') ?></td>
                     <td class="p-1"><?= $uni ?></td>
-                    <td class="p-1"><input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0" value="" autocomplete="off" class="w-20 p-1 bg-gray-800 rounded text-sm"></td>
+                    <td class="p-1 text-green-400 font-mono text-xs"><?= $media_display ?></td>
+                    <td class="p-1">
+                      <input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0"
+                        value="<?= $media_input ?>"
+                        autocomplete="off" class="w-20 p-1 bg-gray-800 rounded text-sm">
+                    </td>
                     <td class="p-1"><input type="text" name="observacao[<?= $cod ?>]" maxlength="200" class="w-full p-1 bg-gray-800 rounded text-sm"></td>
 
                     <input type="hidden" name="produto_codigo[<?= $cod ?>]" value="<?= $cod ?>">
@@ -254,8 +298,16 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
 
         addNewBtn.addEventListener('click', addNewRow);
 
-  // Reset all existing quantity inputs to empty on page load to avoid stale/autofill values
-  document.querySelectorAll('input[name^="quantidade"]').forEach(i => { try { i.value = ''; i.autocomplete = 'off'; } catch(e){} });
+  // Reset apenas os campos quantidade que não têm valor pré-definido (sem média) na inicialização
+  document.querySelectorAll('input[name^="quantidade"]').forEach(i => { 
+    try { 
+      // Se o campo já tem um valor (média), mantém. Se não, limpa para evitar autofill indesejado
+      if (!i.value || i.value === '') {
+        i.value = ''; 
+      }
+      i.autocomplete = 'off'; 
+    } catch(e){} 
+  });
   // Add one empty new-item row by default
   addNewRow();
 
