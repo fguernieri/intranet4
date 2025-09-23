@@ -163,8 +163,11 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     error_log("HTTP Code estoques: " . $code_estoque . " - Response: " . $resp_estoque);
   }
   error_log("Filial: {$filial} - View: {$view_media} - Tabela: {$tabela_estoque}");
-  error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
-  error_log("Total estoques carregados: " . count($estoques));
+  // Logs condicionais - só exibe se estiver mostrando médias e estoques
+  if ($mostrar_medias_estoques) {
+    error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
+    error_log("Total estoques carregados: " . count($estoques));
+  }
 }
 
 ?>
@@ -219,14 +222,14 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <div class="bg-yellow-700 text-white p-3 rounded mb-4">Nenhum insumo carregado. Verifique a conexão com o Supabase e as credenciais em modules/bar_orders/config.php</div>
           <?php endif; ?>
 
-          <?php if (empty($medias_consumo) && !empty($insumos)): ?>
+          <?php if ($mostrar_medias_estoques && empty($medias_consumo) && !empty($insumos)): ?>
             <div class="bg-blue-700 text-white p-3 rounded mb-4">
               <strong>Aviso:</strong> Médias de consumo não carregadas (<?= count($medias_consumo) ?> encontradas). 
               <br><small>Filial: <?= htmlspecialchars($filial) ?></small>
               <br><small>Verifique se a view <code><?= htmlspecialchars($view_media ?? 'N/A') ?></code> existe no Supabase e se há dados de movimentação para esta filial.</small>
               <br><small>URL consultada: <?= htmlspecialchars($url_media ?? 'N/A') ?></small>
             </div>
-          <?php elseif (!empty($medias_consumo)): ?>
+          <?php elseif ($mostrar_medias_estoques && !empty($medias_consumo)): ?>
             <div class="bg-green-700 text-white p-3 rounded mb-4">
               <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo e <?= count($estoques) ?> estoques carregados para a filial <?= htmlspecialchars($filial) ?>.
               <br><small>Tabelas: <code><?= htmlspecialchars($view_media) ?></code> e <code><?= htmlspecialchars($tabela_estoque) ?></code></small>
