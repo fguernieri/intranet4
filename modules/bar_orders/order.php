@@ -17,6 +17,12 @@ if (file_exists(__DIR__ . '/config.php')) {
 $usuario = $_SESSION['usuario_nome'] ?? '';
 $filial = isset($_GET['filial']) ? urldecode($_GET['filial']) : '';
 
+// Flag para determinar se devemos mostrar médias e estoques
+$mostrar_medias_estoques = true;
+if ($filial === 'BAR DO MEIO' || $filial === 'CROSS') {
+  $mostrar_medias_estoques = false;
+}
+
 $insumos = [];
 $medias_consumo = [];
 $estoques = [];
@@ -57,9 +63,11 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     $tabela_estoque = 'destoquewab';
   }
   
-  // Carrega médias de consumo da view (dinâmica baseada na filial)
-  $sel_media = 'cod_ref,media_consumo,filial,produto';
-  $url_media = "{$base}/rest/v1/{$view_media}?select={$sel_media}&filial=eq." . urlencode($filial);
+  // Carrega médias de consumo e estoques apenas se não for BAR DO MEIO ou CROSS
+  if ($mostrar_medias_estoques) {
+    // Carrega médias de consumo da view (dinâmica baseada na filial)
+    $sel_media = 'cod_ref,media_consumo,filial,produto';
+    $url_media = "{$base}/rest/v1/{$view_media}?select={$sel_media}&filial=eq." . urlencode($filial);
   $ch_media = curl_init($url_media);
   curl_setopt($ch_media, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch_media, CURLOPT_HTTPHEADER, [
@@ -139,6 +147,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
       }
     }
   }
+  } // Fim do if ($mostrar_medias_estoques)
   
   // Debug temporário - remova após confirmar funcionamento
   if ($err_media) {
@@ -275,7 +284,19 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   <div class="mb-4 overflow-y-auto max-h-[63vh] bg-gray-800 p-2 rounded">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-yellow-400">
-      <tr><th class="p-1">Código</th><th class="p-1">Insumo</th><th class="p-1">Categoria</th><th class="p-1">Unidade</th><th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th><th class="p-1" title="Estoque atual do produto">Estoque ⓘ</th><th class="p-1" title="Sugestão de compra: Média - Estoque">Sugestão ⓘ</th><th class="p-1">Qtde</th><th class="p-1">Obs</th></tr>
+      <tr>
+        <th class="p-1">Código</th>
+        <th class="p-1">Insumo</th>
+        <th class="p-1">Categoria</th>
+        <th class="p-1">Unidade</th>
+        <?php if ($mostrar_medias_estoques): ?>
+        <th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th>
+        <th class="p-1" title="Estoque atual do produto">Estoque ⓘ</th>
+        <th class="p-1" title="Sugestão de compra: Média - Estoque">Sugestão ⓘ</th>
+        <?php endif; ?>
+        <th class="p-1">Qtde</th>
+        <th class="p-1">Obs</th>
+      </tr>
                 </thead>
                 <tbody id="insumo-list">
 
@@ -284,30 +305,40 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
                     $ins = htmlspecialchars($it['insumo'] ?? '', ENT_QUOTES);
                     $uni = htmlspecialchars($it['unidade'] ?? '', ENT_QUOTES);
                     
-                    // Média
-                    $media_val = isset($medias_consumo[$cod]) ? $medias_consumo[$cod] : '';
-                    $media_display = $media_val !== '' ? $media_val : '<span class="text-gray-500">N/A</span>';
-                    $media_float = $media_val !== '' ? floatval(str_replace(['.', ','], ['', '.'], $media_val)) : 0;
-                    
-                    // Estoque
-                    $estoque_val = isset($estoques[$cod]) ? $estoques[$cod] : 0;
-                    $estoque_display = number_format($estoque_val, 2, ',', '.');
-                    
-                    // Sugestão de Compra = Média - Estoque (mínimo 0)
-                    $sugestao_val = max(0, $media_float - $estoque_val);
-                    $sugestao_display = number_format($sugestao_val, 2, ',', '.');
-                    
-                    // Para preencher o campo quantidade, usa a sugestão
-                    $qtde_input = $sugestao_val > 0 ? number_format($sugestao_val, 2, '.', '') : '';
+                    if ($mostrar_medias_estoques) {
+                      // Média
+                      $media_val = isset($medias_consumo[$cod]) ? $medias_consumo[$cod] : '';
+                      $media_display = $media_val !== '' ? $media_val : '<span class="text-gray-500">N/A</span>';
+                      $media_float = $media_val !== '' ? floatval(str_replace(['.', ','], ['', '.'], $media_val)) : 0;
+                      
+                      // Estoque
+                      $estoque_val = isset($estoques[$cod]) ? $estoques[$cod] : 0;
+                      $estoque_display = number_format($estoque_val, 2, ',', '.');
+                      
+                      // Sugestão de Compra = Média - Estoque (mínimo 0)
+                      $sugestao_val = max(0, $media_float - $estoque_val);
+                      $sugestao_display = number_format($sugestao_val, 2, ',', '.');
+                      
+                      // Para preencher o campo quantidade, usa a sugestão
+                      $qtde_input = $sugestao_val > 0 ? number_format($sugestao_val, 2, '.', '') : '';
+                    } else {
+                      // Para filiais BAR DO MEIO e CROSS, não mostramos médias/estoques/sugestões
+                      $media_display = '';
+                      $estoque_display = '';
+                      $sugestao_display = '';
+                      $qtde_input = ''; // Campo quantidade vazio
+                    }
                   ?>
                   <tr class="insumo-row bg-gray-900 hover:bg-gray-700" data-insumo="<?= $ins ?>" data-categoria="<?= htmlspecialchars($it['categoria'] ?? '', ENT_QUOTES) ?>">
                     <td class="p-1"><?= $cod ?></td>
                     <td class="p-1"><?= $ins ?></td>
                     <td class="p-1"><?= htmlspecialchars($it['categoria'] ?? '') ?></td>
                     <td class="p-1"><?= $uni ?></td>
+                    <?php if ($mostrar_medias_estoques): ?>
                     <td class="p-1 text-green-400 font-mono text-xs"><?= $media_display ?></td>
                     <td class="p-1 text-blue-400 font-mono text-xs"><?= $estoque_display ?></td>
                     <td class="p-1 text-orange-400 font-mono text-xs font-bold"><?= $sugestao_display ?></td>
+                    <?php endif; ?>
                     <td class="p-1">
                       <input type="number" name="quantidade[<?= $cod ?>]" step="0.01" min="0"
                         value="<?= $qtde_input ?>"
