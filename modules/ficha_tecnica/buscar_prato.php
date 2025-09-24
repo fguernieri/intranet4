@@ -9,20 +9,21 @@ if (!in_array($base, $validBases, true)) {
     exit;
 }
 
-$tabelaInsumos = $base === 'BDF' ? 'insumos_bastards_bdf' : 'insumos_bastards_wab';
 
-$codigo = $_POST['codigo_cloudify'] ?? null;
+$tabelaProdutos = $base === 'BDF' ? 'ProdutosBares_BDF' : 'ProdutosBares_WAB';
+
+$codigo = trim((string)($_POST['codigo_cloudify'] ?? ''));
 
 header('Content-Type: application/json');
 
-if (!$codigo) {
+if ($codigo === '') {
     echo json_encode([]);
     exit;
 }
 
-$stmt = $pdo_dw->prepare("SELECT `Produto` AS nome_prato
-                          FROM `$tabelaInsumos`
-                          WHERE `Cód. ref.` = :codigo
+$stmt = $pdo_dw->prepare("SELECT `Nome` AS nome_prato
+                          FROM `$tabelaProdutos`
+                          WHERE `Cód. Ref.` = :codigo
                           LIMIT 1");
 $stmt->execute([':codigo' => $codigo]);
 echo json_encode($stmt->fetch(PDO::FETCH_ASSOC) ?: []);
