@@ -22,6 +22,13 @@ if (!$ficha) {
     exit('Ficha não encontrada.');
 }
 
+$baseOrigem = strtoupper($ficha['base_origem'] ?? 'WAB');
+$validBases = ['WAB', 'BDF'];
+if (!in_array($baseOrigem, $validBases, true)) {
+    $baseOrigem = 'WAB';
+}
+$tabelaInsumos = $baseOrigem === 'BDF' ? 'insumos_bastards_bdf' : 'insumos_bastards_wab';
+
 // 4) Fetch dos ingredientes
 $stmtIngs = $pdo->prepare('SELECT codigo, descricao, quantidade, unidade FROM ingredientes WHERE ficha_id = :id');
 $stmtIngs->execute([':id' => $id]);
@@ -32,7 +39,7 @@ $codigos = array_column($ingredientes, 'codigo');
 if ($codigos) {
     $placeholders = implode(',', array_fill(0, count($codigos), '?'));
     $sqlCusto = "SELECT `CODIGO` AS codigo, COALESCE(`Custo unit..1`,0) AS custo_unitario
-                 FROM insumos_bastards
+                 FROM `$tabelaInsumos`
                  WHERE `CODIGO` IN ($placeholders)";
     $stmtC = $pdo_dw->prepare($sqlCusto);
     $stmtC->execute($codigos);
@@ -147,6 +154,7 @@ if ($codigos) {
       <p><strong>Rendimento:</strong> <?= htmlspecialchars($ficha['rendimento'], ENT_QUOTES) ?></p>
       <p><strong>Responsável:</strong> <?= htmlspecialchars($ficha['usuario'], ENT_QUOTES) ?></p>
       <p><strong>Código Cloudify:</strong> <?= htmlspecialchars($ficha['codigo_cloudify'], ENT_QUOTES) ?></p>
+      <p><strong>Base de origem:</strong> <?= htmlspecialchars($baseOrigem, ENT_QUOTES) ?></p>
       <p><strong>Data:</strong> <?= date('d/m/Y H:i', strtotime($ficha['data_criacao'])) ?></p>
     </div>
 

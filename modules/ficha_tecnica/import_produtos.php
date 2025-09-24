@@ -2,6 +2,8 @@
 require '../../vendor/autoload.php';
 require_once '../../config/db_dw.php';
 
+$validBases = ['WAB', 'BDF'];
+
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 function normalizeParam($col) {
@@ -29,6 +31,17 @@ function sanitizeExcelValue($value) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
+    $base = strtoupper($_POST['base'] ?? '');
+    if (!in_array($base, $validBases, true)) {
+        http_response_code(400);
+        echo '<h1>❌ Base inválida</h1>';
+        echo '<p>Selecione WAB ou BDF antes de reenviar o arquivo.</p>';
+        echo "<p><a href=\"{$_SERVER['PHP_SELF']}\">⬅️ Voltar</a></p>";
+        exit;
+    }
+
+    $tabelaProdutos = $base === 'BDF' ? 'ProdutosBares_BDF' : 'ProdutosBares_WAB';
+
     $file = $_FILES['excel_file']['tmp_name'];
     $spreadsheet = IOFactory::load($file);
     $sheet = $spreadsheet->getActiveSheet();
@@ -53,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 
             if (empty($rowAssoc['Cód. Ref.'])) continue;
 
-            $stmt = $pdo_dw->prepare("SELECT COUNT(*) FROM ProdutosBares WHERE `Cód. Ref.` = :cod");
+            $stmt = $pdo_dw->prepare("SELECT COUNT(*) FROM `$tabelaProdutos` WHERE `Cód. Ref.` = :cod");
             $stmt->execute(['cod' => $rowAssoc['Cód. Ref.']]);
             $exists = $stmt->fetchColumn();
 
@@ -67,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                     $params[$param] = $val;
                 }
                 $params['cod_ref'] = $rowAssoc['Cód. Ref.'];
-                $sql = "UPDATE ProdutosBares SET " . implode(', ', $set) . " WHERE `Cód. Ref.` = :cod_ref";
+                $sql = "UPDATE `$tabelaProdutos` SET " . implode(', ', $set) . " WHERE `Cód. Ref.` = :cod_ref";
                 $stmt = $pdo_dw->prepare($sql);
                 $stmt->execute($params);
                 $atualizados++;
@@ -80,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                     $placeholders[] = ":$param";
                     $params[$param] = $val;
                 }
-                $sql = "INSERT INTO ProdutosBares (`" . implode('`, `', $cols) . "`) VALUES (" . implode(', ', $placeholders) . ")";
+                $sql = "INSERT INTO `$tabelaProdutos` (`" . implode('`, `', $cols) . "`) VALUES (" . implode(', ', $placeholders) . ")";
                 $stmt = $pdo_dw->prepare($sql);
                 $stmt->execute($params);
                 $novos++;
@@ -91,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
     }
 
     echo "<h1>✅ Importação Concluída</h1>";
+    echo "<p>📁 Base selecionada: <strong>" . htmlspecialchars($base, ENT_QUOTES, 'UTF-8') . "</strong></p>";
     echo "<p>🔁 Atualizados: <strong>$atualizados</strong></p>";
     echo "<p>➕ Inseridos: <strong>$novos</strong></p>";
     echo "<p>❌ Erros: <strong>$erros</strong></p>";
@@ -115,8 +129,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 
 <div class="container" id="form-upload">
   <h1 class="text-xl font-bold mb-4">📦 Importar Produtos do Excel</h1>
-  <form id="upload-form" onsubmit="return ativarLoaderImport()">
+  <form id="upload-form" method="POST" enctype="multipart/form-data" onsubmit="return ativarLoaderImport()">
     <input type="file" name="excel_file" id="excel_file" accept=".xlsx" required class="mb-4">
+
+    <fieldset class="mb-4">
+      <legend class="mb-2 font-semibold text-gray-700">Selecione a base de destino</legend>
+      <label class="inline-flex items-center gap-2 mr-4">
+        <input type="radio" name="base" value="WAB" required checked>
+        <span>WAB</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="base" value="BDF" required>
+        <span>BDF</span>
+      </label>
+    </fieldset>
+
     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">🚀 Importar</button>
   </form>
 </div>

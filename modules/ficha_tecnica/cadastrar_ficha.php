@@ -45,6 +45,19 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
             <label class="block text-cyan-300 mb-1 font-medium">Integração</label>
             <input type="text" class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:ring-2 focus:ring-cyan-500">
           </div>
+          <div class="md:col-span-4">
+            <span class="block text-cyan-300 mb-2 font-medium">Base de origem dos dados</span>
+            <div class="flex items-center gap-6 text-white">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name="base_origem" value="WAB" required checked class="text-cyan-500">
+                <span>WAB</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name="base_origem" value="BDF" required class="text-cyan-500">
+                <span>BDF</span>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -176,6 +189,11 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
   </div>
 
   <script>
+    function obterBaseSelecionada() {
+      const selecionado = document.querySelector('input[name="base_origem"]:checked');
+      return selecionado ? selecionado.value : 'WAB';
+    }
+
     function buscarInsumo() {
       const termo = document.getElementById('busca_insumo').value;
       const tabela = document.getElementById('tabela_resultados');
@@ -186,10 +204,12 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
         return;
       }
 
+      const base = obterBaseSelecionada();
+
       fetch('buscar_insumos.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'termo=' + encodeURIComponent(termo)
+        body: 'termo=' + encodeURIComponent(termo) + '&base=' + encodeURIComponent(base)
       })
       .then(res => res.json())
       .then(dados => {
@@ -219,6 +239,45 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
       });
     }
 
+    function preencherNomePratoPorCodigo(clearWhenNotFound = false) {
+      const codInput = document.getElementById('codigo_cloudify');
+      const nomeInput = document.getElementById('nome_prato');
+
+      if (!codInput || !nomeInput) return;
+
+      const codigo = codInput.value.trim();
+      if (!codigo) {
+        if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+        return;
+      }
+
+      const params = new URLSearchParams({
+        codigo_cloudify: codigo,
+        base: obterBaseSelecionada()
+      });
+
+      fetch('buscar_prato.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.nome_prato) {
+          nomeInput.value = data.nome_prato;
+        } else if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+      })
+      .catch(() => {
+        if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+      });
+    }
+
     function addIngrediente() {
       const container = document.getElementById('ingredientesContainer');
       const tpl = document.getElementById('ingredienteTemplate');
@@ -238,7 +297,7 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
             fetch('buscar_insumos.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: 'codigo=' + encodeURIComponent(codigoValor)
+              body: 'codigo=' + encodeURIComponent(codigoValor) + '&base=' + encodeURIComponent(obterBaseSelecionada())
             })
             .then(res => res.json())
             .then(dados => {
@@ -260,26 +319,16 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
       aplicarBuscaPorCodigo();
 
       const codInput = document.getElementById('codigo_cloudify');
-      const nomeInput = document.getElementById('nome_prato');
-
-      if (codInput && nomeInput) {
-        codInput.addEventListener('blur', function () {
-          const codigo = this.value.trim();
-          if (!codigo) return;
-
-          fetch('buscar_prato.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'codigo_cloudify=' + encodeURIComponent(codigo)
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.nome_prato) {
-              nomeInput.value = data.nome_prato;
-            }
-          });
-        });
+      if (codInput) {
+        codInput.addEventListener('blur', () => preencherNomePratoPorCodigo());
       }
+
+      document.querySelectorAll('input[name="base_origem"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          buscarInsumo();
+          preencherNomePratoPorCodigo(true);
+        });
+      });
     });
   </script>
 </body>

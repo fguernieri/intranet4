@@ -5,7 +5,10 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../config/db_dw.php';
-$table = 'insumos_bastards';
+
+$validBases = ['WAB', 'BDF'];
+$table = '';
+$selectedBase = '';
 
 // 1) Colunas-chave para identificar cada registro
 $keyCols = ['Cód. ref.', 'CODIGO'];
@@ -45,7 +48,7 @@ $numericCols = [
     'Custo total'
 ];
 
-$logFile = __DIR__ . '/import_csv.log';
+$logFile = '';
 
 function paramName(string $col): string {
     return preg_replace('/[^a-zA-Z0-9_]/', '_', $col);
@@ -74,6 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['csv_file'])): ?>
       Selecione o arquivo CSV:<br>
       <input type="file" name="csv_file" accept=".csv,.txt" required>
     </label><br><br>
+    <fieldset class="mb-4">
+      <legend class="font-semibold text-gray-700">Selecione a base de destino</legend>
+      <label class="inline-flex items-center gap-2 mr-4">
+        <input type="radio" name="base" value="WAB" required checked>
+        <span>WAB</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="base" value="BDF" required>
+        <span>BDF</span>
+      </label>
+    </fieldset>
     <button type="submit" class="btn-acao">Importar</button>
   </form>
 
@@ -83,13 +97,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['csv_file'])): ?>
 </html>
 <?php exit; endif;
 
+$selectedBase = strtoupper($_POST['base'] ?? '');
+if (!in_array($selectedBase, $validBases, true)) {
+    die('Base inválida. Selecione WAB ou BDF.');
+}
+
+$table = $selectedBase === 'BDF' ? 'insumos_bastards_bdf' : 'insumos_bastards_wab';
+$logFile = __DIR__ . '/import_csv_' . strtolower($selectedBase) . '.log';
+
 // === PROCESSAMENTO ===
 if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
     die("Erro no upload do CSV: código {$_FILES['csv_file']['error']}");
 }
 $csvFile = $_FILES['csv_file']['tmp_name'];
 
-file_put_contents($logFile, date('Y-m-d H:i:s')." - Início importação {$_FILES['csv_file']['name']}\n", LOCK_EX);
+file_put_contents(
+    $logFile,
+    date('Y-m-d H:i:s') . " - Início importação {$_FILES['csv_file']['name']} [base: $selectedBase]\n",
+    LOCK_EX
+);
 
 // Preparar statements de checagem, update e insert
 $chkSql = "
@@ -206,7 +232,11 @@ foreach ($csvMap as $codRef => $insumosCsv) {
     file_put_contents($logFile, "Cód. ref. $codRef: $delCount registros excluídos por ausência no CSV\n", FILE_APPEND | LOCK_EX);
 }
 
-file_put_contents($logFile, date('Y-m-d H:i:s')." - Fim: proc=$proc; upd=$up; ins=$in; del=$delTotal; err=$err\n", FILE_APPEND | LOCK_EX);
+file_put_contents(
+    $logFile,
+    date('Y-m-d H:i:s') . " - Fim: base=$selectedBase; proc=$proc; upd=$up; ins=$in; del=$delTotal; err=$err\n",
+    FILE_APPEND | LOCK_EX
+);
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -216,6 +246,7 @@ file_put_contents($logFile, date('Y-m-d H:i:s')." - Fim: proc=$proc; upd=$up; in
 </head>
 <body>
   <h1>✅ Importação Finalizada</h1>
+  <p>📁 Base: <strong><?= htmlspecialchars($selectedBase, ENT_QUOTES, 'UTF-8') ?></strong></p>
   <p>Processados: <?= $proc ?> | Atualizados: <?= $up ?> | Inseridos: <?= $in ?> | Deletados: <?= $delTotal ?> | Erros: <?= $err ?></p>
   <p>Log: <code><?= htmlspecialchars($logFile) ?></code></p>
   <p><a href="<?= $_SERVER['PHP_SELF'] ?>">📁 Importar outro CSV</a></p>

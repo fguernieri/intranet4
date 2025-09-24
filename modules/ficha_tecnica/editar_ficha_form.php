@@ -20,6 +20,11 @@ if (!$ficha) {
     exit;
 }
 
+$baseAtual = strtoupper($ficha['base_origem'] ?? 'WAB');
+if (!in_array($baseAtual, ['WAB', 'BDF'], true)) {
+    $baseAtual = 'WAB';
+}
+
 // Ingredientes
 $stmtIng = $pdo->prepare("SELECT * FROM ingredientes WHERE ficha_id = :id");
 $stmtIng->execute([':id' => $id]);
@@ -98,6 +103,21 @@ $ingredientes = $stmtIng->fetchAll();
             <span class="custom-switch-slider"></span>
             <span class="custom-switch-label">BDF Noite</span>
           </label>
+          <div class="md:col-span-4 mt-2">
+            <span class="block text-cyan-300 mb-2 font-medium">Base de origem dos dados</span>
+            <div class="flex items-center gap-6 text-white">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name="base_origem" value="WAB" required class="text-cyan-500"
+                  <?= $baseAtual === 'WAB' ? 'checked' : '' ?>>
+                <span>WAB</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name="base_origem" value="BDF" required class="text-cyan-500"
+                  <?= $baseAtual === 'BDF' ? 'checked' : '' ?>>
+                <span>BDF</span>
+              </label>
+            </div>
+          </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -260,6 +280,11 @@ $ingredientes = $stmtIng->fetchAll();
   </template>
 
   <script>
+    function obterBaseSelecionada() {
+      const selecionado = document.querySelector('input[name="base_origem"]:checked');
+      return selecionado ? selecionado.value : 'WAB';
+    }
+
     function addIngrediente() {
       const template = document.getElementById('linhaIngredienteVazia');
       const container = document.getElementById('ingredientesContainer');
@@ -288,7 +313,7 @@ $ingredientes = $stmtIng->fetchAll();
       fetch('buscar_insumos.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'termo=' + encodeURIComponent(termo)
+        body: 'termo=' + encodeURIComponent(termo) + '&base=' + encodeURIComponent(obterBaseSelecionada())
       })
       .then(res => res.json())
       .then(dados => {
@@ -317,7 +342,46 @@ $ingredientes = $stmtIng->fetchAll();
         }
       });
     }
-    
+
+    function preencherNomePratoPorCodigo(clearWhenNotFound = false) {
+      const codInput = document.getElementById('codigo_cloudify');
+      const nomeInput = document.getElementById('nome_prato');
+
+      if (!codInput || !nomeInput) return;
+
+      const codigo = codInput.value.trim();
+      if (!codigo) {
+        if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+        return;
+      }
+
+      const params = new URLSearchParams({
+        codigo_cloudify: codigo,
+        base: obterBaseSelecionada()
+      });
+
+      fetch('buscar_prato.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.nome_prato) {
+          nomeInput.value = data.nome_prato;
+        } else if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+      })
+      .catch(() => {
+        if (clearWhenNotFound) {
+          nomeInput.value = '';
+        }
+      });
+    }
+
     // Busca por código de insumo em campos dinâmicos
     function aplicarBuscaPorCodigo() {
       document.querySelectorAll("input[name='codigo[]']").forEach(input => {
@@ -330,7 +394,7 @@ $ingredientes = $stmtIng->fetchAll();
             fetch('buscar_insumos.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: 'codigo=' + encodeURIComponent(codigoValor)
+              body: 'codigo=' + encodeURIComponent(codigoValor) + '&base=' + encodeURIComponent(obterBaseSelecionada())
             })
             .then(res => res.json())
             .then(dados => {
@@ -353,28 +417,18 @@ $ingredientes = $stmtIng->fetchAll();
       const nomeInput = document.getElementById('nome_prato');
 
       if (codInput && nomeInput) {
-        codInput.addEventListener('blur', function () {
-          const codigo = this.value.trim();
-          if (!codigo) return;
-
-          fetch('buscar_prato.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'codigo_cloudify=' + encodeURIComponent(codigo)
-          })
-          .then(res => res.json())
-          .then(data => {
-            console.log("Retorno:", data); // Para depuração
-            if (data && data.nome_prato) {
-              nomeInput.value = data.nome_prato;
-            }
-          })
-          .catch(err => console.error("Erro:", err));
-        });
+        codInput.addEventListener('blur', () => preencherNomePratoPorCodigo());
       }
-      
+
       // 👇 Esta linha resolve o problema para os campos já carregados
       aplicarBuscaPorCodigo();
+
+      document.querySelectorAll('input[name="base_origem"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          buscarInsumo();
+          preencherNomePratoPorCodigo(true);
+        });
+      });
     });
 
   </script>
