@@ -372,38 +372,70 @@ $ingredientes = $stmtIng->fetchAll();
         }
       });
     }
-    
+
+    let ultimaBuscaPratoToken = 0;
+
+    function buscarPratoPorCodigo() {
+      const codInput = document.getElementById('codigo_cloudify');
+      const nomeInput = document.getElementById('nome_prato');
+
+      if (!codInput || !nomeInput) {
+        return;
+      }
+
+      const codigo = codInput.value.trim();
+      const baseSelecionada = obterBaseSelecionada();
+      const tokenAtual = ++ultimaBuscaPratoToken;
+
+      if (!codigo) {
+        nomeInput.value = '';
+        nomeInput.dataset.baseOrigem = '';
+        return;
+      }
+
+      fetch('buscar_prato.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'codigo_cloudify=' + encodeURIComponent(codigo) + '&base=' + encodeURIComponent(baseSelecionada)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (tokenAtual !== ultimaBuscaPratoToken) {
+          return;
+        }
+
+        if (data && data.nome_prato) {
+          nomeInput.value = data.nome_prato;
+          nomeInput.dataset.baseOrigem = baseSelecionada;
+        } else {
+          nomeInput.value = '';
+          nomeInput.dataset.baseOrigem = '';
+        }
+      })
+      .catch(err => {
+        if (tokenAtual === ultimaBuscaPratoToken) {
+          nomeInput.value = '';
+          nomeInput.dataset.baseOrigem = '';
+        }
+        console.error('Erro ao buscar prato:', err);
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const codInput = document.getElementById('codigo_cloudify');
       const nomeInput = document.getElementById('nome_prato');
 
       if (codInput && nomeInput) {
-        codInput.addEventListener('blur', function () {
-          const codigo = this.value.trim();
-          if (!codigo) return;
-
-          fetch('buscar_prato.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'codigo_cloudify=' + encodeURIComponent(codigo) + '&base=' + encodeURIComponent(obterBaseSelecionada())
-          })
-          .then(res => res.json())
-          .then(data => {
-            console.log("Retorno:", data); // Para depuração
-            if (data && data.nome_prato) {
-              nomeInput.value = data.nome_prato;
-            }
-          })
-          .catch(err => console.error("Erro:", err));
-        });
+        codInput.addEventListener('blur', buscarPratoPorCodigo);
       }
-      
+
       // 👇 Esta linha resolve o problema para os campos já carregados
       aplicarBuscaPorCodigo();
 
       document.querySelectorAll('input[name="base_origem"]').forEach(radio => {
         radio.addEventListener('change', () => {
           buscarInsumo();
+          buscarPratoPorCodigo();
         });
       });
     });
