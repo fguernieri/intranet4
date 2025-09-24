@@ -4,64 +4,152 @@ include __DIR__ . '/../../config/db_dw.php';   // Cloudify
 
 header('Content-Type: application/json; charset=utf-8');
 
+/**
+ * Carrega os produtos do DW de acordo com a base informada.
+ *
+ * @param PDO    $pdoDw   Conexão com o DW.
+ * @param string $tabela  Nome da tabela (ProdutosBares_WAB/BDF).
+ * @param array  $codigos Lista de códigos Cloudify.
+ *
+ * @return array<string,array{grupo:?string,custo:float,preco:float}>
+ */
+function carregarProdutosPorBase(PDO $pdoDw, string $tabela, array $codigos): array
+{
+    if (empty($codigos)) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($codigos), '?'));
+    $sql = "SELECT `Cód. Ref.` AS codigo, Grupo, `Custo médio` AS custo, Valor AS preco
+            FROM `$tabela`
+            WHERE `Cód. Ref.` IN ($placeholders)";
+
+    $stmt = $pdoDw->prepare($sql);
+    $stmt->execute($codigos);
+
+    $dados = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $codigo = (string)($row['codigo'] ?? '');
+        if ($codigo === '') {
+            continue;
+        }
+        $dados[$codigo] = [
+            'grupo' => $row['Grupo'] ?? 'Não categorizado',
+            'custo' => isset($row['custo']) ? (float)$row['custo'] : 0.0,
+            'preco' => isset($row['preco']) ? (float)$row['preco'] : 0.0,
+        ];
+    }
+
+    return $dados;
+}
+
 // 1) Carrega dados de ficha técnica e ProdutosBares
 $pratos = [];
-$totalCusto = 0;
-$totalPreco = 0;
+$totalCusto = 0.0;
+$totalPreco = 0.0;
 
-$sql = "SELECT nome_prato, codigo_cloudify 
-        FROM ficha_tecnica 
+$sql = "SELECT nome_prato, codigo_cloudify, base_origem
+        FROM ficha_tecnica
         WHERE farol = 'verde'";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $fichas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$todosCodigos = [];
+
+foreach ($fichas as &$ficha) {
+    $base = strtoupper($ficha['base_origem'] ?? 'WAB');
+    if (!in_array($base, ['WAB', 'BDF'], true)) {
+        $base = 'WAB';
+    }
+    $ficha['base_origem'] = $base;
+
+    $codigo = $ficha['codigo_cloudify'];
+    if ($codigo !== null && $codigo !== '') {
+        $todosCodigos[] = (string)$codigo;
+    }
+}
+unset($ficha);
+
+$todosCodigos = array_values(array_unique(array_filter($todosCodigos, static function ($codigo) {
+    return $codigo !== '';
+})));
+
+$tabelasDw = [
+    'WAB' => 'ProdutosBares_WAB',
+    'BDF' => 'ProdutosBares_BDF',
+];
+
+$dadosDw = [];
+foreach ($tabelasDw as $base => $tabela) {
+    $dadosDw[$base] = carregarProdutosPorBase($pdo_dw, $tabela, $todosCodigos);
+}
+
 foreach ($fichas as $ficha) {
     $codigo = $ficha['codigo_cloudify'];
-    // Se o código cloudify for nulo, definimos valores padrão
-    if ($codigo === null) {
+    $baseOrigem = $ficha['base_origem'];
+    $nomePrato = $ficha['nome_prato'];
+
+    if ($codigo === null || $codigo === '') {
         $pratos[] = [
-            'codigo' => $codigo,
-            'nome'   => $ficha['nome_prato'],
-            'grupo'  => 'Não categorizado',
-            'custo'  => 0,
-            'preco'  => 0,
-            'cmv'    => 0
+            'codigo'         => $codigo,
+            'nome'           => $nomePrato,
+            'grupo'          => 'Não categorizado',
+            'custo'          => 0.0,
+            'preco'          => 0.0,
+            'cmv'            => 0.0,
+            'base_origem'    => $baseOrigem,
+            'base_dados'     => null,
+            'possui_dados'   => false,
+            'usou_fallback'  => false,
         ];
         continue;
     }
-    
-    $sqlPB = "SELECT Grupo, `Custo médio` AS custo, Valor AS preco 
-              FROM ProdutosBares 
-              WHERE `Cód. Ref.` = ?";
-    $stmtPB = $pdo_dw->prepare($sqlPB);
-    $stmtPB->execute([$codigo]);
-    $pb = $stmtPB->fetch(PDO::FETCH_ASSOC);
 
-    // Se encontrou informações no Cloudify
-    if ($pb) {
-        $custo = (float)($pb['custo'] ?? 0);
-        $preco = (float)($pb['preco'] ?? 0);
-        $cmv = ($preco > 0) ? ($custo / $preco) * 100 : 0;
+    $codigoStr = (string)$codigo;
+    $dados = $dadosDw[$baseOrigem][$codigoStr] ?? null;
+    $baseDados = $dados ? $baseOrigem : null;
+
+    if ($dados === null) {
+        $baseAlternativa = $baseOrigem === 'WAB' ? 'BDF' : 'WAB';
+        $dados = $dadosDw[$baseAlternativa][$codigoStr] ?? null;
+        if ($dados !== null) {
+            $baseDados = $baseAlternativa;
+        }
+    }
+
+    if ($dados !== null) {
+        $custo = (float)$dados['custo'];
+        $preco = (float)$dados['preco'];
+        $cmv = ($preco > 0) ? ($custo / $preco) * 100 : 0.0;
+
         $pratos[] = [
-            'codigo' => $codigo,
-            'nome'   => $ficha['nome_prato'],
-            'grupo'  => $pb['Grupo'] ?? 'Não categorizado',
-            'custo'  => $custo,
-            'preco'  => $preco,
-            'cmv'    => $cmv
+            'codigo'         => $codigo,
+            'nome'           => $nomePrato,
+            'grupo'          => $dados['grupo'] ?? 'Não categorizado',
+            'custo'          => $custo,
+            'preco'          => $preco,
+            'cmv'            => $cmv,
+            'base_origem'    => $baseOrigem,
+            'base_dados'     => $baseDados,
+            'possui_dados'   => true,
+            'usou_fallback'  => ($baseDados !== null && $baseDados !== $baseOrigem),
         ];
+
         $totalCusto += $custo;
         $totalPreco += $preco;
     } else {
-        // Se não encontrou no Cloudify, adiciona com valores zerados
         $pratos[] = [
-            'codigo' => $codigo,
-            'nome'   => $ficha['nome_prato'],
-            'grupo'  => 'Não categorizado',
-            'custo'  => 0,
-            'preco'  => 0,
-            'cmv'    => 0
+            'codigo'         => $codigo,
+            'nome'           => $nomePrato,
+            'grupo'          => 'Não categorizado',
+            'custo'          => 0.0,
+            'preco'          => 0.0,
+            'cmv'            => 0.0,
+            'base_origem'    => $baseOrigem,
+            'base_dados'     => null,
+            'possui_dados'   => false,
+            'usou_fallback'  => false,
         ];
     }
 }
