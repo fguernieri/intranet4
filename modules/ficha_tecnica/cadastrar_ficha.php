@@ -296,6 +296,9 @@ include $_SERVER['DOCUMENT_ROOT'] . '/sidebar.php';
         return;
       }
 
+      nomeInput.value = '';
+      nomeInput.dataset.baseOrigem = '';
+
       fetch('buscar_prato.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
