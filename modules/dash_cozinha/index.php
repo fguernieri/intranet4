@@ -22,6 +22,12 @@ include __DIR__ . '/../../sidebar.php';
 <main class="flex-1 p-4 sm:p-10 pt-20 sm:pt-10">
   <h1 class="text-2xl font-bold mb-4">Dashboard da Cozinha</h1>
 
+  <div
+    id="base-status"
+    class="card1 no-hover text-sm mb-4 hidden space-y-2"
+    role="status"
+  ></div>
+
   <!-- Disp Cozinhas -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
     <a href="disp_bdf_almoco.php"       class="btn-acao">Disp BDF Almoço</a>
@@ -115,6 +121,24 @@ include __DIR__ . '/../../sidebar.php';
 </main>
 
 <script>
+  const escapeHtml = (value) => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char]);
+  };
+
+  const toNumber = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
   async function fetchDashData() {
     const resp = await fetch('dash_data.php', { cache: 'no-cache' });
     if (!resp.ok) throw new Error('Erro ao buscar dados');
@@ -123,6 +147,73 @@ include __DIR__ . '/../../sidebar.php';
 
   document.addEventListener('DOMContentLoaded', async () => {
     const data = await fetchDashData();
+    const pratos = Array.isArray(data.tabela) ? data.tabela : [];
+
+    const baseStatusBox = document.getElementById('base-status');
+    if (baseStatusBox) {
+      const divergencias = pratos.filter(function (prato) {
+        const baseOrigem = prato && prato.base_origem;
+        const baseDados = prato && prato.base_dados;
+        return baseOrigem && baseDados && baseOrigem !== baseDados;
+      });
+      const semDados = pratos.filter(function (prato) {
+        if (!prato || !prato.codigo) {
+          return false;
+        }
+        if (typeof prato.possui_dados === 'boolean') {
+          return !prato.possui_dados;
+        }
+        return !prato.base_dados;
+      });
+      const semCodigo = pratos.filter(function (prato) {
+        return !prato || !prato.codigo;
+      });
+
+      const mensagens = [];
+      if (!pratos.length) {
+        mensagens.push('<p class="text-gray-300 text-sm">Nenhuma ficha com farol verde encontrada.</p>');
+      } else if (divergencias.length === 0 && semDados.length === 0) {
+        mensagens.push('<p class="text-green-400 font-semibold">Bases validadas</p>');
+        mensagens.push(`<p class="text-gray-300 text-sm">Todos os ${pratos.length} pratos utilizam dados da base configurada.</p>`);
+      } else {
+        mensagens.push('<p class="text-yellow-300 font-semibold">Atenção nas bases</p>');
+
+        if (divergencias.length) {
+          mensagens.push(`<p class="text-gray-300 text-sm mt-2">Dados provenientes de outra base (${divergencias.length}):</p>`);
+          const itens = divergencias.slice(0, 6).map(function (prato) {
+            const nome = escapeHtml(prato && prato.nome ? prato.nome : 'Sem nome');
+            const origem = escapeHtml(prato && prato.base_origem ? prato.base_origem : 'N/D');
+            const dados = escapeHtml(prato && prato.base_dados ? prato.base_dados : 'Desconhecida');
+            return `<li>${nome} <span class="text-gray-400">(${origem} → ${dados})</span></li>`;
+          });
+          mensagens.push(`<ul class="list-disc list-inside text-xs text-gray-300 space-y-1">${itens.join('')}</ul>`);
+          if (divergencias.length > 6) {
+            mensagens.push(`<p class="text-gray-400 text-xs mt-1">+${divergencias.length - 6} fichas adicionais.</p>`);
+          }
+        }
+
+        if (semDados.length) {
+          mensagens.push(`<p class="text-gray-300 text-sm mt-2">Sem dados encontrados (${semDados.length}):</p>`);
+          const itensSem = semDados.slice(0, 6).map(function (prato) {
+            const nome = escapeHtml(prato && prato.nome ? prato.nome : 'Sem nome');
+            const codigo = escapeHtml(prato && prato.codigo ? prato.codigo : 'Sem código');
+            const origem = escapeHtml(prato && prato.base_origem ? prato.base_origem : 'N/D');
+            return `<li>${nome} <span class="text-gray-400">(${codigo} • ${origem})</span></li>`;
+          });
+          mensagens.push(`<ul class="list-disc list-inside text-xs text-gray-300 space-y-1">${itensSem.join('')}</ul>`);
+          if (semDados.length > 6) {
+            mensagens.push(`<p class="text-gray-400 text-xs mt-1">+${semDados.length - 6} fichas adicionais.</p>`);
+          }
+        }
+
+        if (semCodigo.length) {
+          mensagens.push(`<p class="text-xs text-gray-400 mt-2">Fichas sem código Cloudify: ${semCodigo.length}.</p>`);
+        }
+      }
+
+      baseStatusBox.innerHTML = mensagens.join('');
+      baseStatusBox.classList.remove('hidden');
+    }
 
     // KPIs
     document.getElementById('kpi-total').textContent  = data.kpis.total ?? '--';
@@ -137,17 +228,35 @@ include __DIR__ . '/../../sidebar.php';
 
     // Tabela
     const tbody = document.getElementById('tabela-pratos');
-    tbody.innerHTML = data.tabela.map(p => {
-      const margemR = p.preco - p.custo;
-      const margemP = p.preco > 0 ? (margemR / p.preco * 100) : 0;
+    tbody.innerHTML = pratos.map(function (p) {
+      if (!p) {
+        return '';
+      }
+      const custo = toNumber(p.custo);
+      const preco = toNumber(p.preco);
+      const cmv = toNumber(p.cmv);
+      const margemR = preco - custo;
+      const margemP = preco > 0 ? (margemR / preco * 100) : 0;
+      const possuiDados = typeof p.possui_dados === 'boolean' ? p.possui_dados : Boolean(p.base_dados);
+      const mismatch = Boolean(p.base_origem && p.base_dados && p.base_origem !== p.base_dados);
+      const rowClasses = ['border-b', 'border-gray-700', 'hover:bg-gray-800'];
+      if (!possuiDados && p.codigo) {
+        rowClasses.push('bg-red-900/40');
+      } else if (mismatch) {
+        rowClasses.push('bg-yellow-900/40');
+      }
+      const baseFicha = p.base_origem ? String(p.base_origem) : 'N/D';
+      const baseDados = possuiDados ? (p.base_dados ? String(p.base_dados) : 'desconhecida') : 'não encontrados';
+      const tooltip = escapeHtml(`Base ficha: ${baseFicha} • Base dados: ${baseDados}`);
+      const codigo = p.codigo ?? '';
       return `
-        <tr class="border-b border-gray-700 hover:bg-gray-800">
-          <td class="p-2">${p.codigo ?? ''}</td>
+        <tr class="${rowClasses.join(' ')}" title="${tooltip}">
+          <td class="p-2">${codigo}</td>
           <td class="p-2">${p.nome}</td>
           <td class="p-2">${p.grupo}</td>
-          <td class="p-2">R$ ${p.custo.toFixed(2)}</td>
-          <td class="p-2">R$ ${p.preco.toFixed(2)}</td>
-          <td class="p-2">${p.cmv.toFixed(1)}%</td>
+          <td class="p-2">R$ ${custo.toFixed(2)}</td>
+          <td class="p-2">R$ ${preco.toFixed(2)}</td>
+          <td class="p-2">${cmv.toFixed(1)}%</td>
           <td class="p-2">R$ ${margemR.toFixed(2)}</td>
           <td class="p-2">${margemP.toFixed(1)}%</td>
         </tr>`;
