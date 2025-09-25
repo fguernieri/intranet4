@@ -74,7 +74,7 @@ if (empty($bars)) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pedidos de Bar</title>
+  <title>Módulo - Pedido de compra</title>
   <link href="/assets/css/style.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -83,17 +83,18 @@ if (empty($bars)) {
   <main class="flex-1 p-6">
     <div class="max-w-7xl mx-auto w-full">
       <header class="mb-6">
-        <h1 class="text-2xl font-bold">Pedidos de Bar</h1>
+        <h1 class="text-2xl font-bold">Módulo - Pedido de compra</h1>
         <p class="text-gray-400 text-sm">Usuário: <?= htmlspecialchars($usuario) ?></p>
         <div class="mt-3 space-x-2">
-          <a href="manage_orders.php" class="inline-block bg-yellow-500 text-black px-3 py-2 rounded hover:bg-yellow-400">GERENCIADOR DE PEDIDOS</a>
+          <a href="manage_orders.php" class="inline-block bg-yellow-500 text-black px-3 py-2 rounded hover:bg-yellow-400">Gerenciador de pedidos</a>
           <a href="export_form.php" class="inline-block bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-500">Exportar pedido</a>
+          <a href="list.php" class="inline-block bg-green-600 text-white px-3 py-2 rounded hover:bg-green-500">Ver recibos</a>
         </div>
       </header>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <?php foreach ($bars as $bar): ?>
-          <a href="order.php?filial=<?= urlencode($bar) ?>" class="block p-4 bg-gray-800 rounded hover:bg-gray-700">
+          <a href="order_blank.php?filial=<?= urlencode($bar) ?>" class="block p-4 bg-gray-800 rounded hover:bg-gray-700">
             <h2 class="font-semibold text-lg text-yellow-400"><?= htmlspecialchars($bar) ?></h2>
             <p class="text-sm text-gray-300">Fazer pedido para esta filial</p>
           </a>
