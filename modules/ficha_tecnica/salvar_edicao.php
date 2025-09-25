@@ -71,6 +71,7 @@ try {
     $ativo_bdf_almoco = isset($_POST['ativo_bdf_almoco']) ? 1 : 0;
     $ativo_bdf_almoco_fds = isset($_POST['ativo_bdf_almoco_fds']) ? 1 : 0;
     $ativo_bdf_noite = isset($_POST['ativo_bdf_noite']) ? 1 : 0;
+    $remover_imagem = isset($_POST['remover_imagem']) && $_POST['remover_imagem'] === '1';
 
 
     $pdo->beginTransaction();
@@ -81,9 +82,12 @@ try {
     $antigo = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$antigo) throw new Exception("Ficha técnica não encontrada.");
 
-    // Upload de imagem
+    // Upload e remoção de imagem
     $imagem_nome = $antigo['imagem'];
-    if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
+    $caminhoImagemAntiga = $imagem_nome ? __DIR__ . '/uploads/' . $imagem_nome : null;
+    $novoUpload = isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK;
+
+    if ($novoUpload) {
         $tmp_name = $_FILES['imagem']['tmp_name'];
         $ext = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
         $mime_type = mime_content_type($tmp_name);
@@ -93,13 +97,30 @@ try {
         }
 
         $imagem_nome = uniqid('prato_') . '.' . $ext;
-        $destino = 'uploads/' . $imagem_nome;
+        $destinoDir = __DIR__ . '/uploads';
+
+        if (!is_dir($destinoDir)) {
+            if (!mkdir($destinoDir, 0755, true) && !is_dir($destinoDir)) {
+                throw new Exception('Não foi possível criar a pasta de uploads.');
+            }
+        }
+
+        $destino = $destinoDir . '/' . $imagem_nome;
 
         if (!move_uploaded_file($tmp_name, $destino)) {
             throw new Exception('Erro ao salvar imagem.');
         }
 
         compressImage($destino, $destino);
+
+        if ($caminhoImagemAntiga && is_file($caminhoImagemAntiga)) {
+            unlink($caminhoImagemAntiga);
+        }
+    } elseif ($remover_imagem) {
+        if ($caminhoImagemAntiga && is_file($caminhoImagemAntiga)) {
+            unlink($caminhoImagemAntiga);
+        }
+        $imagem_nome = null;
     }
 
     // Atualizar ficha técnica
