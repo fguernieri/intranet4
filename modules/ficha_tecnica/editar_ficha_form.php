@@ -132,8 +132,29 @@ $ingredientes = $stmtIng->fetchAll();
       <!-- Imagem -->
       <div class="md:col-span-2">
         <label class="block text-cyan-300 mb-1 font-medium">Imagem (opcional)</label>
-        <input type="file" name="imagem" accept=".jpg,.jpeg,.png"
+
+        <?php if (!empty($ficha['imagem'])): ?>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
+            <img id="imagemAtualPreview"
+                 src="uploads/<?= htmlspecialchars($ficha['imagem'], ENT_QUOTES) ?>"
+                 alt="Imagem atual do prato"
+                 class="w-40 h-40 object-cover rounded border border-gray-700">
+            <div class="flex flex-col gap-2">
+              <span class="text-sm text-gray-300">Imagem atual</span>
+              <button type="button" id="btnRemoverImagem"
+                      class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow font-semibold min-w-[170px] text-center">
+                🗑️ Remover imagem
+              </button>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <input type="file" name="imagem" id="imagem" accept=".jpg,.jpeg,.png"
                class="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg file:text-white file:bg-cyan-500 file:px-4 file:py-1 file:font-semibold">
+        <input type="hidden" name="remover_imagem" id="remover_imagem" value="0">
+        <p id="avisoRemocaoImagem" class="text-sm text-red-400 mt-2 hidden">
+          A imagem atual será removida ao salvar esta ficha.
+        </p>
       </div>
 
       <!-- Responsável -->
@@ -404,6 +425,11 @@ $ingredientes = $stmtIng->fetchAll();
     document.addEventListener('DOMContentLoaded', () => {
       const codInput = document.getElementById('codigo_cloudify');
       const nomeInput = document.getElementById('nome_prato');
+      const removerImagemInput = document.getElementById('remover_imagem');
+      const btnRemoverImagem = document.getElementById('btnRemoverImagem');
+      const avisoRemocaoImagem = document.getElementById('avisoRemocaoImagem');
+      const imagemAtualPreview = document.getElementById('imagemAtualPreview');
+      const inputImagem = document.getElementById('imagem');
 
       if (codInput && nomeInput) {
         codInput.addEventListener('blur', buscarPratoPorCodigo);
@@ -418,6 +444,36 @@ $ingredientes = $stmtIng->fetchAll();
           buscarPratoPorCodigo();
         });
       });
+
+      if (btnRemoverImagem && removerImagemInput) {
+        btnRemoverImagem.addEventListener('click', () => {
+          const marcadaParaRemocao = removerImagemInput.value === '1';
+
+          if (marcadaParaRemocao) {
+            removerImagemInput.value = '0';
+            if (imagemAtualPreview) imagemAtualPreview.classList.remove('hidden');
+            if (avisoRemocaoImagem) avisoRemocaoImagem.classList.add('hidden');
+            btnRemoverImagem.textContent = '🗑️ Remover imagem';
+          } else {
+            removerImagemInput.value = '1';
+            if (imagemAtualPreview) imagemAtualPreview.classList.add('hidden');
+            if (avisoRemocaoImagem) avisoRemocaoImagem.classList.remove('hidden');
+            if (inputImagem) inputImagem.value = '';
+            btnRemoverImagem.textContent = '↩️ Manter imagem';
+          }
+        });
+      }
+
+      if (inputImagem && removerImagemInput) {
+        inputImagem.addEventListener('change', () => {
+          if (inputImagem.files.length) {
+            removerImagemInput.value = '0';
+            if (avisoRemocaoImagem) avisoRemocaoImagem.classList.add('hidden');
+            if (imagemAtualPreview) imagemAtualPreview.classList.remove('hidden');
+            if (btnRemoverImagem) btnRemoverImagem.textContent = '🗑️ Remover imagem';
+          }
+        });
+      }
     });
 
   </script>
