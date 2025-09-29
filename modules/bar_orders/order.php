@@ -54,20 +54,82 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
     }
   }
   
-  // Define as tabelas baseadas na filial
-  $view_media = 'vw_media_consumo_simples';  // TAP por padrão
-  $tabela_estoque = 'destoquetap';            // TAP por padrão
-  
+  // Define a view consolidada baseada na filial
   if ($filial === 'WE ARE BASTARDS') {
-    $view_media = 'vw_media_consumo_wab';
-    $tabela_estoque = 'destoquewab';
+    $view_consolidada = 'vw_pedidos_wab';
+  } elseif ($filial === 'BAR DO MEIO' || $filial === 'CROSS') {
+    $view_consolidada = 'vw_pedidos_simples';
+  } else {
+    // TAP, BAR DA FABRICA e outras filiais similares
+    $view_consolidada = 'vw_pedidos_tap';
   }
   
+  // DEBUG da view selecionada
+  error_log("=== DEBUG VIEW CONSOLIDADA ===");
+  error_log("Filial: '{$filial}'");
+  error_log("View consolidada: '{$view_consolidada}'");
+  error_log("Mostrar médias/estoques: " . ($mostrar_medias_estoques ? 'SIM' : 'NÃO'));
+  
+  // NOVA ABORDAGEM: Carrega dados da view consolidada - UMA ÚNICA CONSULTA
+  $sel_consolidado = 'codigo,insumo,categoria,unidade,filial,media_consumo,estoque_atual,sugestao_compra';
+  $url_consolidado = "{$base}/rest/v1/{$view_consolidada}?select={$sel_consolidado}&filial=eq." . urlencode($filial) . "&limit=10000";
+  
+  $ch_consolidado = curl_init($url_consolidado);
+  curl_setopt($ch_consolidado, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch_consolidado, CURLOPT_HTTPHEADER, [
+    'apikey: ' . SUPABASE_KEY,
+    'Authorization: Bearer ' . SUPABASE_KEY,
+    'Content-Type: application/json'
+  ]);
+  $resp_consolidado = curl_exec($ch_consolidado);
+  $err_consolidado = curl_error($ch_consolidado);
+  $code_consolidado = curl_getinfo($ch_consolidado, CURLINFO_HTTP_CODE);
+  curl_close($ch_consolidado);
+
+
+
+  if (!$err_consolidado && $code_consolidado >= 200 && $code_consolidado < 300) {
+    $dados_consolidados = json_decode($resp_consolidado, true) ?: [];
+
+    
+    // Resetar arrays para usar os dados da view consolidada
+    $insumos = [];
+    $medias_consumo = [];
+    $estoques = [];
+    
+    // Processar dados da view consolidada
+    foreach ($dados_consolidados as $item) {
+      $codigo = strval($item['codigo'] ?? '');
+      
+      // Array de insumos (mantém a estrutura original)
+      $insumos[] = [
+        'codigo' => $item['codigo'] ?? 0,
+        'insumo' => $item['insumo'] ?? '',
+        'categoria' => $item['categoria'] ?? '',
+        'unidade' => $item['unidade'] ?? '',
+        'filial' => $item['filial'] ?? ''
+      ];
+      
+      // Arrays de médias e estoques (mantém a estrutura original para compatibilidade)
+      if ($mostrar_medias_estoques) {
+        $medias_consumo[$codigo] = number_format($item['media_consumo'] ?? 0, 2, ',', '.');
+        $estoques[$codigo] = floatval($item['estoque_atual'] ?? 0);
+      }
+      
+
+    }
+    
+
+    
+  }
+
+  // MANTER COMPATIBILIDADE: Código antigo comentado para fallback se necessário
+  /*
   // Carrega médias de consumo e estoques apenas se não for BAR DO MEIO ou CROSS
   if ($mostrar_medias_estoques) {
     // Carrega médias de consumo da view (dinâmica baseada na filial)
     $sel_media = 'cod_ref,media_consumo,filial,produto';
-    $url_media = "{$base}/rest/v1/{$view_media}?select={$sel_media}&filial=eq." . urlencode($filial);
+    $url_media = "{$base}/rest/v1/{$view_media}?select={$sel_media}&filial=eq." . urlencode($filial) . "&limit=10000";
   $ch_media = curl_init($url_media);
   curl_setopt($ch_media, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch_media, CURLOPT_HTTPHEADER, [
@@ -91,7 +153,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   
   // Se não encontrou médias com filtro de filial, tenta sem filtro
   if (empty($medias_consumo)) {
-    $url_media_all = "{$base}/rest/v1/{$view_media}?select={$sel_media}";
+    $url_media_all = "{$base}/rest/v1/{$view_media}?select={$sel_media}&limit=10000";
     $ch_media_all = curl_init($url_media_all);
     curl_setopt($ch_media_all, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch_media_all, CURLOPT_HTTPHEADER, [
@@ -126,7 +188,8 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   
   // Carrega dados de estoque da tabela (dinâmica baseada na filial)
   $sel_estoque = 'cod_ref,estoque_total,nome';
-  $url_estoque = "{$base}/rest/v1/{$tabela_estoque}?select={$sel_estoque}";
+  // CORREÇÃO: Adicionar limite alto para pegar todos os registros
+  $url_estoque = "{$base}/rest/v1/{$tabela_estoque}?select={$sel_estoque}&order=cod_ref&limit=10000";
   $ch_estoque = curl_init($url_estoque);
   curl_setopt($ch_estoque, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch_estoque, CURLOPT_HTTPHEADER, [
@@ -139,35 +202,185 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   $code_estoque = curl_getinfo($ch_estoque, CURLINFO_HTTP_CODE);
   curl_close($ch_estoque);
   
+  // CONSULTA ESPECÍFICA PARA CÓDIGO 1805 (para debug)
+  $url_1805 = "{$base}/rest/v1/{$tabela_estoque}?select={$sel_estoque}&cod_ref=eq.1805";
+  $ch_1805 = curl_init($url_1805);
+  curl_setopt($ch_1805, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch_1805, CURLOPT_HTTPHEADER, [
+    'apikey: ' . SUPABASE_KEY,
+    'Authorization: Bearer ' . SUPABASE_KEY,
+    'Content-Type: application/json'
+  ]);
+  $resp_1805 = curl_exec($ch_1805);
+  $err_1805 = curl_error($ch_1805);
+  $code_1805 = curl_getinfo($ch_1805, CURLINFO_HTTP_CODE);
+  curl_close($ch_1805);
+  
+  if (!$err_1805 && $code_1805 >= 200 && $code_1805 < 300) {
+    $dados_1805 = json_decode($resp_1805, true) ?: [];
+    error_log("CONSULTA ESPECÍFICA 1805 - URL: {$url_1805}");
+    error_log("CONSULTA ESPECÍFICA 1805 - Registros encontrados: " . count($dados_1805));
+    if (!empty($dados_1805)) {
+      error_log("CONSULTA ESPECÍFICA 1805 - Dados: " . json_encode($dados_1805[0]));
+    }
+  } else {
+    error_log("CONSULTA ESPECÍFICA 1805 - ERRO: HTTP {$code_1805} - {$resp_1805}");
+  }
+  
   if (!$err_estoque && $code_estoque >= 200 && $code_estoque < 300) {
     $rows_estoque = json_decode($resp_estoque, true) ?: [];
-    foreach ($rows_estoque as $re) {
-      if (isset($re['cod_ref']) && isset($re['estoque_total'])) {
-        $estoques[$re['cod_ref']] = floatval($re['estoque_total']);
+    
+            // DEBUG DETALHADO PARA INVESTIGAR INCONSISTÊNCIAS
+    error_log("=== DEBUG DETALHADO CÓDIGO 1805 ===");
+    error_log("Filial: {$filial} - Tabela: {$tabela_estoque}");
+    error_log("Total registros retornados da tabela estoque: " . count($rows_estoque));
+    error_log("URL consultada: {$url_estoque}");
+    error_log("HTTP Response Code: {$code_estoque}");    // Debug de TODOS os registros para encontrar padrões
+    $codigos_encontrados = [];
+    $codigo_1805_encontrado = false;
+    
+    foreach ($rows_estoque as $index => $re) {
+      if (isset($re['cod_ref'])) {
+        $cod_original = $re['cod_ref'];
+        $cod_string = strval($cod_original);
+        $cod_trimmed = trim($cod_string);
+        $tipo_original = gettype($cod_original);
+        
+        $codigos_encontrados[] = $cod_trimmed;
+        
+        // Log detalhado dos primeiros 10 registros
+        if ($index < 10) {
+          error_log("Registro {$index}: cod_ref='{$cod_original}' (tipo:{$tipo_original}) string='{$cod_string}' trimmed='{$cod_trimmed}' bytes:" . bin2hex($cod_string));
+        }
+        
+        // Verificações múltiplas para o código 1805
+        if ($cod_trimmed === '1805') {
+          $codigo_1805_encontrado = true;
+          error_log("ENCONTRADO 1805 - cod_ref: '{$cod_original}' (tipo:{$tipo_original}), estoque_total: {$re['estoque_total']}, nome: " . ($re['nome'] ?? 'N/A'));
+        } elseif ($cod_original == 1805 || $cod_original === 1805) {
+          error_log("ENCONTRADO 1805 por comparação numérica - cod_ref: '{$cod_original}' (tipo:{$tipo_original}), estoque_total: {$re['estoque_total']}, nome: " . ($re['nome'] ?? 'N/A'));
+          $codigo_1805_encontrado = true;
+        } elseif (strpos($cod_string, '1805') !== false) {
+          error_log("PARCIAL 1805 encontrado em: '{$cod_string}' - registro: " . json_encode($re));
+        }
       }
     }
+    
+    // Log de códigos únicos encontrados (primeiros 20)
+    $codigos_unicos = array_unique($codigos_encontrados);
+    sort($codigos_unicos, SORT_NUMERIC);
+    error_log("Primeiros 20 códigos únicos encontrados: " . implode(', ', array_slice($codigos_unicos, 0, 20)));
+    
+    if (!$codigo_1805_encontrado) {
+      error_log("Código 1805 NÃO encontrado nos dados retornados da tabela {$tabela_estoque}");
+      
+      // Verifica se há códigos próximos ao 1805
+      $proximos = array_filter($codigos_unicos, function($cod) {
+        $num = intval($cod);
+        return $num >= 1800 && $num <= 1810;
+      });
+      error_log("Códigos próximos ao 1805 (1800-1810): " . implode(', ', $proximos));
+    }
+    
+    foreach ($rows_estoque as $re) {
+      if (isset($re['cod_ref']) && isset($re['estoque_total'])) {
+        // Análise detalhada dos tipos e conversões
+        $codigo_original = $re['cod_ref'];
+        $codigo_string = strval($codigo_original);
+        $codigo_trimmed = trim($codigo_string);
+        $valor_estoque = floatval($re['estoque_total']);
+        
+        // Múltiplas tentativas de conversão para capturar inconsistências
+        $codigo_final = $codigo_trimmed;
+        
+        // Tenta também conversão numérica e volta para string (para normalizar)
+        if (is_numeric($codigo_trimmed)) {
+          $codigo_numerico = floatval($codigo_trimmed);
+          if ($codigo_numerico == intval($codigo_numerico)) {
+            $codigo_final = strval(intval($codigo_numerico)); // Remove .0 se for inteiro
+          }
+        }
+        
+        $estoques[$codigo_final] = $valor_estoque;
+        
+        // Log específico para código 1805 e códigos próximos
+        if ($codigo_final === '1805' || $codigo_trimmed === '1805' || $codigo_original == 1805) {
+          error_log("ADICIONADO ao array estoques - Original: '{$codigo_original}' String: '{$codigo_string}' Trimmed: '{$codigo_trimmed}' Final: '{$codigo_final}' Valor: {$valor_estoque}");
+        }
+        
+        // Debug para códigos na faixa 1800-1810
+        $num_codigo = intval($codigo_final);
+        if ($num_codigo >= 1800 && $num_codigo <= 1810) {
+          error_log("Código próximo ao 1805: Original='{$codigo_original}' Final='{$codigo_final}' Valor={$valor_estoque}");
+        }
+      }
+    }
+    
+    // Verificar se 1805 está no array final
+    if (isset($estoques['1805'])) {
+      error_log("Código 1805 no array final estoques: " . $estoques['1805']);
+    } else {
+      error_log("Código 1805 NÃO está no array final estoques");
+      error_log("Códigos disponíveis no estoque: " . implode(', ', array_keys(array_slice($estoques, 0, 10))));
+    }
+    
+    // Verificar se 1805 existe nos insumos da filial
+    $codigo_1805_nos_insumos = false;
+    $insumos_1805_info = [];
+    
+    foreach ($insumos as $insumo) {
+      $cod_insumo_original = $insumo['codigo'];
+      $cod_insumo_string = strval($cod_insumo_original);
+      $cod_insumo_trimmed = trim($cod_insumo_string);
+      
+      if ($cod_insumo_trimmed === '1805' || $cod_insumo_original == 1805) {
+        $codigo_1805_nos_insumos = true;
+        $insumos_1805_info[] = [
+          'original' => $cod_insumo_original,
+          'string' => $cod_insumo_string,
+          'trimmed' => $cod_insumo_trimmed,
+          'tipo' => gettype($cod_insumo_original),
+          'nome' => $insumo['insumo']
+        ];
+        error_log("INSUMO 1805 encontrado - Original: '{$cod_insumo_original}' String: '{$cod_insumo_string}' Trimmed: '{$cod_insumo_trimmed}' Tipo: " . gettype($cod_insumo_original) . " Nome: " . $insumo['insumo']);
+      }
+    }
+    
+    if (!$codigo_1805_nos_insumos) {
+      error_log("Código 1805 NÃO encontrado nos insumos da filial {$filial}");
+      
+      // Debug de códigos próximos nos insumos
+      foreach ($insumos as $insumo) {
+        $cod = intval($insumo['codigo']);
+        if ($cod >= 1800 && $cod <= 1810) {
+          error_log("Insumo próximo: {$insumo['codigo']} - {$insumo['insumo']}");
+        }
+      }
+    }
+    
+    // ANÁLISE CRUZADA - Verificar se a chave do array estoque bate com os códigos dos insumos
+    error_log("=== ANÁLISE CRUZADA CÓDIGOS ===");
+    
+    // Pegar os primeiros 5 insumos e verificar se têm estoque correspondente
+    foreach (array_slice($insumos, 0, 5) as $i => $insumo) {
+      $cod_insumo = $insumo['codigo'];
+      $cod_insumo_str = strval($cod_insumo);
+      $cod_insumo_trim = trim($cod_insumo_str);
+      
+      $tem_estoque_original = isset($estoques[$cod_insumo]);
+      $tem_estoque_string = isset($estoques[$cod_insumo_str]);
+      $tem_estoque_trimmed = isset($estoques[$cod_insumo_trim]);
+      
+      error_log("Insumo {$i}: código='{$cod_insumo}' ({gettype($cod_insumo)}) nome='{$insumo['insumo']}'");
+      error_log("  - Estoque[original]: " . ($tem_estoque_original ? $estoques[$cod_insumo] : 'NÃO ENCONTRADO'));
+      error_log("  - Estoque[string]: " . ($tem_estoque_string ? $estoques[$cod_insumo_str] : 'NÃO ENCONTRADO'));
+      error_log("  - Estoque[trimmed]: " . ($tem_estoque_trimmed ? $estoques[$cod_insumo_trim] : 'NÃO ENCONTRADO'));
+    }
+    
+    error_log("=== FIM DEBUG 1805 ===");
   }
   } // Fim do if ($mostrar_medias_estoques)
-  
-  // Debug temporário - remova após confirmar funcionamento
-  if ($err_media) {
-    error_log("Erro na consulta de médias: " . $err_media);
-  }
-  if ($code_media < 200 || $code_media >= 300) {
-    error_log("HTTP Code médias: " . $code_media . " - Response: " . $resp_media);
-  }
-  if ($err_estoque) {
-    error_log("Erro na consulta de estoques: " . $err_estoque);
-  }
-  if ($code_estoque < 200 || $code_estoque >= 300) {
-    error_log("HTTP Code estoques: " . $code_estoque . " - Response: " . $resp_estoque);
-  }
-  error_log("Filial: {$filial} - View: {$view_media} - Tabela: {$tabela_estoque}");
-  // Logs condicionais - só exibe se estiver mostrando médias e estoques
-  if ($mostrar_medias_estoques) {
-    error_log("Total médias carregadas: " . count($medias_consumo) . " para filial: " . $filial);
-    error_log("Total estoques carregados: " . count($estoques));
-  }
+  */ // FIM DO CÓDIGO ANTIGO COMENTADO
 }
 
 ?>
@@ -226,13 +439,13 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <div class="bg-blue-700 text-white p-3 rounded mb-4">
               <strong>Aviso:</strong> Médias de consumo não carregadas (<?= count($medias_consumo) ?> encontradas). 
               <br><small>Filial: <?= htmlspecialchars($filial) ?></small>
-              <br><small>Verifique se a view <code><?= htmlspecialchars($view_media ?? 'N/A') ?></code> existe no Supabase e se há dados de movimentação para esta filial.</small>
-              <br><small>URL consultada: <?= htmlspecialchars($url_media ?? 'N/A') ?></small>
+              <br><small>Verifique se a view <code><?= htmlspecialchars($view_consolidada ?? 'N/A') ?></code> existe no Supabase e se há dados de movimentação para esta filial.</small>
+              <br><small>URL consultada: <?= htmlspecialchars($url_consolidado ?? 'N/A') ?></small>
             </div>
           <?php elseif ($mostrar_medias_estoques && !empty($medias_consumo)): ?>
             <div class="bg-green-700 text-white p-3 rounded mb-4">
               <strong>Sucesso:</strong> <?= count($medias_consumo) ?> médias de consumo e <?= count($estoques) ?> estoques carregados para a filial <?= htmlspecialchars($filial) ?>.
-              <br><small>Tabelas: <code><?= htmlspecialchars($view_media) ?></code> e <code><?= htmlspecialchars($tabela_estoque) ?></code></small>
+              <br><small>View consolidada: <code><?= htmlspecialchars($view_consolidada) ?></code></small>
               <br><small>Sugestões de compra calculadas automaticamente: <strong>Média - Estoque</strong></small>
             </div>
           <?php endif; ?>
@@ -283,6 +496,9 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
               </div>
             </div>
             <?php endif; ?>
+
+
+
 
   <div class="mb-4 overflow-y-auto max-h-[63vh] bg-gray-800 p-2 rounded">
               <table class="min-w-full text-sm">
