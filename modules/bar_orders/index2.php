@@ -94,7 +94,7 @@ if (empty($bars)) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <?php foreach ($bars as $bar): ?>
-          <a href="orders.php?filial=<?= urlencode($bar) ?>" class="block p-4 bg-gray-800 rounded hover:bg-gray-700">
+          <a href="order.php?filial=<?= urlencode($bar) ?>" class="block p-4 bg-gray-800 rounded hover:bg-gray-700">
             <h2 class="font-semibold text-lg text-yellow-400"><?= htmlspecialchars($bar) ?></h2>
             <p class="text-sm text-gray-300">Fazer pedido para esta filial</p>
           </a>
