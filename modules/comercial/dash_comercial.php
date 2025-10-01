@@ -436,7 +436,6 @@ $UltimaAtualizacao = $stmt->fetchColumn();
             'chartPedidosDia' => 'Pedidos por Dia',
             'chartClientes' => 'Clientes Únicos por Vendedor',
             'chartEstado' => 'Pedidos por Estado',
-            'chartPagamento' => 'Total por Forma de Pagamento',
           ];
 
           $sortableCharts = ['chartVendedor', 'chartCadastros', 'chartClientes', 'chartEstado', 'chartPedidosDia', 'chartData'];
@@ -574,13 +573,6 @@ $UltimaAtualizacao = $stmt->fetchColumn();
 
         };
 
-        // 🍩 Donut chart (forma de pagamento) - sem ordenação
-        const donutChart = {
-          id: 'chartPagamento',
-          type: 'donut',
-          labels: <?= json_encode(array_keys($porPagamento)) ?>,
-          values: <?= json_encode(array_values($porPagamento)) ?>
-        };
 
         // 📈 Renderiza qualquer gráfico
         function renderApex(selector, options, metas = null, toggle = null) {
