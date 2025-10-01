@@ -517,7 +517,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
           <h1 class="section-title text-2xl">📊 Fechamento Bulldog</h1>
         </div>
         <div class="card-body">
-            <p>Cloudify > Relatórios Gerais > Vendas > Relatório de vendas</p>
+            <p class="mb-2">Cloudify > Relatórios Gerais > Vendas > Relatório de vendas</p>
           <form method="POST" enctype="multipart/form-data" class="mb-6">
             <div class="form-group">
               <label for="arquivo" class="form-label">Selecione o arquivo Excel</label>
