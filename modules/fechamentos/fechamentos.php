@@ -248,7 +248,7 @@ if (!empty($dadosChoripan)) {
 $totaisGodSave = [];
 $litrosBastards = 0;
 $litrosEspeciais = 0;
-$percentualBonificacao = 30;
+$percentualBonificacao = 20;
 $percentualEspeciais   = 25;
 $bonificacaoBastards   = 0;
 $bonificacaoEspeciais  = 0;
