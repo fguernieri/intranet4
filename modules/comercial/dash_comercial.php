@@ -381,7 +381,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           <div class="flex justify-end gap-4">
             <button id="btnCarregarMetas" class="btn-acao" type="button">Carregar Clientes</button>
             <a class="btn-acao" href="metas.php">Painel de Metas</a>
-            <button type="submit" class="btn-acao">Aplicar Filtros</button>
+            <button type="submit" class="btn-acao-verde">Aplicar Filtros</button>
           </div>
         </div>
       </form>
