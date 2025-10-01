@@ -518,6 +518,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
         </div>
         <div class="card-body">
             <p class="mb-2">Cloudify > Relatórios Gerais > Vendas > Relatório de vendas</p>
+            <p class="mb-2">Inicio e Fim > Grupo de Produtos > T - SOUVENIR > Filiais > Bastards Taproom > Excel</p>
           <form method="POST" enctype="multipart/form-data" class="mb-6">
             <div class="form-group">
               <label for="arquivo" class="form-label">Selecione o arquivo Excel</label>
@@ -694,10 +695,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       <!-- Relatório de Vendas -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">📤 Upload Relatório de Vendas</h1>
+          <h1 class="section-title text-2xl">📤 Upload Relatório de Recebimentos</h1>
 
         </div>
         <div class="card-body">
+            <p class="mb-2">ARB > Relatórios > Comercial > Vendas > Vendas por cliente</p>
+            <p>Data Pagamento > Inicial e Final > Buscar > Produto > Excel</p>
           <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <input type="hidden" name="formulario" value="choripan" />
             <div class="md:col-span-4 form-group">
