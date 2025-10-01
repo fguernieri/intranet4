@@ -380,7 +380,7 @@ $UltimaAtualizacao = $stmt->fetchColumn();
           <div><p class="p-2 text-sm text-gray-400 mt-auto">Última Atualização em: <?=date('d/m/Y H:i:s', strtotime($UltimaAtualizacao))?></p></div>
           <div class="flex justify-end gap-4">
             <button id="btnCarregarMetas" class="btn-acao" type="button">Carregar Clientes</button>
-            <a class="btn-acao" href="metas.php">Cadastro Metas</a>
+            <a class="btn-acao" href="metas.php">Painel de Metas</a>
             <button type="submit" class="btn-acao">Aplicar Filtros</button>
           </div>
         </div>
