@@ -112,7 +112,7 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
     $mapEmpresa = [
       'WAB' => [
         'tabela' => 'ProdutosBares_WAB',
-        'grupo'  => 'WAB - INSUMOS - WAB - INSUMO COZINHA',
+        'grupo'  => 'INSUMOS - INSUMO COZINHA - ESTOQUE',
       ],
       'BDF' => [
         'tabela' => 'ProdutosBares_BDF',
