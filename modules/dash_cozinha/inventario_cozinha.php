@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
   $mapEmpresa = [
     'WAB' => [
       'tabela' => 'ProdutosBares_WAB',
-      'grupo'  => 'WAB - INSUMOS - WAB - INSUMO COZINHA',
+      'grupo'  => 'INSUMOS - INSUMO COZINHA - ESTOQUEA',
     ],
     'BDF' => [
       'tabela' => 'ProdutosBares_BDF',
