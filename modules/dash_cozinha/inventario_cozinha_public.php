@@ -50,22 +50,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
 // Endpoint AJAX: retorna lista atualizada de insumos em JSON (agora recebe `empresa`)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'refresh') {
   $empresa = $_GET['empresa'] ?? '';
-  // Mapear empresa para o grupo correto
-  if ($empresa === 'WAB') {
-    $groupAjax = 'WAB - INSUMOS - WAB - INSUMO COZINHA';
-  } elseif ($empresa === 'BDF') {
-    $groupAjax = 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA';
-  } else {
+  $mapEmpresa = [
+    'WAB' => [
+      'tabela' => 'ProdutosBares_WAB',
+      'grupo'  => 'INSUMOS - INSUMO COZINHA - ESTOQUE',
+    ],
+    'BDF' => [
+      'tabela' => 'ProdutosBares_BDF',
+      'grupo'  => 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA',
+    ],
+  ];
+
+  if (!isset($mapEmpresa[$empresa])) {
     // Sem empresa válida: retorna array vazio
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([], JSON_UNESCAPED_UNICODE);
     exit;
   }
 
-  $sqlAjax = "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM ProdutosBares WHERE `Grupo` = ? AND `Situação` = 'Ativo' ORDER BY `Nome`";
+  $tabela = $mapEmpresa[$empresa]['tabela'];
+  $grupoAjax = $mapEmpresa[$empresa]['grupo'];
+  $tabelaEsc = str_replace('`', '``', $tabela);
+
+  $sqlAjax = sprintf(
+    "SELECT `Cód. Ref.` AS codigo, `Nome` AS nome, `Grupo` AS grupo, `Unidade` AS unidade FROM `%s` WHERE `Grupo` = ? AND `Situação` = 'Ativo' ORDER BY `Nome`",
+    $tabelaEsc
+  );
   try {
     $stmtAjax = $pdo_dw->prepare($sqlAjax);
-    $stmtAjax->execute([$groupAjax]);
+    $stmtAjax->execute([$grupoAjax]);
     $insumosAjax = $stmtAjax->fetchAll(PDO::FETCH_ASSOC);
   } catch (PDOException $e) {
     $insumosAjax = [];
@@ -93,43 +106,63 @@ if (isset($_GET['debug']) && $_GET['debug'] === '1') {
     $debug_info .= "character_set_database: $charset\n";
     $debug_info .= "collation_database: $collation\n\n";
 
-    // Contagens e comparações para os dois grupos
-    $groups = [
-    'WAB' => 'WAB - INSUMOS - WAB - INSUMO COZINHA',
-      'BDF' => 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA',
+    // Contagens e comparações para os dois grupos/tabelas
+    $mapEmpresa = [
+      'WAB' => [
+        'tabela' => 'ProdutosBares_WAB',
+        'grupo'  => 'INSUMOS - INSUMO COZINHA - ESTOQUE',
+      ],
+      'BDF' => [
+        'tabela' => 'ProdutosBares_BDF',
+        'grupo'  => 'TAP - INSUMOS ESTOQUE - TAP - INSUMO COZINHA',
+      ],
     ];
-    foreach ($groups as $k => $g) {
-      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE `Grupo` = ?');
-      $stmt->execute([$g]);
+
+    foreach ($mapEmpresa as $empresaKey => $info) {
+      $tabelaEsc = str_replace('`', '``', $info['tabela']);
+      $grupo = $info['grupo'];
+
+      $sqlExact = sprintf('SELECT COUNT(*) FROM `%s` WHERE `Grupo` = ?', $tabelaEsc);
+      $stmt = $pdo_dw->prepare($sqlExact);
+      $stmt->execute([$grupo]);
       $cnt_exact = $stmt->fetchColumn();
 
-      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE TRIM(`Grupo`) = ?');
-      $stmt->execute([$g]);
+      $sqlTrim = sprintf('SELECT COUNT(*) FROM `%s` WHERE TRIM(`Grupo`) = ?', $tabelaEsc);
+      $stmt = $pdo_dw->prepare($sqlTrim);
+      $stmt->execute([$grupo]);
       $cnt_trim = $stmt->fetchColumn();
 
-      $stmt = $pdo_dw->prepare('SELECT COUNT(*) FROM ProdutosBares WHERE `Grupo` LIKE ?');
+      $sqlLike = sprintf('SELECT COUNT(*) FROM `%s` WHERE `Grupo` LIKE ?', $tabelaEsc);
+      $stmt = $pdo_dw->prepare($sqlLike);
       $stmt->execute(['%INSUMO%']);
       $cnt_like = $stmt->fetchColumn();
 
-      $debug_info .= "$k -> group: $g\n exact=$cnt_exact trim=$cnt_trim likeINSUMO=$cnt_like\n\n";
+      $debug_info .= sprintf("%s -> table: %s group: %s\n exact=%d trim=%d likeINSUMO=%d\n\n", $empresaKey, $info['tabela'], $grupo, $cnt_exact, $cnt_trim, $cnt_like);
     }
 
-    // Valores distintos de Grupo com tamanho e HEX
-    $stmt = $pdo_dw->query("SELECT `Grupo`, COUNT(*) AS cnt, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM ProdutosBares GROUP BY `Grupo`, CHAR_LENGTH(`Grupo`), HEX(`Grupo`) ORDER BY cnt DESC LIMIT 50");
-    $groupsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $debug_info .= "Distinct Grupo (sample):\n";
-    foreach ($groupsList as $gr) {
-      $debug_info .= "{$gr['Grupo']} | cnt={$gr['cnt']} | len={$gr['len']} | hex={$gr['hexval']}\n";
-    }
+    foreach ($mapEmpresa as $empresaKey => $info) {
+      $tabelaEsc = str_replace('`', '``', $info['tabela']);
 
-    // Amostra de linhas que contêm INSUMO
-    $stmt = $pdo_dw->prepare("SELECT `Cód. Ref.`, `Nome`, `Grupo`, `Unidade`, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM ProdutosBares WHERE `Grupo` LIKE ? LIMIT 200");
-    $stmt->execute(['%INSUMO%']);
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $debug_info .= "\nSample rows (like %INSUMO%):\n";
-    foreach (array_slice($rows, 0, 50) as $r) {
-      $cr = $r['Cód. Ref.'] ?? $r['Cód. Ref.'];
-      $debug_info .= "$cr | {$r['Nome']} | {$r['Grupo']} | len={$r['len']} | hex={$r['hexval']}\n";
+      // Valores distintos de Grupo com tamanho e HEX
+      $sqlDistinct = sprintf("SELECT `Grupo`, COUNT(*) AS cnt, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM `%s` GROUP BY `Grupo`, CHAR_LENGTH(`Grupo`), HEX(`Grupo`) ORDER BY cnt DESC LIMIT 50", $tabelaEsc);
+      $stmt = $pdo_dw->query($sqlDistinct);
+      $groupsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      $debug_info .= sprintf("Distinct Grupo (sample) [%s]:\n", $empresaKey);
+      foreach ($groupsList as $gr) {
+        $debug_info .= "{$gr['Grupo']} | cnt={$gr['cnt']} | len={$gr['len']} | hex={$gr['hexval']}\n";
+      }
+
+      // Amostra de linhas que contêm INSUMO
+      $sqlSample = sprintf("SELECT `Cód. Ref.`, `Nome`, `Grupo`, `Unidade`, CHAR_LENGTH(`Grupo`) AS len, HEX(`Grupo`) AS hexval FROM `%s` WHERE `Grupo` LIKE ? LIMIT 200", $tabelaEsc);
+      $stmt = $pdo_dw->prepare($sqlSample);
+      $stmt->execute(['%INSUMO%']);
+      $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      $debug_info .= sprintf("\nSample rows (like %%INSUMO%%) [%s]:\n", $empresaKey);
+      foreach (array_slice($rows, 0, 50) as $r) {
+        $cr = $r['Cód. Ref.'] ?? $r['Cód. Ref.'];
+        $debug_info .= "$cr | {$r['Nome']} | {$r['Grupo']} | len={$r['len']} | hex={$r['hexval']}\n";
+      }
+      $debug_info .= "\n";
     }
 
   } catch (PDOException $e) {
