@@ -47,9 +47,16 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   curl_close($ch);
   if (!$err && $code >= 200 && $code < 300) {
     $rows = json_decode($resp, true) ?: [];
+    // Categorias que devem ser ocultadas
+    $categorias_ocultas = ['BEBIDAS', 'CARNES/FRIOS/CONGELADOS', 'SECOS'];
+    
     foreach ($rows as $r) {
       if (isset($r['filial']) && $r['filial'] === $filial) {
-        $insumos[] = $r;
+        // Filtrar categorias indesejadas
+        $categoria_item = trim($r['categoria'] ?? '');
+        if (!in_array($categoria_item, $categorias_ocultas)) {
+          $insumos[] = $r;
+        }
       }
     }
   }
@@ -248,9 +255,14 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <?php
               // build a list of categories from the loaded insumos
               $categories = [];
+              // Categorias que devem ser ocultadas
+              $categorias_ocultas = ['BEBIDAS', 'CARNES/FRIOS/CONGELADOS - SECOS'];
+              
               foreach ($insumos as $r) {
                 $c = trim($r['categoria'] ?? '');
-                if ($c !== '') $categories[] = $c;
+                if ($c !== '' && !in_array($c, $categorias_ocultas)) {
+                  $categories[] = $c;
+                }
               }
               $categories = array_values(array_unique($categories));
               // sort categories alphabetically (case-insensitive)
