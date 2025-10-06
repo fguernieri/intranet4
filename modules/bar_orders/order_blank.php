@@ -47,15 +47,21 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
   curl_close($ch);
   if (!$err && $code >= 200 && $code < 300) {
     $rows = json_decode($resp, true) ?: [];
-    // Categorias que devem ser ocultadas
+    // Categorias que devem ser ocultadas apenas para outras filiais (não BAR DO MEIO e CROSS)
     $categorias_ocultas = ['BEBIDAS', 'CARNES/FRIOS/CONGELADOS', 'SECOS'];
+    $mostrar_todas_categorias = ($filial === 'BAR DO MEIO' || $filial === 'CROSS');
     
     foreach ($rows as $r) {
       if (isset($r['filial']) && $r['filial'] === $filial) {
-        // Filtrar categorias indesejadas
-        $categoria_item = trim($r['categoria'] ?? '');
-        if (!in_array($categoria_item, $categorias_ocultas)) {
+        // Para BAR DO MEIO e CROSS, mostrar todas as categorias
+        if ($mostrar_todas_categorias) {
           $insumos[] = $r;
+        } else {
+          // Para outras filiais, filtrar categorias indesejadas
+          $categoria_item = trim($r['categoria'] ?? '');
+          if (!in_array($categoria_item, $categorias_ocultas)) {
+            $insumos[] = $r;
+          }
         }
       }
     }
@@ -255,13 +261,19 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
             <?php
               // build a list of categories from the loaded insumos
               $categories = [];
-              // Categorias que devem ser ocultadas
-              $categorias_ocultas = ['BEBIDAS', 'CARNES/FRIOS/CONGELADOS - SECOS'];
+              // Para BAR DO MEIO e CROSS, mostrar todas as categorias
+              $mostrar_todas_categorias_filtro = ($filial === 'BAR DO MEIO' || $filial === 'CROSS');
               
               foreach ($insumos as $r) {
                 $c = trim($r['categoria'] ?? '');
-                if ($c !== '' && !in_array($c, $categorias_ocultas)) {
-                  $categories[] = $c;
+                if ($c !== '') {
+                  // Para BAR DO MEIO e CROSS, incluir todas as categorias
+                  if ($mostrar_todas_categorias_filtro) {
+                    $categories[] = $c;
+                  } else {
+                    // Para outras filiais, manter o comportamento original (sem filtros específicos aqui pois já foi filtrado acima)
+                    $categories[] = $c;
+                  }
                 }
               }
               $categories = array_values(array_unique($categories));
