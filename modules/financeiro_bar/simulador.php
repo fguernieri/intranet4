@@ -1979,14 +1979,38 @@ function salvarMetasFinanceiras() {
         return;
     }
     
+    // Separar categorias pai e subcategorias para debug
+    const categoriasPai = metasFinanceiras.filter(meta => meta.subcategoria === '');
+    const subcategorias = metasFinanceiras.filter(meta => meta.subcategoria !== '');
+    
+    // Preview das categorias pai
+    let previewMetas = 'CATEGORIAS PAI:\n';
+    categoriasPai.slice(0, 5).forEach(meta => {
+        previewMetas += `• ${meta.categoria}: R$ ${meta.meta.toFixed(2)}\n`;
+    });
+    
+    if (categoriasPai.length > 5) {
+        previewMetas += `• ... e mais ${categoriasPai.length - 5} categorias pai\n`;
+    }
+    
+    // Preview das subcategorias
+    previewMetas += '\nSUBCATEGORIAS:\n';
+    subcategorias.slice(0, 5).forEach(meta => {
+        previewMetas += `• ${meta.categoria} → ${meta.subcategoria}: R$ ${meta.meta.toFixed(2)}\n`;
+    });
+    
+    if (subcategorias.length > 5) {
+        previewMetas += `• ... e mais ${subcategorias.length - 5} subcategorias\n`;
+    }
+    
     // Confirmar com usuário
     const confirmacao = confirm(
         `🎯 SALVAR METAS FINANCEIRAS\n\n` +
         `📅 Meses selecionados: ${mesesSelecionados.length}\n` +
         `📊 Metas encontradas: ${metasFinanceiras.length}\n\n` +
-        `Exemplo de dados:\n` +
-        `• ${metasFinanceiras[0]?.categoria}: R$ ${metasFinanceiras[0]?.meta?.toFixed(2)}\n\n` +
-        `Deseja salvar essas metas na base de dados?`
+        `Dados coletados da coluna "Valor Simulador (R$)":\n` +
+        previewMetas +
+        `\nDeseja salvar essas metas na base de dados?`
     );
     
     if (!confirmacao) return;
@@ -1998,120 +2022,182 @@ function salvarMetasFinanceiras() {
 function coletarMetasDoSimulador() {
     const metas = [];
     
-    // Mapear nomes legíveis para as categorias
-    const nomesCategorias = {
-        'receita-bruta': 'RECEITA BRUTA',
-        'receita-liquida': 'RECEITA LÍQUIDA', 
-        'tributos': 'TRIBUTOS',
-        'custo-variavel': 'CUSTO VARIÁVEL',
-        'lucro-bruto': 'LUCRO BRUTO',
-        'custo-fixo': 'CUSTO FIXO',
-        'despesa-fixa': 'DESPESA FIXA',
-        'despesas-venda': 'DESPESAS DE VENDA',
-        'lucro-liquido': 'LUCRO LÍQUIDO',
-        'investimento-interno': 'INVESTIMENTO INTERNO',
-        'saidas-nao-operacionais': 'SAÍDAS NÃO OPERACIONAIS',
-        'impacto-caixa': 'IMPACTO CAIXA'
-    };
+    // CATEGORIAS PAI: Usar IDs diretos dos elementos
+    const categoriasPrincipais = [
+        { id: 'valor-sim-receita-bruta', nome: 'RECEITA BRUTA', percId: 'perc-receita-bruta' },
+        { id: 'valor-sim-tributos', nome: 'TRIBUTOS', percId: 'perc-tributos' },
+        { id: 'valor-sim-receita-liquida', nome: 'RECEITA LÍQUIDA', percId: 'perc-receita-liquida' },
+        { id: 'valor-sim-custo-variavel', nome: 'CUSTO VARIÁVEL', percId: 'perc-custo-variavel' },
+        { id: 'valor-sim-lucro-bruto', nome: 'LUCRO BRUTO', percId: 'perc-lucro-bruto' },
+        { id: 'valor-sim-custo-fixo', nome: 'CUSTO FIXO', percId: 'perc-custo-fixo' },
+        { id: 'valor-sim-despesa-fixa', nome: 'DESPESA FIXA', percId: 'perc-despesa-fixa' },
+        { id: 'valor-sim-despesa-venda', nome: 'DESPESAS DE VENDA', percId: 'perc-despesa-venda' },
+        { id: 'valor-sim-lucro-liquido', nome: 'LUCRO LÍQUIDO', percId: 'perc-lucro-liquido' },
+        { id: 'valor-sim-investimento-interno', nome: 'INVESTIMENTO INTERNO', percId: 'perc-investimento-interno' },
+        { id: 'valor-sim-saidas-nao-operacionais', nome: 'SAÍDAS NÃO OPERACIONAIS', percId: 'perc-saidas-nao-operacionais' },
+        { id: 'valor-sim-impacto-caixa', nome: 'IMPACTO CAIXA', percId: 'perc-impacto-caixa' }
+    ];
     
-    // Coletar TODAS as categorias e subcategorias, salvando tudo na coluna CATEGORIA
-    
-    // 1. Primeiro salvar categorias pai (totais das categorias principais)
-    Object.keys(nomesCategorias).forEach(categoriaId => {
-        const categoriaNome = nomesCategorias[categoriaId];
+    categoriasPrincipais.forEach(cat => {
+        const elementoValor = document.getElementById(cat.id);
+        const elementoPerc = document.getElementById(cat.percId);
         
-        // Obter SEMPRE o valor ABSOLUTO total da categoria
-        const totalElement = document.getElementById(`valor-sim-${categoriaId}`);
-        const textoTotal = totalElement ? totalElement.textContent.trim() : '';
-        
-        // Extrair APENAS números, vírgulas e pontos, depois converter para float
-        const valorAbsolutoString = textoTotal.replace(/[^\d,.-]/g, ''); // Remove R$, espaços, etc
-        const valorAbsolutoTotal = parseFloat(valorAbsolutoString.replace(',', '.')) || 0;
-        
-        // Calcular percentual baseado na receita bruta APENAS para referência
-        let percentualTotal = 0;
-        const receitaBrutaElement = document.getElementById('valor-sim-receita-bruta');
-        const receitaBruta = parseFloat(receitaBrutaElement?.textContent?.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-        if (receitaBruta > 0) {
-            percentualTotal = (valorAbsolutoTotal / receitaBruta) * 100;
-        }
-        
-        // DEBUG: Log detalhado para categorias pai
-        console.log(`CATEGORIA PAI: ${categoriaNome}`);
-        console.log(`  - Elemento: valor-sim-${categoriaId}`);
-        console.log(`  - Texto original: "${textoTotal}"`);
-        console.log(`  - Valor absoluto extraído: R$ ${valorAbsolutoTotal.toFixed(2)}`);
-        console.log(`  - Percentual calculado: ${percentualTotal.toFixed(2)}%`);
-        
-        // GARANTIR que está salvando o VALOR ABSOLUTO no campo META
-        metas.push({
-            categoria: categoriaNome,     // Ex: "CUSTO FIXO" → vai para CATEGORIA
-            subcategoria: '',            // Sempre vazio
-            meta: valorAbsolutoTotal,    // SEMPRE VALOR ABSOLUTO (ex: 160204.54, nunca %)
-            percentual: percentualTotal  // Percentual calculado apenas para referência
-        });
-    });
-    
-    // 2. Depois salvar subcategorias (extraindo das tabelas)
-    const categoriasComSubcategorias = ['custo-fixo', 'tributos', 'custo-variavel', 'despesa-fixa', 'despesas-venda'];
-    
-    categoriasComSubcategorias.forEach(categoriaId => {
-        const categoriaNome = nomesCategorias[categoriaId];
-        if (!categoriaNome) return;
-        
-        // Procurar tabela de subcategorias desta categoria
-        const tabelaSubcategorias = document.querySelector(`#sub-${categoriaId}`);
-        if (!tabelaSubcategorias) return;
-        
-        // Procurar todas as linhas de subcategorias
-        const linhasSubcategorias = tabelaSubcategorias.querySelectorAll('tr');
-        
-        linhasSubcategorias.forEach(linha => {
-            const celulaCategoria = linha.querySelector('td:first-child');
-            if (!celulaCategoria) return;
-            
-            const subcategoriaNome = celulaCategoria.textContent.trim();
-            if (!subcategoriaNome || subcategoriaNome === '') return;
-            
-            // Obter SEMPRE o valor ABSOLUTO da subcategoria (última coluna da tabela)
-            const celulaValor = linha.querySelector('td:last-child');
-            const textoValor = celulaValor ? celulaValor.textContent.trim() : '';
-            
-            // Extrair APENAS números, vírgulas e pontos, depois converter para float
-            const valorAbsolutoString = textoValor.replace(/[^\d,.-]/g, ''); // Remove R$, espaços, etc
-            const valorAbsoluto = parseFloat(valorAbsolutoString.replace(',', '.')) || 0;
-            
-            // Calcular percentual baseado na receita bruta APENAS para referência
-            let percentual = 0;
-            const receitaBrutaElement = document.getElementById('valor-sim-receita-bruta');
-            const receitaBruta = parseFloat(receitaBrutaElement?.textContent?.replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-            if (receitaBruta > 0) {
-                percentual = (valorAbsoluto / receitaBruta) * 100;
+        if (elementoValor) {
+            // Extrair VALOR SIMULADOR
+            let textoValor = '';
+            if (elementoValor.tagName === 'INPUT') {
+                textoValor = elementoValor.value;
+            } else {
+                textoValor = elementoValor.textContent || elementoValor.innerText || '';
             }
             
-            // DEBUG: Log detalhado do que está sendo coletado
-            console.log(`SUBCATEGORIA: ${subcategoriaNome}`);
-            console.log(`  - Texto original: "${textoValor}"`);
-            console.log(`  - Valor absoluto extraído: R$ ${valorAbsoluto.toFixed(2)}`);
-            console.log(`  - Percentual calculado: ${percentual.toFixed(2)}%`);
-            console.log(`  - Categoria pai: ${categoriaNome}`);
+            let valorMeta = 0;
+            if (textoValor) {
+                // Parsing para formato brasileiro: R$ 1.234,56
+                const valorLimpo = textoValor.replace(/R\$\s*/, '').replace(/\./g, '').replace(',', '.');
+                valorMeta = parseFloat(valorLimpo) || 0;
+            }
             
-            // GARANTIR que está salvando o VALOR ABSOLUTO no campo META
+            // Extrair PERCENTUAL
+            let percentual = 0;
+            if (elementoPerc) {
+                const textoPerc = elementoPerc.textContent || elementoPerc.innerText || '';
+                if (textoPerc.includes('%')) {
+                    const percLimpo = textoPerc.replace(/[^\d,]/g, '').replace(',', '.');
+                    percentual = parseFloat(percLimpo) || 0;
+                }
+            }
+            
+            // CATEGORIA PAI (sem subcategoria)
             metas.push({
-                categoria: subcategoriaNome, // Ex: "ÁGUA" → vai para CATEGORIA
-                subcategoria: '',           // Sempre vazio
-                meta: valorAbsoluto,        // SEMPRE VALOR ABSOLUTO (ex: 87.12, nunca %)
-                percentual: percentual      // Percentual calculado apenas para referência
+                categoria: cat.nome,         // Campo CATEGORIA na fmetastap
+                subcategoria: '',            // Vazio para categoria pai
+                meta: valorMeta,             // Campo META na fmetastap
+                percentual: percentual       // Campo PERCENTUAL na fmetastap
+            });
+        }
+    });
+    
+    // SUBCATEGORIAS: Das tabelas expandidas
+    const tabelasSubcategorias = [
+        { id: 'sub-custo-fixo', categoriaPai: 'CUSTO FIXO' },
+        { id: 'sub-tributos', categoriaPai: 'TRIBUTOS' },
+        { id: 'sub-custo-variavel', categoriaPai: 'CUSTO VARIÁVEL' },
+        { id: 'sub-despesa-fixa', categoriaPai: 'DESPESA FIXA' },
+        { id: 'sub-despesas-venda', categoriaPai: 'DESPESAS DE VENDA' },
+        { id: 'sub-investimento-interno', categoriaPai: 'INVESTIMENTO INTERNO' },
+        { id: 'sub-saidas-nao-operacionais', categoriaPai: 'SAÍDAS NÃO OPERACIONAIS' }
+    ];
+    
+    tabelasSubcategorias.forEach(tabela => {
+        const elemento = document.getElementById(tabela.id);
+        if (!elemento) return;
+        
+        const linhas = elemento.querySelectorAll('tr');
+        
+        linhas.forEach(linha => {
+            const celulas = linha.querySelectorAll('td');
+            if (celulas.length < 3) return;
+            
+            // Primeira célula = nome da subcategoria
+            const nomeSubcategoria = celulas[0].textContent.trim();
+            if (!nomeSubcategoria) return;
+            
+            let valorMeta = 0;
+            let percentual = 0;
+            
+            // ABORDAGEM ESPECÍFICA: Buscar por IDs conhecidos na linha
+            // Procurar por elementos com IDs que seguem padrões conhecidos
+            const elementosComId = linha.querySelectorAll('[id]');
+            
+            elementosComId.forEach(elemento => {
+                const id = elemento.id;
+                
+                // Se é um elemento de valor (valor-sim-*)
+                if (id.includes('valor-sim-')) {
+                    let textoValor = '';
+                    if (elemento.tagName === 'INPUT') {
+                        textoValor = elemento.value;
+                    } else {
+                        textoValor = elemento.textContent || elemento.innerText || '';
+                    }
+                    
+                    if (textoValor.includes('R$')) {
+                        const valorLimpo = textoValor.replace(/R\$\s*/, '').replace(/\./g, '').replace(',', '.');
+                        valorMeta = parseFloat(valorLimpo) || 0;
+                    }
+                }
+                
+                // Se é um elemento de percentual (perc-*)
+                if (id.includes('perc-')) {
+                    let textoPerc = '';
+                    if (elemento.tagName === 'INPUT') {
+                        textoPerc = elemento.value;
+                    } else {
+                        textoPerc = elemento.textContent || elemento.innerText || '';
+                    }
+                    
+                    if (textoPerc) {
+                        // Remove tudo exceto números e vírgula, depois converte
+                        const percLimpo = textoPerc.replace(/[^\d,]/g, '').replace(',', '.');
+                        percentual = parseFloat(percLimpo) || 0;
+                    }
+                }
+            });
+            
+            // FALLBACK: Se não encontrou pelos IDs, usar abordagem de busca por texto
+            if (valorMeta === 0 || percentual === 0) {
+                for (let i = 1; i < celulas.length; i++) {
+                    const texto = celulas[i].textContent.trim();
+                    
+                    // Se contém R$ e ainda não temos valor
+                    if (texto.includes('R$') && valorMeta === 0) {
+                        const valorLimpo = texto.replace(/R\$\s*/, '').replace(/\./g, '').replace(',', '.');
+                        valorMeta = parseFloat(valorLimpo) || 0;
+                    }
+                    
+                    // Se contém % e ainda não temos percentual
+                    if (texto.includes('%') && !texto.includes('R$') && percentual === 0) {
+                        const percLimpo = texto.replace(/[^\d,]/g, '').replace(',', '.');
+                        percentual = parseFloat(percLimpo) || 0;
+                    }
+                }
+            }
+            
+            // DEBUG específico para COMISSÃO
+            if (nomeSubcategoria.toUpperCase().includes('COMISSÃO') || nomeSubcategoria.toUpperCase().includes('COMISSAO')) {
+                console.log(`🔍 DEBUG COMISSÃO:`, {
+                    nome: nomeSubcategoria,
+                    categoria: tabela.categoriaPai,
+                    valorMeta: valorMeta,
+                    percentual: percentual,
+                    elementosComId: Array.from(elementosComId).map(el => ({ id: el.id, tag: el.tagName, text: el.textContent?.slice(0, 50) }))
+                });
+            }
+            
+            // SUBCATEGORIA
+            metas.push({
+                categoria: tabela.categoriaPai,   // Campo CATEGORIA na fmetastap
+                subcategoria: nomeSubcategoria,   // Campo SUBCATEGORIA na fmetastap  
+                meta: valorMeta,                  // Campo META na fmetastap
+                percentual: percentual            // Campo PERCENTUAL na fmetastap
             });
         });
     });
     
-    // DEBUG: Mostrar TODAS as metas coletadas antes de enviar
-    console.log('=== RESUMO FINAL DAS METAS COLETADAS ===');
-    metas.forEach(meta => {
-        console.log(`${meta.categoria}: META = R$ ${meta.meta.toFixed(2)}, PERCENTUAL = ${meta.percentual.toFixed(2)}%`);
-    });
-    console.log(`Total de metas coletadas: ${metas.length}`);
+    // DEBUG: Log todas as subcategorias encontradas
+    const subcategorias = metas.filter(m => m.subcategoria !== '');
+    console.log('🔍 SUBCATEGORIAS COLETADAS:', subcategorias);
+    
+    // DEBUG específico: Procurar por COMISSÃO em todas as metas
+    const comissaoEncontrada = metas.find(m => m.subcategoria.toUpperCase().includes('COMISSÃO') || m.subcategoria.toUpperCase().includes('COMISSAO'));
+    if (comissaoEncontrada) {
+        console.log('✅ COMISSÃO ENCONTRADA:', comissaoEncontrada);
+    } else {
+        console.log('❌ COMISSÃO NÃO ENCONTRADA');
+        // Listar todas as subcategorias para debug
+        console.log('📋 Lista de subcategorias:', subcategorias.map(s => s.subcategoria));
+    }
     
     return metas;
 }
