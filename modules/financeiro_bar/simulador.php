@@ -2075,6 +2075,16 @@ function coletarMetasDoSimulador() {
                 meta: valorMeta,             // Campo META na fmetastap
                 percentual: percentual       // Campo PERCENTUAL na fmetastap
             });
+            
+            // SOLUÇÃO ESPECÍFICA: Se for DESPESAS DE VENDA, criar subcategoria COMISSÃO automaticamente
+            if (cat.nome === 'DESPESAS DE VENDA' && valorMeta > 0) {
+                metas.push({
+                    categoria: 'DESPESAS DE VENDA',  // Campo CATEGORIA na fmetastap
+                    subcategoria: 'COMISSÃO',        // Campo SUBCATEGORIA na fmetastap
+                    meta: valorMeta,                 // Mesmo valor da categoria pai
+                    percentual: percentual           // Mesmo percentual da categoria pai
+                });
+            }
         }
     });
     
@@ -2106,14 +2116,13 @@ function coletarMetasDoSimulador() {
             let valorMeta = 0;
             let percentual = 0;
             
-            // ABORDAGEM ESPECÍFICA: Buscar por IDs conhecidos na linha
-            // Procurar por elementos com IDs que seguem padrões conhecidos
-            const elementosComId = linha.querySelectorAll('[id]');
+            // ABORDAGEM HÍBRIDA: IDs específicos + busca por posição
             
+            // 1. Tentar por IDs conhecidos primeiro
+            const elementosComId = linha.querySelectorAll('[id]');
             elementosComId.forEach(elemento => {
                 const id = elemento.id;
                 
-                // Se é um elemento de valor (valor-sim-*)
                 if (id.includes('valor-sim-')) {
                     let textoValor = '';
                     if (elemento.tagName === 'INPUT') {
@@ -2128,7 +2137,6 @@ function coletarMetasDoSimulador() {
                     }
                 }
                 
-                // Se é um elemento de percentual (perc-*)
                 if (id.includes('perc-')) {
                     let textoPerc = '';
                     if (elemento.tagName === 'INPUT') {
@@ -2138,25 +2146,60 @@ function coletarMetasDoSimulador() {
                     }
                     
                     if (textoPerc) {
-                        // Remove tudo exceto números e vírgula, depois converte
                         const percLimpo = textoPerc.replace(/[^\d,]/g, '').replace(',', '.');
                         percentual = parseFloat(percLimpo) || 0;
                     }
                 }
             });
             
-            // FALLBACK: Se não encontrou pelos IDs, usar abordagem de busca por texto
+            // 2. BUSCA POR POSIÇÃO: Para tabelas com estrutura padrão
+            // Baseado na estrutura: [Nome] [Meta] [Valor Base] [Valor Sim] [Percentual]
+            if (celulas.length >= 5) {
+                // Última célula geralmente é o percentual (pode ser input ou texto)
+                const ultimaCelula = celulas[celulas.length - 1];
+                
+                // Buscar input dentro da célula (para percentuais editáveis)
+                const inputPerc = ultimaCelula.querySelector('input');
+                if (inputPerc && percentual === 0) {
+                    const valuePerc = inputPerc.value || '';
+                    if (valuePerc) {
+                        const percLimpo = valuePerc.replace(/[^\d,]/g, '').replace(',', '.');
+                        percentual = parseFloat(percLimpo) || 0;
+                    }
+                }
+                
+                // Se não há input, pegar texto da célula
+                if (percentual === 0) {
+                    const textoPerc = ultimaCelula.textContent.trim();
+                    if (textoPerc.includes('%')) {
+                        const percLimpo = textoPerc.replace(/[^\d,]/g, '').replace(',', '.');
+                        percentual = parseFloat(percLimpo) || 0;
+                    }
+                }
+                
+                // Penúltima célula geralmente é o valor simulador
+                if (valorMeta === 0 && celulas.length >= 4) {
+                    const penultimaCelula = celulas[celulas.length - 2];
+                    const textoValor = penultimaCelula.textContent.trim();
+                    if (textoValor.includes('R$')) {
+                        const valorLimpo = textoValor.replace(/R\$\s*/, '').replace(/\./g, '').replace(',', '.');
+                        valorMeta = parseFloat(valorLimpo) || 0;
+                    }
+                }
+            }
+            
+            // 3. FALLBACK: Busca por texto em todas as células
             if (valorMeta === 0 || percentual === 0) {
                 for (let i = 1; i < celulas.length; i++) {
                     const texto = celulas[i].textContent.trim();
                     
-                    // Se contém R$ e ainda não temos valor
+                    // Procurar valor monetário
                     if (texto.includes('R$') && valorMeta === 0) {
                         const valorLimpo = texto.replace(/R\$\s*/, '').replace(/\./g, '').replace(',', '.');
                         valorMeta = parseFloat(valorLimpo) || 0;
                     }
                     
-                    // Se contém % e ainda não temos percentual
+                    // Procurar percentual
                     if (texto.includes('%') && !texto.includes('R$') && percentual === 0) {
                         const percLimpo = texto.replace(/[^\d,]/g, '').replace(',', '.');
                         percentual = parseFloat(percLimpo) || 0;
@@ -2164,16 +2207,7 @@ function coletarMetasDoSimulador() {
                 }
             }
             
-            // DEBUG específico para COMISSÃO
-            if (nomeSubcategoria.toUpperCase().includes('COMISSÃO') || nomeSubcategoria.toUpperCase().includes('COMISSAO')) {
-                console.log(`🔍 DEBUG COMISSÃO:`, {
-                    nome: nomeSubcategoria,
-                    categoria: tabela.categoriaPai,
-                    valorMeta: valorMeta,
-                    percentual: percentual,
-                    elementosComId: Array.from(elementosComId).map(el => ({ id: el.id, tag: el.tagName, text: el.textContent?.slice(0, 50) }))
-                });
-            }
+
             
             // SUBCATEGORIA
             metas.push({
@@ -2185,18 +2219,55 @@ function coletarMetasDoSimulador() {
         });
     });
     
-    // DEBUG: Log todas as subcategorias encontradas
-    const subcategorias = metas.filter(m => m.subcategoria !== '');
-    console.log('🔍 SUBCATEGORIAS COLETADAS:', subcategorias);
+    return metas;
+    let debugInfo = '🔍 DEBUG COMISSÃO:\n\n';
     
-    // DEBUG específico: Procurar por COMISSÃO em todas as metas
+    // Verificar se a tabela sub-despesas-venda existe
+    const tabelaDespesasVenda = document.getElementById('sub-despesa-venda');
+    if (tabelaDespesasVenda) {
+        debugInfo += '✅ Tabela sub-despesa-venda ENCONTRADA\n';
+        const linhasDespesas = tabelaDespesasVenda.querySelectorAll('tr');
+        debugInfo += `📊 ${linhasDespesas.length} linhas na tabela\n\n`;
+        
+        debugInfo += '📋 SUBCATEGORIAS ENCONTRADAS:\n';
+        linhasDespesas.forEach((linha, index) => {
+            const celulas = linha.querySelectorAll('td');
+            if (celulas.length > 0) {
+                const nomeSubcat = celulas[0].textContent.trim();
+                const isComissao = nomeSubcat.toUpperCase().includes('COMISSÃO') || nomeSubcat.toUpperCase().includes('COMISSAO');
+                
+                debugInfo += `${index + 1}. "${nomeSubcat}"`;
+                if (isComissao) debugInfo += ' ⭐ COMISSÃO!';
+                debugInfo += '\n';
+                
+                // Se for comissão, mostrar detalhes das células
+                if (isComissao) {
+                    debugInfo += '   📱 Células:\n';
+                    celulas.forEach((cel, i) => {
+                        const texto = cel.textContent.trim();
+                        const id = cel.id || 'sem-id';
+                        debugInfo += `   ${i}: "${texto}" (${id})\n`;
+                    });
+                }
+            }
+        });
+    } else {
+        debugInfo += '❌ Tabela sub-despesa-venda NÃO ENCONTRADA\n';
+    }
+    
+    // Verificar se COMISSÃO foi coletada nas metas
+    const subcategorias = metas.filter(m => m.subcategoria !== '');
+    debugInfo += `\n� Total de subcategorias coletadas: ${subcategorias.length}\n`;
+    
     const comissaoEncontrada = metas.find(m => m.subcategoria.toUpperCase().includes('COMISSÃO') || m.subcategoria.toUpperCase().includes('COMISSAO'));
     if (comissaoEncontrada) {
-        console.log('✅ COMISSÃO ENCONTRADA:', comissaoEncontrada);
+        debugInfo += `✅ COMISSÃO nas metas: ${JSON.stringify(comissaoEncontrada, null, 2)}\n`;
     } else {
-        console.log('❌ COMISSÃO NÃO ENCONTRADA');
-        // Listar todas as subcategorias para debug
-        console.log('📋 Lista de subcategorias:', subcategorias.map(s => s.subcategoria));
+        debugInfo += '❌ COMISSÃO NÃO ENCONTRADA nas metas\n';
+        debugInfo += '\n📋 Subcategorias coletadas:\n';
+        subcategorias.forEach((s, i) => {
+            debugInfo += `${i + 1}. ${s.categoria} → ${s.subcategoria}\n`;
+        });
     }
     
     return metas;
