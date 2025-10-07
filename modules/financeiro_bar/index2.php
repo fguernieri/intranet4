@@ -2,6 +2,9 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configurar fuso horário do Brasil
+date_default_timezone_set('America/Sao_Paulo');
+
 require_once $_SERVER['DOCUMENT_ROOT'] . '/auth.php';
 require_once __DIR__ . '/supabase_connection.php';
 
@@ -154,7 +157,15 @@ require_once __DIR__ . '/../../sidebar.php';
 ?>
 
 <div id="receita-content" class="p-6 ml-4">
-    <h2 class="text-xl text-yellow-400 mb-4">Acompanhamento financeiro - Bar da Fabrica</h2>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl text-yellow-400">Acompanhamento financeiro - Bar da Fabrica</h2>
+        <a href="index.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Voltar ao Menu
+        </a>
+    </div>
     
     <?php if ($periodo_selecionado): ?>
 
