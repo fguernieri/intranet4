@@ -240,8 +240,16 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['DATA_META'] = "eq.$data_meta";
                         }
                         
-                        // Buscar apenas pela coluna CATEGORIA (ignora categoria_pai)
-                        $filtros['CATEGORIA'] = "eq.$categoria_upper";
+                        if ($categoria_pai) {
+                            // Buscar subcategoria: CATEGORIA = pai E SUBCATEGORIA = filha
+                            $categoria_pai_upper = strtoupper(trim($categoria_pai));
+                            $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
+                            $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
+                        } else {
+                            // Buscar categoria pai: CATEGORIA = categoria E SUBCATEGORIA IS NULL
+                            $filtros['CATEGORIA'] = "eq.$categoria_upper";
+                            $filtros['SUBCATEGORIA'] = "is.null";
+                        }
                         
                         $resultado = $supabase->select('fmetastap', [
                             'select' => 'META, PERCENTUAL',
@@ -289,8 +297,16 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['DATA_META'] = "eq.$data_meta";
                         }
                         
-                        // Buscar apenas pela coluna CATEGORIA (ignora categoria_pai)
-                        $filtros['CATEGORIA'] = "eq.$categoria_upper";
+                        if ($categoria_pai) {
+                            // Buscar subcategoria: CATEGORIA = pai E SUBCATEGORIA = filha
+                            $categoria_pai_upper = strtoupper(trim($categoria_pai));
+                            $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
+                            $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
+                        } else {
+                            // Buscar categoria pai: CATEGORIA = categoria E SUBCATEGORIA IS NULL
+                            $filtros['CATEGORIA'] = "eq.$categoria_upper";
+                            $filtros['SUBCATEGORIA'] = "is.null";
+                        }
                         
                         $resultado = $supabase->select('fmetastap', [
                             'select' => 'PERCENTUAL',
@@ -926,7 +942,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual);
+                        $meta_individual = obterMeta($categoria_individual, 'CUSTO FIXO');
                         $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
                         $cor_individual = obterCorBarra($percentual_individual, true); // é despesa
                         ?>
