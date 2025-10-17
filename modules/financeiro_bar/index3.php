@@ -36,7 +36,7 @@ $dados_despesa = [];
 if ($conexao_ok) {
     try {
         // Primeiro, buscar todos os períodos disponíveis na view
-        $todos_dados = $supabase->select('freceitatap', [
+    $todos_dados = $supabase->select('freceitawab', [
             'select' => 'data_mes',
             'order' => 'data_mes.desc'
         ]);
@@ -87,7 +87,7 @@ if ($conexao_ok) {
                 $data_filtro = $ano . '-' . $mes . '-01';
                 
                 // Buscar receitas
-                $dados_receita = $supabase->select('freceitatap', [
+                $dados_receita = $supabase->select('freceitawab', [
                     'select' => '*',
                     'filters' => [
                         'data_mes' => 'eq.' . $data_filtro
@@ -96,7 +96,7 @@ if ($conexao_ok) {
                 ]);
                 
                 // Buscar despesas (para TRIBUTOS)
-                $dados_despesa = $supabase->select('fdespesastap', [
+                $dados_despesa = $supabase->select('fdespesaswab', [
                     'select' => '*',
                     'filters' => [
                         'data_mes' => 'eq.' . $data_filtro
@@ -105,7 +105,7 @@ if ($conexao_ok) {
                 ]);
                 
                 // Buscar detalhes das despesas para drill-down
-                $dados_despesa_detalhes = $supabase->select('fdespesastap_detalhes', [
+                $dados_despesa_detalhes = $supabase->select('fdespesaswab_detalhes', [
                     'select' => '*',
                     'filters' => [
                         'data_mes' => 'eq.' . $data_filtro
@@ -139,8 +139,8 @@ function listarMetasDisponiveis($periodo = null) {
     }
     
     try {
-        $resultado = $supabase->select('fmetastap', [
-            'select' => 'CATEGORIA, SUBCATEGORIA, META, PERCENTUAL, DATA_META',
+        $resultado = $supabase->select('fmetaswab', [
+                'select' => 'CATEGORIA, SUBCATEGORIA, META, PERCENTUAL, DATA_META',
             'filters' => $filtros,
             'order' => 'CATEGORIA.asc,SUBCATEGORIA.asc'
         ]);
@@ -158,7 +158,7 @@ require_once __DIR__ . '/../../sidebar.php';
 
 <div id="receita-content" class="p-6 ml-4">
     <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl text-yellow-400">Acompanhamento financeiro - Bar da Fabrica</h2>
+        <h2 class="text-xl text-yellow-400">Acompanhamento financeiro - We Are Bastards</h2>
         <div class="flex items-center gap-2">
             <a href="index.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors flex items-center">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,19 +166,17 @@ require_once __DIR__ . '/../../sidebar.php';
             </svg>
             Voltar ao Menu
         </a>
-            <!-- Dropdown para alternar entre páginas -->
+            <!-- Dropdown de seleção de bar -->
             <div class="relative">
-                <button id="pageMenuBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded transition-colors">
-                    Selecionar Bar ▾
-                </button>
-                <div id="pageMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                    <a href="index3.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
+                <button id="bar-menu-btn" class="bg-gray-700 text-white px-3 py-2 rounded hover:bg-gray-600 focus:outline-none">Selecionar Bar ▾</button>
+                <div id="bar-menu" class="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg hidden z-50">
+                    <a href="index2.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar da Fabrica</a>
                 </div>
             </div>
             <script>
                 document.addEventListener('click', function(e) {
-                    const btn = document.getElementById('pageMenuBtn');
-                    const menu = document.getElementById('pageMenu');
+                    const btn = document.getElementById('bar-menu-btn');
+                    const menu = document.getElementById('bar-menu');
                     if (!btn || !menu) return;
                     if (btn.contains(e.target)) {
                         menu.classList.toggle('hidden');
@@ -247,7 +245,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 $investimento_interno = [];
                 $saidas_nao_operacionais = [];
                 
-                // Função para obter meta da tabela fmetastap
+                // Função para obter meta da tabela fmetaswab
                 function obterMeta($categoria, $categoria_pai = null, $periodo = null) {
                     global $supabase, $periodo_selecionado;
                     
@@ -285,7 +283,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['SUBCATEGORIA'] = "is.null";
                         }
                         
-                        $resultado = $supabase->select('fmetastap', [
+                        $resultado = $supabase->select('fmetaswab', [
                             'select' => 'META, PERCENTUAL',
                             'filters' => $filtros,
                             'order' => 'DATA_CRI.desc',
@@ -306,7 +304,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     }
                 }
                 
-                // Função para obter percentual da meta da tabela fmetastap
+                // Função para obter percentual da meta da tabela fmetaswab
                 function obterPercentualMeta($categoria, $categoria_pai = null, $periodo = null) {
                     global $supabase, $periodo_selecionado;
                     
@@ -342,7 +340,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['SUBCATEGORIA'] = "is.null";
                         }
                         
-                        $resultado = $supabase->select('fmetastap', [
+                        $resultado = $supabase->select('fmetaswab', [
                             'select' => 'PERCENTUAL',
                             'filters' => $filtros,
                             'order' => 'DATA_CRI.desc',
@@ -1584,23 +1582,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (receitaContent && content2 && !content2.contains(receitaContent)) {
         content2.appendChild(receitaContent);
-    }
-});
-</script>
-
-<script>
-// Toggle menu de página
-document.addEventListener('DOMContentLoaded', function(){
-    var btn = document.getElementById('pageMenuBtn');
-    var menu = document.getElementById('pageMenu');
-    if (btn && menu) {
-        btn.addEventListener('click', function(e){
-            e.stopPropagation();
-            menu.classList.toggle('hidden');
-        });
-        document.addEventListener('click', function(){
-            if (!menu.classList.contains('hidden')) menu.classList.add('hidden');
-        });
     }
 });
 </script>

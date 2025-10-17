@@ -36,7 +36,7 @@ $dados_despesa = [];
 if ($conexao_ok) {
     try {
         // Primeiro, buscar todos os períodos disponíveis na view
-        $todos_dados = $supabase->select('freceitatap', [
+    $todos_dados = $supabase->select('freceitawab', [
             'select' => 'data_mes',
             'order' => 'data_mes.desc'
         ]);
@@ -87,7 +87,7 @@ if ($conexao_ok) {
                 $data_filtro = $ano . '-' . $mes . '-01';
                 
                 // Buscar receitas
-                $dados_receita = $supabase->select('freceitatap', [
+                $dados_receita = $supabase->select('freceitawab', [
                     'select' => '*',
                     'filters' => [
                         'data_mes' => 'eq.' . $data_filtro
@@ -96,7 +96,7 @@ if ($conexao_ok) {
                 ]);
                 
                 // Buscar despesas (para TRIBUTOS)
-                $dados_despesa = $supabase->select('fdespesastap', [
+                $dados_despesa = $supabase->select('fdespesaswab', [
                     'select' => '*',
                     'filters' => [
                         'data_mes' => 'eq.' . $data_filtro
@@ -117,7 +117,7 @@ require_once __DIR__ . '/../../sidebar.php';
 
 <div id="simulador-content" class="p-6 ml-4">
     <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl text-blue-400">Simulador Financeiro - Bar da Fabrica</h2>
+        <h2 class="text-xl text-blue-400">Simulador Financeiro - We Are Bastards</h2>
         <div class="flex items-center gap-2">
             <a href="index.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,17 +125,17 @@ require_once __DIR__ . '/../../sidebar.php';
                 </svg>
                 Voltar ao Menu
             </a>
-            <!-- Dropdown para alternar para simulador WAB -->
+            <!-- Dropdown para alternar para simulador do Bar da Fabrica -->
             <div class="relative">
-                <button id="simuladorMenuBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded transition-colors">Selecionar Bar ▾</button>
-                <div id="simuladorMenu" class="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg hidden z-50">
-                    <a href="simuladorwab.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
+                <button id="simuladorWabMenuBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded transition-colors">Selecionar Bar ▾</button>
+                <div id="simuladorWabMenu" class="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg hidden z-50">
+                    <a href="simulador.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar da Fabrica</a>
                 </div>
             </div>
             <script>
                 document.addEventListener('click', function(e) {
-                    const btn = document.getElementById('simuladorMenuBtn');
-                    const menu = document.getElementById('simuladorMenu');
+                    const btn = document.getElementById('simuladorWabMenuBtn');
+                    const menu = document.getElementById('simuladorWabMenu');
                     if (!btn || !menu) return;
                     if (btn.contains(e.target)) {
                         menu.classList.toggle('hidden');
@@ -217,7 +217,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 $investimento_interno = [];
                 $saidas_nao_operacionais = [];
                 
-                // Função para obter meta da tabela fmetastap
+                // Função para obter meta da tabela fmetaswab
                 function obterMeta($categoria, $categoria_pai = null) {
                     global $supabase;
                     
@@ -234,7 +234,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         if ($categoria_pai) {
                             $categoria_pai_upper = strtoupper(trim($categoria_pai));
                             
-                            $resultado = $supabase->select('fmetastap', [
+                            $resultado = $supabase->select('fmetaswab', [
                                 'select' => 'META',
                                 'filters' => [
                                     'CATEGORIA' => "eq.$categoria_pai_upper",
@@ -246,7 +246,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         // Caso 2: Buscar categoria principal (sem categoria pai)
                         else {
                             // Primeiro tenta buscar como categoria principal
-                            $resultado = $supabase->select('fmetastap', [
+                            $resultado = $supabase->select('fmetaswab', [
                                 'select' => 'META',
                                 'filters' => [
                                     'CATEGORIA' => "eq.$categoria_upper"
@@ -256,7 +256,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             
                             // Se não encontrou, tenta buscar como subcategoria
                             if (empty($resultado)) {
-                                $resultado = $supabase->select('fmetastap', [
+                                $resultado = $supabase->select('fmetaswab', [
                                     'select' => 'META',
                                     'filters' => [
                                         'SUBCATEGORIA' => "eq.$categoria_upper"
@@ -2102,17 +2102,17 @@ function coletarMetasDoSimulador() {
             
             // CATEGORIA PAI (sem subcategoria)
             metas.push({
-                categoria: cat.nome,         // Campo CATEGORIA na fmetastap
+                categoria: cat.nome,         // Campo CATEGORIA na fmetaswab
                 subcategoria: '',            // Vazio para categoria pai
-                meta: valorMeta,             // Campo META na fmetastap
-                percentual: percentual       // Campo PERCENTUAL na fmetastap
+                meta: valorMeta,             // Campo META na fmetaswab
+                percentual: percentual       // Campo PERCENTUAL na fmetaswab
             });
             
             // SOLUÇÃO ESPECÍFICA: Se for DESPESAS DE VENDA, criar subcategoria COMISSÃO automaticamente
             if (cat.nome === 'DESPESAS DE VENDA' && valorMeta > 0) {
                 metas.push({
-                    categoria: 'DESPESAS DE VENDA',  // Campo CATEGORIA na fmetastap
-                    subcategoria: 'COMISSÃO',        // Campo SUBCATEGORIA na fmetastap
+                    categoria: 'DESPESAS DE VENDA',  // Campo CATEGORIA na fmetaswab
+                    subcategoria: 'COMISSÃO',        // Campo SUBCATEGORIA na fmetaswab
                     meta: valorMeta,                 // Mesmo valor da categoria pai
                     percentual: percentual           // Mesmo percentual da categoria pai
                 });
@@ -2243,10 +2243,10 @@ function coletarMetasDoSimulador() {
             
             // SUBCATEGORIA
             metas.push({
-                categoria: tabela.categoriaPai,   // Campo CATEGORIA na fmetastap
-                subcategoria: nomeSubcategoria,   // Campo SUBCATEGORIA na fmetastap  
-                meta: valorMeta,                  // Campo META na fmetastap
-                percentual: percentual            // Campo PERCENTUAL na fmetastap
+                categoria: tabela.categoriaPai,   // Campo CATEGORIA na fmetaswab
+                subcategoria: nomeSubcategoria,   // Campo SUBCATEGORIA na fmetaswab  
+                meta: valorMeta,                  // Campo META na fmetaswab
+                percentual: percentual            // Campo PERCENTUAL na fmetaswab
             });
         });
     });
