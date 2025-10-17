@@ -47,6 +47,14 @@ try {
     $meses = $dados['meses'];
     $metas = $dados['metas'];
     $ano = $dados['ano'] ?? date('Y');
+    // Determinar target (tap ou wab). Default = tap
+    $target = strtolower(trim($dados['target'] ?? 'tap'));
+    $allowed = ['tap' => 'fmetastap', 'wab' => 'fmetaswab'];
+    if (!isset($allowed[$target])) {
+        // fallback para tap
+        $target = 'tap';
+    }
+    $table = $allowed[$target];
     
     // DEBUG: Log dos dados recebidos
     error_log("=== DEBUG SALVAR METAS ===");
@@ -87,7 +95,7 @@ try {
                 $filtros['SUBCATEGORIA'] = 'is.null';
             }
             
-            $existentes = $supabase->select('fmetastap', [
+            $existentes = $supabase->select($table, [
                 'filters' => $filtros,
                 'select' => 'ID'
             ]);
@@ -112,12 +120,12 @@ try {
             
             if (!empty($existentes) && isset($existentes[0]['ID'])) {
                 // Atualizar registro existente
-                $resultado = $supabase->update('fmetastap', $registro, [
+                $resultado = $supabase->update($table, $registro, [
                     'ID' => 'eq.' . $existentes[0]['ID']
                 ]);
             } else {
                 // Inserir novo registro
-                $resultado = $supabase->insert('fmetastap', $registro);
+                $resultado = $supabase->insert($table, $registro);
             }
             
             if ($resultado !== false) {
@@ -136,6 +144,8 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Metas salvas com sucesso no Supabase',
+        'table' => $table,
+        'target' => $target,
         'total_registros' => $totalRegistros,
         'meses_processados' => count($meses),
         'metas_processadas' => count($metas),
