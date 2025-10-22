@@ -509,7 +509,7 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
         <th class="p-1">Categoria</th>
         <th class="p-1">Unidade</th>
         <?php if ($mostrar_medias_estoques): ?>
-        <th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 9">Média ⓘ</th>
+        <th class="p-1" title="Média de consumo baseada nos últimos 90 dias: (soma saídas / 90) * 15">Média ⓘ</th>
         <th class="p-1" title="Estoque atual do produto">Estoque ⓘ</th>
         <th class="p-1" title="Sugestão de compra: Média - Estoque">Sugestão ⓘ</th>
         <?php endif; ?>
@@ -963,4 +963,5 @@ if (defined('SUPABASE_URL') && defined('SUPABASE_KEY') && $filial !== '') {
         
       </script>
     </body>
+
     </html>
