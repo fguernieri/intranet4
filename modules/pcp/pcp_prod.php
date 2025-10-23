@@ -19,6 +19,7 @@ $cervejas_permitidas = [
     'MARK THE SHADOW',
     'CRIATURA DO PANTANO',
     'XP 094 HOP HEADS',
+    'OLD BUT GOLD',
     'BASTARDS RED ALE'
 ];
 
@@ -579,4 +580,5 @@ try {
     });
     </script>
 </body>
+
 </html>
