@@ -105,6 +105,7 @@ $cervejas_permitidas = [
     'MARK THE SHADOW',
     'CRIATURA DO PANTANO',
     'XP 094 HOP HEADS',
+    'OLD BUT GOLD',
     'BASTARDS RED ALE'
 ];
 
@@ -384,4 +385,5 @@ $atualizacao_recente = $atualizacao_recente ?? null;
         </div>
     </main>
 </body>
+
 </html>
