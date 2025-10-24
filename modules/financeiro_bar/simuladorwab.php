@@ -219,64 +219,76 @@ require_once __DIR__ . '/../../sidebar.php';
                 
                 // Função para obter meta da tabela fmetaswab
                 function obterMeta($categoria, $categoria_pai = null) {
-                    global $supabase;
-                    
+                    global $supabase, $periodo_selecionado;
+
                     if (!$supabase) {
                         return 0; // Se conexão não existe, retorna 0
                     }
-                    
+
+                    // Converter período YYYY/MM para DATA_META YYYY-MM-01 se disponível
+                    $filtros = [];
+                    if (!empty($periodo_selecionado) && preg_match('/^(\d{4})\/(\d{2})$/', $periodo_selecionado, $m)) {
+                        $data_meta = $m[1] . '-' . $m[2] . '-01';
+                        $filtros['DATA_META'] = "eq.$data_meta";
+                    }
+
                     $categoria_upper = strtoupper(trim($categoria));
-                    
+
                     try {
                         $resultado = null;
-                        
-                        // Caso 1: Buscar subcategoria com categoria pai
+
                         if ($categoria_pai) {
+                            // Buscar subcategoria com categoria pai
                             $categoria_pai_upper = strtoupper(trim($categoria_pai));
-                            
+                            $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
+                            $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
+
                             $resultado = $supabase->select('fmetaswab', [
                                 'select' => 'META',
-                                'filters' => [
-                                    'CATEGORIA' => "eq.$categoria_pai_upper",
-                                    'SUBCATEGORIA' => "eq.$categoria_upper"
-                                ],
+                                'filters' => $filtros,
+                                'order' => 'DATA_CRI.desc',
                                 'limit' => 1
                             ]);
-                        } 
-                        // Caso 2: Buscar categoria principal (sem categoria pai)
-                        else {
-                            // Primeiro tenta buscar como categoria principal
+                        } else {
+                            // Buscar categoria pai explicitamente (SUBCATEGORIA is null)
+                            $filtros['CATEGORIA'] = "eq.$categoria_upper";
+                            $filtros['SUBCATEGORIA'] = 'is.null';
+
                             $resultado = $supabase->select('fmetaswab', [
                                 'select' => 'META',
-                                'filters' => [
-                                    'CATEGORIA' => "eq.$categoria_upper"
-                                ],
+                                'filters' => $filtros,
+                                'order' => 'DATA_CRI.desc',
                                 'limit' => 1
                             ]);
-                            
-                            // Se não encontrou, tenta buscar como subcategoria
+
+                            // Se não encontrou meta de categoria pai, tentar como subcategoria (retrocompat)
                             if (empty($resultado)) {
+                                $filtros = [];
+                                if (!empty($periodo_selecionado) && preg_match('/^(\d{4})\/(\d{2})$/', $periodo_selecionado, $m2)) {
+                                    $data_meta2 = $m2[1] . '-' . $m2[2] . '-01';
+                                    $filtros['DATA_META'] = "eq.$data_meta2";
+                                }
+                                $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
+
                                 $resultado = $supabase->select('fmetaswab', [
                                     'select' => 'META',
-                                    'filters' => [
-                                        'SUBCATEGORIA' => "eq.$categoria_upper"
-                                    ],
+                                    'filters' => $filtros,
+                                    'order' => 'DATA_CRI.desc',
                                     'limit' => 1
                                 ]);
                             }
                         }
-                        
+
                         // Verifica se encontrou resultado válido
                         if (!empty($resultado) && isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
                             return floatval($resultado[0]['META']);
                         }
-                        
-                        // Meta não encontrada, retorna 0
+
                         return 0;
-                        
+
                     } catch (Exception $e) {
-                        error_log("Erro ao buscar meta para '$categoria' (pai: '$categoria_pai'): " . $e->getMessage());
-                        return 0; // Em caso de erro, sempre retorna 0
+                        error_log("Erro ao buscar meta para '$categoria' (pai: '$categoria_pai', periodo: '{$periodo_selecionado}'): " . $e->getMessage());
+                        return 0;
                     }
                 }
                 
@@ -409,11 +421,62 @@ require_once __DIR__ . '/../../sidebar.php';
                 echo "Total Não Operacional: R$ " . number_format($total_nao_operacional, 2);
                 echo " -->";
                 ?>
-                
 
-                
                 <?php
-                
+                // --- Prefetch de todas as metas pertinentes ---
+                // Isso garante que as linhas calculadas também possam exibir um valor de meta
+                // (se houver) ou uma derivação a partir de componentes.
+                $meta_receita_bruta = obterMeta('RECEITA BRUTA');
+                $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
+                $meta_tributos = obterMeta('TRIBUTOS');
+                $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
+                $meta_custo_fixo = obterMeta('CUSTO FIXO');
+                $meta_despesa_fixa = obterMeta('DESPESA FIXA');
+                $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
+                $meta_investimento_interno = obterMeta('INVESTIMENTO INTERNO');
+                $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                $meta_saidas_nao_operacionais = obterMeta('SAÍDAS NÃO OPERACIONAIS');
+                $meta_impacto_caixa = obterMeta('IMPACTO CAIXA');
+
+                // Metas calculadas: pegar somente da tabela de metas. Se não existir, manter 0.
+                $meta_receita_liquida = obterMeta('RECEITA LÍQUIDA');
+                $base_receita_liquida = ($total_geral - $total_tributos);
+
+                $meta_lucro_bruto = obterMeta('LUCRO BRUTO');
+                $base_lucro_bruto = ($total_geral - $total_tributos) - $total_custo_variavel;
+
+                $meta_lucro_liquido = obterMeta('LUCRO LÍQUIDO');
+                $base_lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
+
+                // Fallbacks seguros para evitar notices
+                $meta_receita_bruta = $meta_receita_bruta ?? 0;
+                $meta_operacional = $meta_operacional ?? 0;
+                $meta_tributos = $meta_tributos ?? 0;
+                $meta_custo_variavel = $meta_custo_variavel ?? 0;
+                $meta_custo_fixo = $meta_custo_fixo ?? 0;
+                $meta_despesa_fixa = $meta_despesa_fixa ?? 0;
+                $meta_despesa_venda = $meta_despesa_venda ?? 0;
+                $meta_investimento_interno = $meta_investimento_interno ?? 0;
+                $meta_nao_operacional = $meta_nao_operacional ?? 0;
+                $meta_saidas_nao_operacionais = $meta_saidas_nao_operacionais ?? 0;
+                $meta_impacto_caixa = $meta_impacto_caixa ?? 0;
+                $meta_receita_liquida = $meta_receita_liquida ?? 0;
+                $meta_lucro_bruto = $meta_lucro_bruto ?? 0;
+                $meta_lucro_liquido = $meta_lucro_liquido ?? 0;
+
+                // DEBUG: imprimir metas e bases como comentário HTML para inspeção rápida
+                echo "<!-- METAS_DEBUG: ";
+                echo "meta_receita_bruta=" . number_format($meta_receita_bruta, 2, '.', '') . " ";
+                echo "meta_receita_liquida=" . number_format($meta_receita_liquida, 2, '.', '') . " ";
+                echo "meta_lucro_bruto=" . number_format($meta_lucro_bruto, 2, '.', '') . " ";
+                echo "meta_lucro_liquido=" . number_format($meta_lucro_liquido, 2, '.', '') . " ";
+                echo "base_receita_liquida=" . number_format($base_receita_liquida ?? 0, 2, '.', '') . " ";
+                echo "base_lucro_bruto=" . number_format($base_lucro_bruto ?? 0, 2, '.', '') . " ";
+                echo "base_lucro_liquido=" . number_format($base_lucro_liquido ?? 0, 2, '.', '') . " ";
+                echo "total_geral=" . number_format($total_geral ?? 0, 2, '.', '') . " ";
+                echo "total_tributos=" . number_format($total_tributos ?? 0, 2, '.', '') . " ";
+                echo "total_custo_variavel=" . number_format($total_custo_variavel ?? 0, 2, '.', '') . "";
+                echo " -->";
                 if (!empty($receitas_nao_operacionais)) {
                     echo "<!-- DEBUG NÃO OPERACIONAIS: ";
                     foreach ($receitas_nao_operacionais as $item) {
@@ -442,7 +505,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr id="row-receita-bruta" data-toggle="receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITA BRUTA
+                                RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_receita_bruta, 0, ',', '.') ?></span>
@@ -538,11 +601,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -567,12 +626,13 @@ require_once __DIR__ . '/../../sidebar.php';
                     
                     <!-- RECEITA LÍQUIDA - Cálculo automático -->
                     <tbody>
+                        <?php // meta_receita_liquida pré-carregada acima (ver METAS_DEBUG) ?>
                         <tr class="hover:bg-gray-700 font-semibold text-green-400">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 RECEITA LÍQUIDA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Cálculo</span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_receita_liquida ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-liquida">
                                 R$ <?= number_format($total_geral - $total_tributos, 2, ',', '.') ?>
@@ -625,11 +685,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -654,12 +710,13 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- LUCRO BRUTO - Cálculo automático -->
                     <tbody>
+                        <?php // meta_lucro_bruto pré-carregado acima (ver METAS_DEBUG) ?>
                         <tr class="hover:bg-gray-700 font-semibold text-green-400">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 LUCRO BRUTO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Cálculo</span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_lucro_bruto ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-lucro-bruto">
                                 R$ <?= number_format(($total_geral - $total_tributos) - $total_custo_variavel, 2, ',', '.') ?>
@@ -712,11 +769,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -779,11 +832,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -846,11 +895,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -877,13 +922,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php 
                     $lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
                     ?>
+                    <?php // meta_lucro_liquido pré-carregado acima (ver METAS_DEBUG) ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 font-bold text-green-400 bg-green-900 bg-opacity-20">
                             <td class="px-3 py-3 border-b-2 border-green-600 font-bold">
                                 LUCRO LÍQUIDO
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-center">
-                                <span class="text-xs text-gray-500 font-semibold">Resultado</span>
+                                <span class="text-xs text-gray-500 font-semibold">R$ <?= number_format($meta_lucro_liquido ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-right font-mono font-bold" id="valor-base-lucro-liquido">
                                 R$ <?= number_format($lucro_liquido, 2, ',', '.') ?>
@@ -936,11 +982,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-blue-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1039,11 +1081,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Meta</span>
-                                <?php endif; ?>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-red-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1421,8 +1459,13 @@ function atualizarCalculos() {
     let percTributos = 0;
     const elementoPercTributos = document.getElementById('perc-tributos');
     if (elementoPercTributos) {
-        const percTexto = elementoPercTributos.textContent || elementoPercTributos.innerText;
-        percTributos = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        if (elementoPercTributos.tagName === 'INPUT') {
+            // se for input editável, use a função utilitária que já lida com percentuais
+            percTributos = obterValorNumericoPercentual(elementoPercTributos);
+        } else {
+            const percTexto = elementoPercTributos.textContent || elementoPercTributos.innerText;
+            percTributos = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        }
     }
     totalTributos = (totalReceitas * percTributos) / 100;
     
@@ -1430,8 +1473,12 @@ function atualizarCalculos() {
     let percCustoVariavel = 0;
     const elementoPercCustoVariavel = document.getElementById('perc-custo-variavel');
     if (elementoPercCustoVariavel) {
-        const percTexto = elementoPercCustoVariavel.textContent || elementoPercCustoVariavel.innerText;
-        percCustoVariavel = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        if (elementoPercCustoVariavel.tagName === 'INPUT') {
+            percCustoVariavel = obterValorNumericoPercentual(elementoPercCustoVariavel);
+        } else {
+            const percTexto = elementoPercCustoVariavel.textContent || elementoPercCustoVariavel.innerText;
+            percCustoVariavel = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        }
     }
     totalCustoVariavel = (totalReceitas * percCustoVariavel) / 100;
     
@@ -1439,8 +1486,12 @@ function atualizarCalculos() {
     let percDespesaVenda = 0;
     const elementoPercDespesaVenda = document.getElementById('perc-despesa-venda');
     if (elementoPercDespesaVenda) {
-        const percTexto = elementoPercDespesaVenda.textContent || elementoPercDespesaVenda.innerText;
-        percDespesaVenda = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        if (elementoPercDespesaVenda.tagName === 'INPUT') {
+            percDespesaVenda = obterValorNumericoPercentual(elementoPercDespesaVenda);
+        } else {
+            const percTexto = elementoPercDespesaVenda.textContent || elementoPercDespesaVenda.innerText;
+            percDespesaVenda = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        }
     }
     totalDespesaVenda = (totalReceitas * percDespesaVenda) / 100;
     
@@ -1504,6 +1555,28 @@ function atualizarCalculos() {
             console.warn(`Elemento não encontrado: ${elementId}`);
         }
     });
+
+    // Expor os totais calculados para uso por outras funções (evita re-parsear DOM imediatamente)
+    try {
+        window.simulador_totais = {
+            totalReceitas: totalReceitas,
+            totalTributos: totalTributos,
+            totalOperacional: totalOperacional,
+            totalNaoOperacional: totalNaoOperacional,
+            totalCustoVariavel: totalCustoVariavel,
+            totalCustoFixo: totalCustoFixo,
+            totalDespesaFixa: totalDespesaFixa,
+            totalDespesaVenda: totalDespesaVenda,
+            totalInvestimentoInterno: totalInvestimentoInterno,
+            totalSaidasNaoOperacionais: totalSaidasNaoOperacionais,
+            receitaLiquida: receitaLiquida,
+            lucroBruto: lucroBruto,
+            lucroLiquido: lucroLiquido,
+            impactoCaixa: impactoCaixa
+        };
+    } catch (e) {
+        // ignore if environment doesn't allow
+    }
     
     // Atualizar percentuais individuais das subcategorias (baseado no novo faturamento total)
     inputs.forEach(input => {
@@ -1583,6 +1656,25 @@ function atualizarCalculos() {
     }
     
     // FORÇAR RECÁLCULO DOS TOTAIS DE GRUPOS BASEADOS NAS SUBCATEGORIAS
+    // Expor os totais calculados para chamadas subsequentes do goal-seek
+    try {
+        window.simulador_totais = {
+            totalReceitas: totalReceitas,
+            totalOperacional: totalOperacional,
+            totalNaoOperacional: totalNaoOperacional,
+            totalTributos: totalTributos,
+            totalCustoVariavel: totalCustoVariavel,
+            totalCustoFixo: totalCustoFixo,
+            totalDespesaFixa: totalDespesaFixa,
+            totalDespesaVenda: totalDespesaVenda,
+            totalInvestimentoInterno: totalInvestimentoInterno,
+            totalSaidasNaoOperacionais: totalSaidasNaoOperacionais,
+            receitaLiquida: receitaLiquida,
+            lucroBruto: lucroBruto,
+            lucroLiquido: lucroLiquido,
+            impactoCaixa: impactoCaixa
+        };
+    } catch(e) { console.warn('Não foi possível setar window.simulador_totais', e); }
     // Recalcular TRIBUTOS somando as subcategorias
     recalcularTotalGrupo('tributos', 'valor-sim-tributos');
     // Recalcular CUSTO VARIÁVEL somando as subcategorias  
@@ -1660,12 +1752,21 @@ function resetarSimulacao() {
 
 function calcularPontoEquilibrio() {
     // GARANTIR que todos os cálculos estejam atualizados ANTES de calcular o ponto de equilíbrio
+    // If an input is currently focused, blur it to fire onblur/onchange handlers and formatting
+    try { if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur(); } catch(e) { /* ignore */ }
+    // Recalcular explicitamente
     atualizarCalculos();
-    
-    // Aguardar um pequeno delay para garantir que a DOM foi atualizada
-    setTimeout(() => {
-        calcularPontoEquilibrioInterno();
-    }, 100);
+
+    // Aguardar um ciclo de render + pequeno timeout para garantir que
+    // qualquer onblur/onchange/formatting tenha sido processado e que
+    // `window.simulador_totais` tenha sido atualizado.
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+            setTimeout(() => calcularPontoEquilibrioInterno(), 50);
+        });
+    } else {
+        setTimeout(() => calcularPontoEquilibrioInterno(), 100);
+    }
 }
 
 function calcularPontoEquilibrioInterno() {
@@ -1677,26 +1778,32 @@ function calcularPontoEquilibrioInterno() {
     function extrairValor(elementId) {
         const element = document.getElementById(elementId);
         if (!element) return 0;
+        // Se for um input, ler o value (já formatado ou não). Caso contrário, usar textContent.
+        if (element.value !== undefined) {
+            const raw = element.value || element.getAttribute('value') || '';
+            return parseFloat(raw.toString().replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        }
         const texto = element.textContent || element.innerText || '';
-        return parseFloat(texto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        return parseFloat(texto.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
     }
     
-    // Pegar percentuais atuais das categorias variáveis (como no DRE)
-    const receitaBruta = extrairValor('valor-sim-receita-bruta');
-    const tributos = extrairValor('valor-sim-tributos');
-    const custoVariavel = extrairValor('valor-sim-custo-variavel');  
-    const despesaVenda = extrairValor('valor-sim-despesa-venda');
+    // Preferir totais já calculados por atualizarCalculos (mais determinístico)
+    const simulTotais = (window && window.simulador_totais) ? window.simulador_totais : null;
+    const receitaBruta = simulTotais ? simulTotais.totalReceitas : extrairValor('valor-sim-receita-bruta');
+    const tributos = simulTotais ? simulTotais.totalTributos : extrairValor('valor-sim-tributos');
+    const custoVariavel = simulTotais ? simulTotais.totalCustoVariavel : extrairValor('valor-sim-custo-variavel');
+    const despesaVenda = simulTotais ? simulTotais.totalDespesaVenda : extrairValor('valor-sim-despesa-venda');
     
     // Calcular percentuais (frações de 0 a 1)
     const t = receitaBruta > 0 ? tributos / receitaBruta : 0;
     const cv = receitaBruta > 0 ? custoVariavel / receitaBruta : 0;
     const dv = receitaBruta > 0 ? despesaVenda / receitaBruta : 0;
     
-    // Custos fixos
-    const CF = extrairValor('valor-sim-custo-fixo');
-    const DF = extrairValor('valor-sim-despesa-fixa');
-    const II = extrairValor('valor-sim-investimento-interno');
-    const SNO = extrairValor('valor-sim-saidas-nao-operacionais');
+    // Custos fixos (ler dos totais calculados quando disponíveis)
+    const CF = simulTotais ? simulTotais.totalCustoFixo : extrairValor('valor-sim-custo-fixo');
+    const DF = simulTotais ? simulTotais.totalDespesaFixa : extrairValor('valor-sim-despesa-fixa');
+    const II = simulTotais ? simulTotais.totalInvestimentoInterno : extrairValor('valor-sim-investimento-interno');
+    const SNO = simulTotais ? simulTotais.totalSaidasNaoOperacionais : extrairValor('valor-sim-saidas-nao-operacionais');
     
     // Receitas/saldos não operacionais
     const receitaNaoOp = extrairValor('valor-sim-nao-operacional');
@@ -1769,6 +1876,8 @@ function calcularPontoEquilibrioInterno() {
         });
         // Disparar evento para recalcular (como no DRE)
         inputReceitaOperacional.dispatchEvent(new Event('input', { bubbles: true }));
+        // trigger change as some handlers listen for onchange
+        inputReceitaOperacional.dispatchEvent(new Event('change', { bubbles: true }));
     }
     
     // Recalcular tudo
