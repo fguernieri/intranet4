@@ -535,7 +535,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITA BRUTA
+                                RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">

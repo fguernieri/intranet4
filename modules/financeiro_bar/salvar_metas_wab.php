@@ -73,7 +73,16 @@ try {
     
     // Para cada mês selecionado
     foreach ($meses as $mes) {
-        $dataMeta = sprintf('%04d-%02d-01', $ano, intval($mes));
+        // Normalize month to integer and build a proper Y-m-d string
+        $mesInt = intval($mes);
+        // Use DateTime to avoid accidental day/month swaps and ensure ISO format
+        $dt = DateTime::createFromFormat('!Y-n-j', sprintf('%04d-%d-1', intval($ano), $mesInt));
+        if ($dt === false) {
+            // Fallback: try simple sprintf and trust padding
+            $dataMeta = sprintf('%04d-%02d-01', intval($ano), $mesInt);
+        } else {
+            $dataMeta = $dt->format('Y-m-d');
+        }
         
         // Para cada meta financeira
         foreach ($metas as $meta) {

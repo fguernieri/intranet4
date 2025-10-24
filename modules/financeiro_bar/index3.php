@@ -548,9 +548,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         $percentual_receita_bruta = calcularPercentualMeta($total_geral_operacional, $meta_receita_bruta);
                         $cor_receita_bruta = obterCorBarra($percentual_receita_bruta, false);
                         ?>
-                        <tr id="row-receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
+                        <tr id="row-receita-bruta" data-toggle="receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITA BRUTA
+                                RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1777,12 +1777,13 @@ function toggleDetalhes(detalheId) {
 
 function toggleReceita(categoriaId) {
     var subcategorias = document.getElementById('sub-' + categoriaId);
-    
+
     // Caso especial para RECEITA BRUTA - mostra os subgrupos principais
     if (categoriaId === 'receita-bruta') {
         var subReceitaBruta = document.getElementById('sub-receita-bruta');
         if (subReceitaBruta) {
-            if (subReceitaBruta.style.display === 'none' || subReceitaBruta.style.display === '') {
+            var current = window.getComputedStyle(subReceitaBruta).display;
+            if (current === 'none' || current === '') {
                 subReceitaBruta.style.display = 'table-row-group';
             } else {
                 subReceitaBruta.style.display = 'none';
@@ -1794,7 +1795,8 @@ function toggleReceita(categoriaId) {
     }
     // Para outros casos (operacional, nao-operacional, tributos, custo-variavel, custo-fixo, despesa-fixa, despesa-venda, investimento-interno, saidas-nao-operacionais)
     else if (subcategorias) {
-        if (subcategorias.style.display === 'none' || subcategorias.style.display === '') {
+        var current = window.getComputedStyle(subcategorias).display;
+        if (current === 'none' || current === '') {
             subcategorias.style.display = 'table-row-group';
         } else {
             subcategorias.style.display = 'none';
@@ -1826,6 +1828,20 @@ document.addEventListener('DOMContentLoaded', function() {
             var targetTag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
             if (['a','button','input','select','textarea'].indexOf(targetTag) !== -1) return;
             toggleReceita('receita-bruta');
+        });
+    }
+
+    // Delegação de clique: qualquer <tr data-toggle="..."> dentro da tabela acionará o toggle adequado
+    var tabelaReceita = document.querySelector('#receita-content table');
+    if (tabelaReceita) {
+        tabelaReceita.addEventListener('click', function(e){
+            var tr = e.target.closest && e.target.closest('tr[data-toggle]');
+            if (!tr) return;
+            // evitar disparar quando clicar em elementos interativos dentro da linha
+            var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+            if (['a','button','input','select','textarea'].indexOf(tag) !== -1) return;
+            var cat = tr.getAttribute('data-toggle');
+            if (cat) toggleReceita(cat);
         });
     }
 });
