@@ -385,7 +385,8 @@ require_once __DIR__ . '/../../sidebar.php';
                 // Categorias não operacionais
                 $categorias_nao_operacionais = [
                     'ENTRADA DE REPASSE DE SALARIOS',
-                    'ENTRADA DE REPASSE EXTRA DE SALARIOS', 
+                    'ENTRADA DE REPASSE EXTRA DE SALARIOS',
+                    'ENTRADA DE REPASSE', 
                     'ENTRADA DE REPASSE OUTROS'
                 ];
                 
