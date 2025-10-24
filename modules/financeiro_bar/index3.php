@@ -242,8 +242,10 @@ require_once __DIR__ . '/../../sidebar.php';
                 $custo_fixo = [];
                 $despesa_fixa = [];
                 $despesa_venda = [];
+                $amortizacao = [];
                 $investimento_interno = [];
                 $saidas_nao_operacionais = [];
+                $retirada_de_lucro = [];
                 
                 // Função para obter meta da tabela fmetaswab
                 function obterMeta($categoria, $categoria_pai = null, $periodo = null) {
@@ -383,7 +385,8 @@ require_once __DIR__ . '/../../sidebar.php';
                 // Categorias não operacionais
                 $categorias_nao_operacionais = [
                     'ENTRADA DE REPASSE DE SALARIOS',
-                    'ENTRADA DE REPASSE EXTRA DE SALARIOS', 
+                    'ENTRADA DE REPASSE EXTRA DE SALARIOS',
+                    'ENTRADA DE REPASSE',  
                     'ENTRADA DE REPASSE OUTROS'
                 ];
                 
@@ -413,11 +416,22 @@ require_once __DIR__ . '/../../sidebar.php';
                 
                 // Processar DESPESAS (incluindo TRIBUTOS e CUSTO FIXO)
                 foreach ($dados_despesa as $linha) {
+                    $categoria = trim(strtoupper($linha['categoria'] ?? ''));
                     $categoria_pai = trim(strtoupper($linha['categoria_pai'] ?? ''));
-                    
+
+                    // Separar RETIRADA DE LUCRO como grupo próprio
+                    if ($categoria === 'RETIRADA DE LUCRO' || $categoria === 'RETIRADA_DE_LUCRO' || $categoria_pai === 'RETIRADA DE LUCRO' || $categoria_pai === 'RETIRADA_DE_LUCRO') {
+                        $retirada_de_lucro[] = $linha;
+                        continue;
+                    }
+
                     // Separar TRIBUTOS das despesas
                     if ($categoria_pai === 'TRIBUTOS') {
                         $tributos[] = $linha;
+                    }
+                    // Separar AMORTIZAÇÃO das despesas
+                    elseif ($categoria === 'AMORTIZAÇÃO' || $categoria === 'AMORTIZACAO' || $categoria_pai === 'AMORTIZAÇÃO' || $categoria_pai === 'AMORTIZACAO') {
+                        $amortizacao[] = $linha;
                     }
                     // Separar CUSTO VARIÁVEL das despesas
                     elseif ($categoria_pai === 'CUSTO VARIÁVEL' || $categoria_pai === 'CUSTO VARIAVEL') {
@@ -482,6 +496,9 @@ require_once __DIR__ . '/../../sidebar.php';
                 usort($investimento_interno, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
+                usort($amortizacao, function($a, $b) {
+                    return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
+                });
                 usort($saidas_nao_operacionais, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
@@ -494,6 +511,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 $total_despesa_fixa = array_sum(array_column($despesa_fixa, 'total_receita_mes'));
                 $total_despesa_venda = array_sum(array_column($despesa_venda, 'total_receita_mes'));
                 $total_investimento_interno = array_sum(array_column($investimento_interno, 'total_receita_mes'));
+                $total_amortizacao = array_sum(array_column($amortizacao, 'total_receita_mes'));
                 $total_saidas_nao_operacionais = array_sum(array_column($saidas_nao_operacionais, 'total_receita_mes'));
                 
                 // DEBUG: Mostrar categorias encontradas (remover depois)
@@ -507,6 +525,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 echo "Despesa Fixa: " . count($despesa_fixa) . " | ";
                 echo "Despesa Venda: " . count($despesa_venda) . " | ";
                 echo "Investimento Interno: " . count($investimento_interno) . " | ";
+                echo "Amortizacao: " . count($amortizacao) . " | ";
                 echo "Saídas Não Operacionais: " . count($saidas_nao_operacionais);
                 echo " -->";
                 ?>
@@ -1241,7 +1260,9 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- LUCRO LÍQUIDO - Cálculo final (LUCRO BRUTO - CUSTO FIXO - DESPESA FIXA - DESPESAS DE VENDA) -->
                     <?php 
-                    $lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
+                    // Incluir AMORTIZAÇÃO como despesa extra a ser subtraída do lucro
+                    $total_amortizacao = $total_amortizacao ?? 0;
+                    $lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda - $total_amortizacao;
                     $meta_lucro_liquido = obterMeta('LUCRO LÍQUIDO');
                     $percentual_lucro_liquido = calcularPercentualMeta($lucro_liquido, $meta_lucro_liquido);
                     $cor_lucro_liquido = obterCorBarra($percentual_lucro_liquido, false);
@@ -1267,6 +1288,105 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                     </tbody>
+
+                    <!-- AMORTIZAÇÃO - Linha principal (após LUCRO LÍQUIDO e antes de INVESTIMENTO INTERNO) -->
+                    <?php if (!empty($amortizacao)): ?>
+                    <tbody>
+                        <?php 
+                        $meta_amortizacao = obterMeta('AMORTIZAÇÃO');
+                        $percentual_amortizacao = calcularPercentualMeta($total_amortizacao, $meta_amortizacao);
+                        $cor_amortizacao = obterCorBarra($percentual_amortizacao, true); // é despesa
+                        ?>
+                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('amortizacao')">
+                            <td class="px-3 py-2 border-b border-gray-700">
+                                (-) AMORTIZAÇÃO
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <div class="w-full">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-gray-400"><?= number_format($percentual_amortizacao, 1) ?>%</span>
+                                        <span class="text-gray-500">Meta: R$ <?= number_format($meta_amortizacao, 0, ',', '.') ?></span>
+                                    </div>
+                                    <div class="w-full bg-gray-600 rounded-full h-2">
+                                        <div class="bg-<?= $cor_amortizacao ?>-500 h-2 rounded-full transition-all duration-300" style="width: <?= min($percentual_amortizacao, 100) ?>%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
+                                R$ <?= number_format($total_amortizacao, 2, ',', '.') ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                    
+                    <!-- Detalhes da AMORTIZAÇÃO (ocultos inicialmente) -->
+                    <tbody class="subcategorias" id="sub-amortizacao" style="display: none;">
+                        <?php foreach ($amortizacao as $linha): ?>
+                        <?php 
+                        $categoria_individual = trim($linha['categoria'] ?? 'AMORTIZAÇÃO');
+                        $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
+                        $meta_individual = obterMeta($categoria_individual, 'AMORTIZAÇÃO');
+                        $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
+                        $cor_individual = obterCorBarra($percentual_individual, true); // é despesa
+                        ?>
+                        <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('amortizacao-<?= md5($linha['categoria']) ?>')">
+                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
+                                <?= htmlspecialchars($categoria_individual) ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <?php if ($meta_individual > 0): ?>
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="text-gray-400 text-xs"><?= number_format($percentual_individual, 1) ?>%</span>
+                                            <span class="text-gray-500 text-xs">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
+                                        </div>
+                                        <div class="w-full bg-gray-600 rounded-full h-1">
+                                            <div class="bg-<?= $cor_individual ?>-500 h-1 rounded-full transition-all duration-300" style="width: <?= min($percentual_individual, 100) ?>%"></div>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="text-xs text-gray-500">🎯 Aguardando meta</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
+                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                            </td>
+                        </tr>
+                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <tr class="detalhes-categoria" id="det-amortizacao-<?= md5($linha['categoria']) ?>" style="display: none;">
+                            <td colspan="2" class="px-0 py-0 border-b border-gray-700">
+                                <div class="bg-gray-900 rounded-lg m-2">
+                                    <div class="px-4 py-2 bg-gray-800 rounded-t-lg text-xs text-gray-400 font-semibold">
+                                        Lançamentos individuais - <?= htmlspecialchars($linha['categoria']) ?>
+                                    </div>
+                                    <div class="px-2 py-2">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="text-gray-400">
+                                                    <th class="px-2 py-1 text-left">Descrição</th>
+                                                    <th class="px-2 py-1 text-right">Valor Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <tr class="hover:bg-gray-800 text-gray-300">
+                                                    <td class="px-2 py-1 border-b border-gray-800">
+                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    </td>
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <?php endif; ?>
 
                     <!-- INVESTIMENTO INTERNO - Linha principal (após LUCRO LÍQUIDO) -->
                     <?php if (!empty($investimento_interno)): ?>
@@ -1399,13 +1519,17 @@ require_once __DIR__ . '/../../sidebar.php';
                     
                     <!-- Detalhes das SAÍDAS NÃO OPERACIONAIS (ocultos inicialmente) -->
                     <tbody class="subcategorias" id="sub-saidas-nao-operacionais" style="display: none;">
-                        <?php foreach ($saidas_nao_operacionais as $linha): ?>
-                        <?php 
-                        $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
-                        $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
-                        $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
-                        $cor_individual = obterCorBarra($percentual_individual, true); // é saída/despesa
+                        <?php
+                        // Renderizar RETIRADA DE LUCRO primeiro, se existir
+                        $retiradas = array_filter($saidas_nao_operacionais, function($l){
+                            return trim(strtoupper($l['categoria'] ?? '')) === 'RETIRADA DE LUCRO';
+                        });
+                        foreach ($retiradas as $linha):
+                            $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
+                            $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
+                            $meta_individual = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                            $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
+                            $cor_individual = obterCorBarra($percentual_individual, true);
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('saidas-nao-operacionais-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
@@ -1430,7 +1554,78 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
                             </td>
                         </tr>
-                        
+
+                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <tr class="detalhes-categoria" id="det-saidas-nao-operacionais-<?= md5($linha['categoria']) ?>" style="display: none;">
+                            <td colspan="2" class="px-0 py-0 border-b border-gray-700">
+                                <div class="bg-gray-900 rounded-lg m-2">
+                                    <div class="px-4 py-2 bg-gray-800 rounded-t-lg text-xs text-gray-400 font-semibold">
+                                        Lançamentos individuais - <?= htmlspecialchars($linha['categoria']) ?>
+                                    </div>
+                                    <div class="px-2 py-2">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="text-gray-400">
+                                                    <th class="px-2 py-1 text-left">Descrição</th>
+                                                    <th class="px-2 py-1 text-right">Valor Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <tr class="hover:bg-gray-800 text-gray-300">
+                                                    <td class="px-2 py-1 border-b border-gray-800">
+                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    </td>
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200">
+                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+
+                        <?php
+                        // Agora renderizar as demais subcategorias (excluindo RETIRADA DE LUCRO)
+                        $outras = array_filter($saidas_nao_operacionais, function($l){
+                            return trim(strtoupper($l['categoria'] ?? '')) !== 'RETIRADA DE LUCRO';
+                        });
+                        foreach ($outras as $linha):
+                            $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
+                            $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
+                            $meta_individual = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                            $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
+                            $cor_individual = obterCorBarra($percentual_individual, true);
+                        ?>
+                        <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('saidas-nao-operacionais-<?= md5($linha['categoria']) ?>')">
+                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
+                                <?= htmlspecialchars($categoria_individual) ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <?php if ($meta_individual > 0): ?>
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="text-gray-400 text-xs"><?= number_format($percentual_individual, 1) ?>%</span>
+                                            <span class="text-gray-500 text-xs">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
+                                        </div>
+                                        <div class="w-full bg-gray-600 rounded-full h-1">
+                                            <div class="bg-<?= $cor_individual ?>-500 h-1 rounded-full transition-all duration-300" style="width: <?= min($percentual_individual, 100) ?>%"></div>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="text-xs text-gray-500">🎯 Aguardando meta</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-red-300">
+                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                            </td>
+                        </tr>
+
                         <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
                         <tr class="detalhes-categoria" id="det-saidas-nao-operacionais-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
@@ -1468,9 +1663,44 @@ require_once __DIR__ . '/../../sidebar.php';
                     </tbody>
                     <?php endif; ?>
 
+                    <!-- RETIRADA DE LUCRO - Categoria pai separada (logo abaixo das SAÍDAS NÃO OPERACIONAIS) -->
+                    <?php if (!empty($retirada_de_lucro)): ?>
+                    <?php
+                        $total_retirada_de_lucro = array_sum(array_column($retirada_de_lucro, 'total_receita_mes'));
+                        $meta_retirada = obterMeta('RETIRADA DE LUCRO');
+                        $perc_retirada = calcularPercentualMeta($total_retirada_de_lucro, $meta_retirada);
+                        $cor_retirada = obterCorBarra($perc_retirada, true);
+                    ?>
+                    <tbody>
+                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-red-400">
+                            <td class="px-3 py-2 border-b border-gray-700">
+                                (-) RETIRADA DE LUCRO
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <div class="w-full">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-gray-400"><?= number_format($perc_retirada, 1) ?>%</span>
+                                        <span class="text-gray-500">Meta: R$ <?= number_format($meta_retirada, 0, ',', '.') ?></span>
+                                    </div>
+                                    <div class="w-full bg-gray-600 rounded-full h-2">
+                                        <div class="bg-<?= $cor_retirada ?>-500 h-2 rounded-full transition-all duration-300" style="width: <?= min($perc_retirada, 100) ?>%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
+                                R$ <?= number_format($total_retirada_de_lucro, 2, ',', '.') ?>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <?php else: $total_retirada_de_lucro = 0; ?>
+                    <?php endif; ?>
+
                     <!-- IMPACTO CAIXA - Cálculo final (LUCRO LÍQUIDO - INVESTIMENTO INTERNO - SAÍDAS NÃO OPERACIONAIS) -->
                     <?php 
-                    $impacto_caixa = (((($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda) - $total_investimento_interno - $total_saidas_nao_operacionais);
+                    // Subtrair também RETIRADA DE LUCRO (se existir) e AMORTIZAÇÃO das saídas para cálculo do impacto
+                    $total_retirada_de_lucro = $total_retirada_de_lucro ?? 0;
+                    $total_amortizacao = $total_amortizacao ?? 0;
+                    $impacto_caixa = (((((($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda) - $total_amortizacao) - $total_investimento_interno) - $total_saidas_nao_operacionais - $total_retirada_de_lucro);
                     $cor_impacto = $impacto_caixa >= 0 ? 'green' : 'red';
                     ?>
                     <?php 
