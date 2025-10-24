@@ -491,6 +491,8 @@ require_once __DIR__ . '/../../sidebar.php';
                 
                 $total_operacional = array_sum(array_column($receitas_operacionais, 'total_receita_mes'));
                 $total_nao_operacional = array_sum(array_column($receitas_nao_operacionais, 'total_receita_mes'));
+                // Total considerado como RECEITA BRUTA (exclui RECEITAS NÃO OPERACIONAIS)
+                $total_geral_operacional = $total_geral - $total_nao_operacional;
                 $total_tributos = array_sum(array_column($tributos, 'total_receita_mes'));
                 $total_custo_variavel = array_sum(array_column($custo_variavel, 'total_receita_mes'));
                 $total_custo_fixo = array_sum(array_column($custo_fixo, 'total_receita_mes'));
@@ -526,7 +528,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <!-- RECEITA BRUTA - Linha principal expansível -->
                         <?php 
                         $meta_receita_bruta = obterMeta('RECEITA BRUTA');
-                        $percentual_receita_bruta = calcularPercentualMeta($total_geral, $meta_receita_bruta);
+                        // Mostrar RECEITA BRUTA sem as RECEITAS NÃO OPERACIONAIS
+                        $percentual_receita_bruta = calcularPercentualMeta($total_geral_operacional, $meta_receita_bruta);
+                        
                         $cor_receita_bruta = obterCorBarra($percentual_receita_bruta, false);
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
@@ -545,7 +549,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_geral, 2, ',', '.') ?>
+                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
                             </td>
                         </tr>
                     </tbody>
@@ -617,71 +621,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php endforeach; ?>
                     </tbody>
 
-                    <!-- RECEITAS NÃO OPERACIONAIS - Subgrupo -->
-                    <tbody class="subcategorias" id="sub-receita-bruta-nao-op" style="display: none;">
-                        <?php if (!empty($receitas_nao_operacionais)): ?>
-                        <?php 
-                        $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
-                        $percentual_nao_operacional = calcularPercentualMeta($total_nao_operacional, $meta_nao_operacional);
-                        $cor_nao_operacional = obterCorBarra($percentual_nao_operacional, false);
-                        ?>
-                        <tr class="hover:bg-gray-700 cursor-pointer font-medium text-blue-300 text-sm" onclick="toggleReceita('nao-operacional')">
-                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                RECEITAS NÃO OPERACIONAIS
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <div class="w-full">
-                                    <div class="flex items-center justify-between text-xs mb-1">
-                                        <span class="text-gray-400"><?= number_format($percentual_nao_operacional, 1) ?>%</span>
-                                        <span class="text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
-                                    </div>
-                                    <div class="w-full bg-gray-600 rounded-full h-1.5">
-                                        <div class="bg-<?= $cor_nao_operacional ?>-500 h-1.5 rounded-full transition-all duration-300" style="width: <?= min($percentual_nao_operacional, 100) ?>%"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
-                            </td>
-                        </tr>
-                        <?php endif; ?>
-                    </tbody>
-                    
-                    <!-- Detalhes das receitas não operacionais (logo após RECEITAS NÃO OPERACIONAIS) -->
-                    <tbody class="subcategorias" id="sub-nao-operacional" style="display: none;">
-                        <?php foreach ($receitas_nao_operacionais as $linha): ?>
-                        <?php 
-                        $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
-                        $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'RECEITAS NÃO OPERACIONAIS');
-                        $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
-                        $cor_individual = obterCorBarra($percentual_individual, false);
-                        ?>
-                        <tr class="hover:bg-gray-700 text-gray-300">
-                            <td class="px-3 py-2 border-b border-gray-700 pl-12">
-                                <?= htmlspecialchars($categoria_individual) ?>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <?php if ($meta_individual > 0): ?>
-                                    <div class="w-full">
-                                        <div class="flex items-center justify-between text-xs mb-1">
-                                            <span class="text-gray-400 text-xs"><?= number_format($percentual_individual, 1) ?>%</span>
-                                            <span class="text-gray-500 text-xs">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
-                                        </div>
-                                        <div class="w-full bg-gray-600 rounded-full h-1">
-                                            <div class="bg-<?= $cor_individual ?>-500 h-1 rounded-full transition-all duration-300" style="width: <?= min($percentual_individual, 100) ?>%"></div>
-                                        </div>
-                                    </div>
-                                <?php else: ?>
-                                    <span class="text-xs text-gray-500">🎯 Aguardando meta</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-green-400">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
+                    <!-- (RECEITAS NÃO OPERACIONAIS removed from RECEITA BRUTA section and will be rendered later as top-level category) -->
                     
                     <!-- TRIBUTOS - Linha principal (após subgrupos da RECEITA BRUTA) -->
                     <?php if (!empty($tributos)): ?>
@@ -786,7 +726,8 @@ require_once __DIR__ . '/../../sidebar.php';
                     
                     <!-- RECEITA LÍQUIDA - Cálculo automático (RECEITA BRUTA - TRIBUTOS) -->
                     <?php 
-                    $receita_liquida = $total_geral - $total_tributos;
+                    // RECEITA LÍQUIDA deve considerar a RECEITA BRUTA sem as não-operacionais
+                    $receita_liquida = $total_geral_operacional - $total_tributos;
                     $meta_receita_liquida = obterMeta('RECEITA LÍQUIDA');
                     $percentual_receita_liquida = calcularPercentualMeta($receita_liquida, $meta_receita_liquida);
                     $cor_receita_liquida = obterCorBarra($percentual_receita_liquida, false);
@@ -915,7 +856,8 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- LUCRO BRUTO - Cálculo automático (RECEITA LÍQUIDA - CUSTO VARIÁVEL) -->
                     <?php 
-                    $lucro_bruto = ($total_geral - $total_tributos) - $total_custo_variavel;
+                    // LUCRO BRUTO baseado na receita operacional (exclui receitas não operacionais)
+                    $lucro_bruto = ($total_geral_operacional - $total_tributos) - $total_custo_variavel;
                     $meta_lucro_bruto = obterMeta('LUCRO BRUTO');
                     $percentual_lucro_bruto = calcularPercentualMeta($lucro_bruto, $meta_lucro_bruto);
                     $cor_lucro_bruto = obterCorBarra($percentual_lucro_bruto, false);
@@ -1244,7 +1186,8 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- LUCRO LÍQUIDO - Cálculo final (LUCRO BRUTO - CUSTO FIXO - DESPESA FIXA - DESPESAS DE VENDA) -->
                     <?php 
-                    $lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
+                    // LUCRO LÍQUIDO baseado na receita operacional (exclui receitas não operacionais)
+                    $lucro_liquido = (($total_geral_operacional - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
                     $meta_lucro_liquido = obterMeta('LUCRO LÍQUIDO');
                     $percentual_lucro_liquido = calcularPercentualMeta($lucro_liquido, $meta_lucro_liquido);
                     $cor_lucro_liquido = obterCorBarra($percentual_lucro_liquido, false);
@@ -1367,6 +1310,72 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         <?php endif; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <?php endif; ?>
+
+                    <!-- RECEITAS NÃO OPERACIONAIS - Agora como categoria PAI (antes de SAÍDAS NÃO OPERACIONAIS) -->
+                    <?php if (!empty($receitas_nao_operacionais)): ?>
+                    <tbody>
+                        <?php 
+                        $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                        $percentual_nao_operacional = calcularPercentualMeta($total_nao_operacional, $meta_nao_operacional);
+                        $cor_nao_operacional = obterCorBarra($percentual_nao_operacional, false);
+                        ?>
+                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300" onclick="toggleReceita('nao-operacional')">
+                            <td class="px-3 py-2 border-b border-gray-700">
+                                RECEITAS NÃO OPERACIONAIS
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <div class="w-full">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-gray-400"><?= number_format($percentual_nao_operacional, 1) ?>%</span>
+                                        <span class="text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
+                                    </div>
+                                    <div class="w-full bg-gray-600 rounded-full h-2">
+                                        <div class="bg-<?= $cor_nao_operacional ?>-500 h-2 rounded-full transition-all duration-300" style="width: <?= min($percentual_nao_operacional, 100) ?>%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
+                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- Detalhes das RECEITAS NÃO OPERACIONAIS (ocultos inicialmente) -->
+                    <tbody class="subcategorias" id="sub-nao-operacional" style="display: none;">
+                        <?php foreach ($receitas_nao_operacionais as $linha): ?>
+                        <?php 
+                        $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
+                        $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
+                        $meta_individual = obterMeta($categoria_individual, 'RECEITAS NÃO OPERACIONAIS');
+                        $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
+                        $cor_individual = obterCorBarra($percentual_individual, false);
+                        ?>
+                        <tr class="hover:bg-gray-700 text-gray-300">
+                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
+                                <?= htmlspecialchars($categoria_individual) ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <?php if ($meta_individual > 0): ?>
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="text-gray-400 text-xs"><?= number_format($percentual_individual, 1) ?>%</span>
+                                            <span class="text-gray-500 text-xs">R$ <?= number_format($meta_individual, 0, ',', '.') ?></span>
+                                        </div>
+                                        <div class="w-full bg-gray-600 rounded-full h-1">
+                                            <div class="bg-<?= $cor_individual ?>-500 h-1 rounded-full transition-all duration-300" style="width: <?= min($percentual_individual, 100) ?>%"></div>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="text-xs text-gray-500">🎯 Aguardando meta</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-green-400">
+                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                            </td>
+                        </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <?php endif; ?>
@@ -1546,21 +1555,17 @@ function toggleReceita(categoriaId) {
     // Caso especial para RECEITA BRUTA - mostra os subgrupos principais
     if (categoriaId === 'receita-bruta') {
         var subReceitaBruta = document.getElementById('sub-receita-bruta');
-        var subReceitaBrutaNaoOp = document.getElementById('sub-receita-bruta-nao-op');
-        
-        if (subReceitaBruta && subReceitaBrutaNaoOp) {
+        if (subReceitaBruta) {
             if (subReceitaBruta.style.display === 'none' || subReceitaBruta.style.display === '') {
                 subReceitaBruta.style.display = 'table-row-group';
-                subReceitaBrutaNaoOp.style.display = 'table-row-group';
             } else {
                 subReceitaBruta.style.display = 'none';
-                subReceitaBrutaNaoOp.style.display = 'none';
-                // Esconder também os detalhes quando colapsar a RECEITA BRUTA
-                document.getElementById('sub-operacional').style.display = 'none';
-                document.getElementById('sub-nao-operacional').style.display = 'none';
+                // Esconder também os detalhes das operacionais quando colapsar a RECEITA BRUTA
+                var subOper = document.getElementById('sub-operacional');
+                if (subOper) subOper.style.display = 'none';
             }
         }
-    } 
+    }
     // Para outros casos (operacional, nao-operacional, tributos, custo-variavel, custo-fixo, despesa-fixa, despesa-venda, investimento-interno, saidas-nao-operacionais)
     else if (subcategorias) {
         if (subcategorias.style.display === 'none' || subcategorias.style.display === '') {
