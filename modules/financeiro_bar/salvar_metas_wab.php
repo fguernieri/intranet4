@@ -9,8 +9,29 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Desabilitar relatórios de erro para evitar HTML no response
-error_reporting(0);
+// Keep display off but log everything to error log for debugging
+error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Convert uncaught exceptions to JSON response and log
+set_exception_handler(function($e){
+    error_log("Uncaught exception in salvar_metas_wab.php: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Erro interno no servidor', 'error' => $e->getMessage()]);
+    exit;
+});
+
+// Catch fatal errors and return JSON for easier debugging
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err && ($err['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR))) {
+        error_log("Fatal error in salvar_metas_wab.php: " . print_r($err, true));
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Fatal error', 'error' => $err]);
+        exit;
+    }
+});
 
 try {
     // Verificar se é POST
@@ -70,96 +91,168 @@ try {
     
     $totalRegistros = 0;
     $registrosProcessados = [];
+    $failures = [];
+    $successRows = [];
     
+    // Helper: executar operação supabase com retry exponencial
+    function supabaseWithRetry($supabase, $method, $table, $args = [], $maxAttempts = 3) {
+        $attempt = 0;
+        $delayMs = 100; // initial backoff
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            try {
+                if ($method === 'select') {
+                    $res = $supabase->select($table, $args);
+                } elseif ($method === 'insert') {
+                    $res = $supabase->insert($table, $args);
+                } elseif ($method === 'update') {
+                    $res = $supabase->update($table, $args[0], $args[1] ?? []);
+                } else {
+                    throw new Exception('Método supabase desconhecido: ' . $method);
+                }
+
+                if ($res === false) {
+                    // Log and retry if attempts remain
+                    error_log("[supabaseWithRetry] tentativa $attempt falhou para $method $table");
+                    if ($attempt < $maxAttempts) {
+                        usleep($delayMs * 1000);
+                        $delayMs *= 2;
+                        continue;
+                    }
+                    return false;
+                }
+
+                return $res;
+            } catch (Exception $e) {
+                error_log("[supabaseWithRetry] exceção tentativa $attempt para $method $table: " . $e->getMessage());
+                if ($attempt < $maxAttempts) {
+                    usleep($delayMs * 1000);
+                    $delayMs *= 2;
+                    continue;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
     // Para cada mês selecionado
     foreach ($meses as $mes) {
-        // Normalize month to integer and build a proper Y-m-d string
         $mesInt = intval($mes);
-        // Use DateTime to avoid accidental day/month swaps and ensure ISO format
         $dt = DateTime::createFromFormat('!Y-n-j', sprintf('%04d-%d-1', intval($ano), $mesInt));
         if ($dt === false) {
-            // Fallback: try simple sprintf and trust padding
             $dataMeta = sprintf('%04d-%02d-01', intval($ano), $mesInt);
         } else {
             $dataMeta = $dt->format('Y-m-d');
         }
-        
-        // Para cada meta financeira
-        foreach ($metas as $meta) {
-            // Pular metas com valor zero
-            if (($meta['meta'] ?? 0) == 0) {
-                continue;
+
+        // Per-month wrapper so one failing month doesn't abort everything
+        try {
+            // For each meta in this month
+            foreach ($metas as $meta) {
+                try {
+                    if (($meta['meta'] ?? 0) == 0) {
+                        continue;
+                    }
+
+                    $categoriaFiltro = 'eq.' . trim($meta['categoria'] ?? '');
+                    $filtros = [
+                        'CATEGORIA' => $categoriaFiltro,
+                        'DATA_META' => 'eq.' . $dataMeta
+                    ];
+
+                    if (isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '') {
+                        $filtros['SUBCATEGORIA'] = 'eq.' . trim($meta['subcategoria']);
+                    } else {
+                        $filtros['SUBCATEGORIA'] = 'is.null';
+                    }
+
+                    $existentes = supabaseWithRetry($supabase, 'select', $table, [ 'filters' => $filtros, 'select' => 'ID' ]);
+
+                    $subcategoria = isset($meta['subcategoria']) && trim($meta['subcategoria']) !== ''
+                                    ? trim($meta['subcategoria'])
+                                    : null;
+
+                    $registro = [
+                        'CATEGORIA' => trim($meta['categoria'] ?? ''),
+                        'SUBCATEGORIA' => $subcategoria,
+                        'META' => floatval($meta['meta'] ?? 0),
+                        'PERCENTUAL' => floatval($meta['percentual'] ?? 0),
+                        'DATA' => date('Y-m-d H:i:s'),
+                        'DATA_META' => $dataMeta,
+                        'DATA_CRI' => date('Y-m-d H:i:s')
+                    ];
+
+                    error_log("[salvar_metas_wab] Salvando para $dataMeta: " . json_encode($registro));
+
+                    if ($existentes === false) {
+                        // Could not fetch existing rows; register failure and continue
+                        $failures[] = [ 'mes' => $mesInt, 'categoria' => $meta['categoria'] ?? '', 'subcategoria' => $meta['subcategoria'] ?? '', 'reason' => 'Erro ao verificar existentes (select falhou)'];
+                        error_log("[salvar_metas_wab] select falhou para $dataMeta categoria " . ($meta['categoria'] ?? '')); 
+                        continue;
+                    }
+
+                    if (!empty($existentes) && isset($existentes[0]['ID'])) {
+                        $resultado = supabaseWithRetry($supabase, 'update', $table, [$registro, [ 'ID' => 'eq.' . $existentes[0]['ID'] ]]);
+                    } else {
+                        $resultado = supabaseWithRetry($supabase, 'insert', $table, $registro);
+                    }
+
+                    if ($resultado === false) {
+                        // Register failure but continue
+                        $failures[] = [
+                            'mes' => $mesInt,
+                            'categoria' => $meta['categoria'] ?? '',
+                            'subcategoria' => $meta['subcategoria'] ?? '',
+                            'reason' => 'Supabase returned false'
+                        ];
+                        error_log("[salvar_metas_wab] Falha ao inserir/atualizar para $dataMeta: returned false");
+                    } else {
+                        $totalRegistros++;
+                        $registrosProcessados[] = [ 'categoria' => $meta['categoria'], 'subcategoria' => $meta['subcategoria'] ?? '', 'mes' => $mesInt, 'meta' => $meta['meta'] ];
+                        $successRows[] = ['mes' => $mesInt, 'categoria' => $meta['categoria'] ?? ''];
+                    }
+
+                } catch (Exception $me) {
+                    // Log meta-specific error and continue
+                    $failures[] = [ 'mes' => $mesInt, 'categoria' => $meta['categoria'] ?? '', 'subcategoria' => $meta['subcategoria'] ?? '', 'reason' => $me->getMessage() ];
+                    error_log("[salvar_metas_wab] Erro meta (mes $mesInt): " . $me->getMessage());
+                    continue;
+                }
             }
-            
-            // Verificar se já existe uma meta para essa categoria/subcategoria no mês
-            $filtros = [
-                'CATEGORIA' => 'eq.' . trim($meta['categoria'] ?? ''),
-                'DATA_META' => 'eq.' . $dataMeta
-            ];
-            
-            // Adicionar filtro de subcategoria baseado no valor
-            if (isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '') {
-                $filtros['SUBCATEGORIA'] = 'eq.' . trim($meta['subcategoria']);
-            } else {
-                $filtros['SUBCATEGORIA'] = 'is.null';
-            }
-            
-            $existentes = $supabase->select($table, [
-                'filters' => $filtros,
-                'select' => 'ID'
-            ]);
-            
-            // Tratar subcategoria vazia como NULL para o banco
-            $subcategoria = isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '' 
-                            ? trim($meta['subcategoria']) 
-                            : null;
-            
-            $registro = [
-                'CATEGORIA' => trim($meta['categoria'] ?? ''),
-                'SUBCATEGORIA' => $subcategoria,
-                'META' => floatval($meta['meta'] ?? 0),
-                'PERCENTUAL' => floatval($meta['percentual'] ?? 0),
-                'DATA' => date('Y-m-d H:i:s'),
-                'DATA_META' => $dataMeta,
-                'DATA_CRI' => date('Y-m-d H:i:s')
-            ];
-            
-            // DEBUG: Log do registro a ser salvo
-            error_log("Registro para " . $dataMeta . ": " . print_r($registro, true));
-            
-            if (!empty($existentes) && isset($existentes[0]['ID'])) {
-                // Atualizar registro existente
-                $resultado = $supabase->update($table, $registro, [
-                    'ID' => 'eq.' . $existentes[0]['ID']
-                ]);
-            } else {
-                // Inserir novo registro
-                $resultado = $supabase->insert($table, $registro);
-            }
-            
-            if ($resultado !== false) {
-                $totalRegistros++;
-                $registrosProcessados[] = [
-                    'categoria' => $meta['categoria'],
-                    'subcategoria' => $meta['subcategoria'],
-                    'mes' => $mes,
-                    'meta' => $meta['meta']
-                ];
-            }
+
+            // Small delay to reduce the chance of hitting rate limits
+            usleep(80000); // 80ms
+
+        } catch (Exception $me) {
+            $failures[] = [ 'mes' => $mesInt, 'reason' => 'Erro no processamento do mês: ' . $me->getMessage() ];
+            error_log("[salvar_metas_wab] Erro processando mês $mesInt: " . $me->getMessage());
+            // Continue to next month
+            continue;
         }
     }
     
     // Resposta de sucesso
-    echo json_encode([
+    $response = [
         'success' => true,
-        'message' => 'Metas salvas com sucesso no Supabase',
+        'message' => 'Metas processadas',
         'table' => $table,
         'target' => $target,
         'total_registros' => $totalRegistros,
         'meses_processados' => count($meses),
         'metas_processadas' => count($metas),
-        'detalhes' => $registrosProcessados
-    ]);
+        'detalhes' => $registrosProcessados,
+        'failures' => $failures,
+        'success_rows' => $successRows
+    ];
+
+    // If there were failures, include a partial flag and keep HTTP 200 so front-end doesn't receive a 500
+    if (!empty($failures)) {
+        $response['partial'] = true;
+        $response['message'] = 'Processamento parcial: algumas metas não foram salvas';
+    }
+
+    echo json_encode($response);
     
 } catch (Exception $e) {
     // Log do erro

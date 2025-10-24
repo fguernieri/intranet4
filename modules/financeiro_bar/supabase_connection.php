@@ -12,7 +12,7 @@ class SupabaseConnection {
         $config = require_once __DIR__ . '/config/supabase_config.php';
         
         $this->url = rtrim($config['url'], '/');
-        $this->timeout = $config['timeout'] ?? 30;
+        $this->timeout = $config['timeout'] ?? 90;
         
         // Configura headers com a chave apropriada
         $api_key = $config['use_service_key'] ? $config['service_key'] : $config['anon_key'];
