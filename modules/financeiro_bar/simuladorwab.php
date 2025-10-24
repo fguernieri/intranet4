@@ -386,6 +386,19 @@ require_once __DIR__ . '/../../sidebar.php';
                 $total_despesa_venda = array_sum(array_column($despesa_venda, 'total_receita_mes'));
                 $total_investimento_interno = array_sum(array_column($investimento_interno, 'total_receita_mes'));
                 $total_saidas_nao_operacionais = array_sum(array_column($saidas_nao_operacionais, 'total_receita_mes'));
+
+                // Total considerado como RECEITA BRUTA (exclui RECEITAS NÃO OPERACIONAIS)
+                $total_geral_operacional = $total_geral - $total_nao_operacional;
+
+                // Valores operacionais (para exibição das métricas que devem ignorar receitas não operacionais)
+                $receita_liquida_operacional = $total_geral_operacional - $total_tributos;
+                $lucro_bruto_operacional = $receita_liquida_operacional - $total_custo_variavel;
+                $lucro_liquido_operacional = $lucro_bruto_operacional - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
+
+                // Valores totais (incluem RECEITAS NÃO OPERACIONAIS) — usados para IMPACTO CAIXA
+                $receita_liquida_total = $total_geral - $total_tributos;
+                $lucro_bruto_total = $receita_liquida_total - $total_custo_variavel;
+                $lucro_liquido_total = $lucro_bruto_total - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
                 
                 // Debug: mostrar contadores e alguns exemplos
                 echo "<!-- DEBUG CONTADORES: ";
@@ -427,7 +440,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $meta_receita_bruta = obterMeta('RECEITA BRUTA');
                         ?>
-                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
+                        <tr id="row-receita-bruta" data-toggle="receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 RECEITA BRUTA
                             </td>
@@ -435,13 +448,13 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_receita_bruta, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-bruta">
-                                R$ <?= number_format($total_geral, 2, ',', '.') ?>
+                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-receita-bruta">
-                                R$ <?= number_format($total_geral, 2, ',', '.') ?>
+                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-receita-bruta">
-                                100.00%
+                                100,00%
                             </td>
                         </tr>
                     </tbody>
@@ -481,38 +494,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         </tr>
                         <?php endif; ?>
                         
-                        <!-- RECEITAS NÃO OPERACIONAIS - Subgrupo (dentro da RECEITA BRUTA) -->
-                        <?php if (!empty($receitas_nao_operacionais)): ?>
-                        <?php 
-                        $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
-                        ?>
-                        <tr class="hover:bg-gray-700 font-medium text-blue-300 text-sm">
-                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                RECEITAS NÃO OPERACIONAIS
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
-                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
-                                <input type="text" 
-                                       class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
-                                       id="valor-sim-nao-operacional"
-                                       data-categoria="RECEITAS NÃO OPERACIONAIS"
-                                       data-tipo="receita-nao-operacional"
-                                       data-valor-base="<?= $total_nao_operacional ?>"
-                                       value="<?= number_format($total_nao_operacional, 2, ',', '.') ?>"
-                                       onchange="atualizarCalculos()"
-                                       onblur="formatarCampoMoeda(this)"
-                                       onfocus="removerFormatacao(this)">
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-nao-operacional">
-                                <?= number_format(($total_nao_operacional / $total_geral) * 100, 2, ',', '.') ?>%
-                            </td>
-                        </tr>
-                        <?php endif; ?>
+                        
                     </tbody>
                     
 
@@ -983,6 +965,41 @@ require_once __DIR__ . '/../../sidebar.php';
                     </tbody>
                     <?php endif; ?>
 
+                    <!-- RECEITAS NÃO OPERACIONAIS - Linha principal (separada) -->
+                    <?php if (!empty($receitas_nao_operacionais)): ?>
+                    <?php 
+                    $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                    ?>
+                    <tbody>
+                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300" onclick="toggleReceita('nao-operacionais')">
+                            <td class="px-3 py-2 border-b border-gray-700">
+                                RECEITAS NÃO OPERACIONAIS
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
+                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-nao-operacional">
+                                <input type="text" 
+                                       class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
+                                       id="valor-sim-nao-operacional"
+                                       data-categoria="RECEITAS NÃO OPERACIONAIS"
+                                       data-tipo="receita-nao-operacional"
+                                       data-valor-base="<?= $total_nao_operacional ?>"
+                                       value="<?= number_format($total_nao_operacional, 2, ',', '.') ?>"
+                                       onchange="atualizarCalculos()"
+                                       onblur="formatarCampoMoeda(this)"
+                                       onfocus="removerFormatacao(this)">
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-nao-operacional">
+                                <?= number_format(($total_nao_operacional / $total_geral) * 100, 2, ',', '.') ?>%
+                            </td>
+                        </tr>
+                    </tbody>
+                    <?php endif; ?>
+
                     <!-- SAÍDAS NÃO OPERACIONAIS - Linha principal -->
                     <?php if (!empty($saidas_nao_operacionais)): ?>
                     <tbody>
@@ -1195,7 +1212,8 @@ function toggleReceita(categoriaId) {
         var subReceitaBruta = document.getElementById('sub-receita-bruta');
         
         if (subReceitaBruta) {
-            if (subReceitaBruta.style.display === 'none' || subReceitaBruta.style.display === '') {
+            var computed = window.getComputedStyle(subReceitaBruta);
+            if (!computed || computed.display === 'none') {
                 subReceitaBruta.style.display = 'table-row-group';
             } else {
                 subReceitaBruta.style.display = 'none';
@@ -1207,7 +1225,8 @@ function toggleReceita(categoriaId) {
         var subcategorias = document.getElementById('sub-' + categoriaId);
         
         if (subcategorias) {
-            if (subcategorias.style.display === 'none' || subcategorias.style.display === '') {
+            var computed = window.getComputedStyle(subcategorias);
+            if (!computed || computed.display === 'none') {
                 subcategorias.style.display = 'table-row-group';
             } else {
                 subcategorias.style.display = 'none';
@@ -2320,7 +2339,7 @@ function enviarMetasParaServidor(meses, metas) {
         ano: new Date().getFullYear()
     };
     
-    fetch('salvar_metas.php', {
+    fetch('salvar_metas_wab.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2374,6 +2393,18 @@ document.addEventListener('keydown', function(event) {
         const modal = document.getElementById('modalMetas');
         if (modal && !modal.classList.contains('hidden')) {
             fecharModalMetas();
+        }
+    }
+});
+
+// Delegated click handler: rows may have data-toggle attribute (fallback to inline onclick still present)
+document.addEventListener('click', function(e) {
+    if (!e || !e.target) return;
+    var tr = (e.target.closest) ? e.target.closest('tr[data-toggle]') : null;
+    if (tr && tr.getAttribute) {
+        var toggle = tr.getAttribute('data-toggle');
+        if (toggle) {
+            toggleReceita(toggle);
         }
     }
 });
