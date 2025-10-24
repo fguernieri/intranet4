@@ -13,6 +13,9 @@ $supabase_config = [
 ];
 
 // Configurações de timeout
-$supabase_timeout = 30; // segundos
+$supabase_timeout = 90; // segundos
+
+// Expor timeout dentro do array de configuração para compatibilidade
+$supabase_config['timeout'] = $supabase_timeout;
 
 return $supabase_config;
