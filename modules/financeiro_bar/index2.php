@@ -705,10 +705,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -835,10 +836,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -965,10 +967,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -1065,10 +1068,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -1165,10 +1169,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -1295,10 +1300,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-blue-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-blue-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
@@ -1461,10 +1467,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200">
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200 align-top">
                                                         R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
                                                     </td>
                                                 </tr>
