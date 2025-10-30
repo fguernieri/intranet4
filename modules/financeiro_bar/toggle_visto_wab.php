@@ -39,7 +39,7 @@ try {
         'seq_lanc' => 'eq.' . $ns,
     ];
 
-    $updateResp = $supabase->update('fcontaspagawb_vistos', ['visto' => true], $filters);
+    $updateResp = $supabase->update('fcontaspagarwab_vistos', ['visto' => true], $filters);
 
     if ($updateResp === false) {
         // erro de requisição
@@ -57,7 +57,7 @@ try {
             'seq_lanc' => $ns,
             'visto' => true
         ];
-        $insertResp = $supabase->insert('fcontaspagawb_vistos', $payload);
+        $insertResp = $supabase->insert('fcontaspagarwab_vistos', $payload);
         if ($insertResp === false) {
             http_response_code(500);
             echo json_encode(['success' => false, 'error' => 'supabase_error_insert']);

@@ -40,7 +40,7 @@ try {
 
     while (true) {
         $offset = $page * $pageSize;
-        $detalhes = $supabase->select('fdespesastap_detalhes', [
+        $detalhes = $supabase->select('fdespesaswab_detalhes', [
             'select' => 'nr_empresa,nr_filial,nr_lanc,seq_lanc',
             'filters' => [ 'data_mes' => 'eq.' . $data_mes ],
             'limit' => $pageSize,
@@ -64,15 +64,13 @@ try {
                 'seq_lanc' => 'eq.' . $ns,
             ];
 
-            $updateResp = $supabase->update('fcontaspagartap_vistos', ['visto' => true], $filters);
+            $updateResp = $supabase->update('fcontaspagawb_vistos', ['visto' => true], $filters);
             if ($updateResp === false) {
-                // log and continue
-                error_log('Erro ao atualizar visto (bulk): ' . json_encode($filters));
+                error_log('Erro ao atualizar visto (bulk wab): ' . json_encode($filters));
                 continue;
             }
 
             if (empty($updateResp)) {
-                // insert
                 $payload = [
                     'nr_empresa' => $ne,
                     'nr_filial' => $nf,
@@ -80,9 +78,9 @@ try {
                     'seq_lanc' => $ns,
                     'visto' => true
                 ];
-                $insertResp = $supabase->insert('fcontaspagartap_vistos', $payload);
+                $insertResp = $supabase->insert('fcontaspagawb_vistos', $payload);
                 if ($insertResp === false) {
-                    error_log('Erro ao inserir visto (bulk): ' . json_encode($payload));
+                    error_log('Erro ao inserir visto (bulk wab): ' . json_encode($payload));
                     continue;
                 }
                 $inserted++;

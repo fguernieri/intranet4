@@ -68,6 +68,8 @@ if ($conexao_ok) {
                 if (!isset($periodos_disponiveis[$periodo_formato])) {
                     $periodos_disponiveis[$periodo_formato] = $periodo_display;
                 }
+
+                // (moved: category unread computation and helper functions are performed later, after detalhes are loaded)
             }
         }
         
@@ -155,7 +157,10 @@ function listarMetasDisponiveis($periodo = null) {
 
 // Antes de enviar qualquer saída HTML, tratar pedido de JSON de debug (se houver)
 // Helper: carregar todos os registros de fcontaspagartap_vistos em páginas e construir um índice
-function buildVistosIndex($pageSize = 2000) {
+// Increase default page size for building the vistos index to reduce the
+// number of paginated requests. The function remains robust to servers that
+// cap per-request rows by advancing the offset by the actual returned count.
+function buildVistosIndex($pageSize = 10000) {
     global $supabase;
     // optional globals used for inline diagnostics
     global $enable_vistos_debug, $buildVistosIndex_debug;
@@ -669,13 +674,35 @@ require_once __DIR__ . '/../../sidebar.php';
                     // (getVkeyFromDetalhe moved to top-level to avoid nested definition)
                 }
 
-                // Função utilitária: retornar vkey canônica a partir de um detalhe
+                // Função utilitária: extrair chaves numéricas de um detalhe de forma tolerante
+                function extractNumericKeys($detalhe) {
+                    $candidates = [
+                        'ne' => ['nr_empresa','empresa','empresa_nr','nrempresa','empresa_id'],
+                        'nf' => ['nr_filial','filial','nrfilial','filial_id'],
+                        'nl' => ['nr_lanc','lanc','nr_lancamento','nr_lancamento','lanc_id','nr_lanc_id'],
+                        'ns' => ['seq_lanc','seq','seq_lancamento','seq_lancamento','seq_id']
+                    ];
+                    $out = ['ne' => 0, 'nf' => 0, 'nl' => 0, 'ns' => 0];
+                    foreach ($candidates as $k => $fields) {
+                        foreach ($fields as $f) {
+                            if (array_key_exists($f, $detalhe) && $detalhe[$f] !== null && $detalhe[$f] !== '') {
+                                $out[$k] = intval($detalhe[$f]);
+                                break;
+                            }
+                        }
+                    }
+                    return $out;
+                }
+
+                // Função utilitária: retornar vkey canônica a partir de um detalhe (usa extractNumericKeys)
                 function getVkeyFromDetalhe($detalhe) {
-                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
+                    $keys = extractNumericKeys($detalhe);
+                    $k_e = strval($keys['ne']);
+                    $k_f = strval($keys['nf']);
+                    $k_l = strval($keys['nl']);
+                    $k_s = strval($keys['ns']);
                     if ($k_e === '' || $k_f === '' || $k_l === '' || $k_s === '') return null;
+                    if (intval($k_e) <= 0 || intval($k_f) <= 0 || intval($k_l) <= 0 || intval($k_s) < 0) return null;
                     return $k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s;
                 }
                 
@@ -785,11 +812,13 @@ require_once __DIR__ . '/../../sidebar.php';
                     }
                 }
                 
-                // Criar arrays para detalhes de cada categoria
+                // Criar arrays para detalhes de cada categoria (normalizar chave: UPPERCASE + trim)
                 $detalhes_por_categoria = [];
                 if ($dados_despesa_detalhes) {
                     foreach ($dados_despesa_detalhes as $detalhe) {
-                        $categoria = $detalhe['categoria'];
+                        $categoria_raw = $detalhe['categoria'] ?? '';
+                        $categoria = strtoupper(trim($categoria_raw));
+                        if ($categoria === '') $categoria = 'SEM CATEGORIA';
                         if (!isset($detalhes_por_categoria[$categoria])) {
                             $detalhes_por_categoria[$categoria] = [];
                         }
@@ -852,6 +881,77 @@ require_once __DIR__ . '/../../sidebar.php';
                 }
                 $vistos_count = count($vistos_index);
                 $vistos_sample = array_slice(array_keys($vistos_index), 0, 20);
+
+                // Computar mapa de categorias que contém itens não lidos (usado pelos badges)
+                $categoria_has_unread = [];
+                if (!empty($detalhes_por_categoria) && is_array($detalhes_por_categoria)) {
+                    foreach ($detalhes_por_categoria as $cat_name => $det_list) {
+                        $kname = strtoupper(trim($cat_name));
+                        if ($kname === '') $kname = 'SEM CATEGORIA';
+                        $has_unread = false;
+                        foreach ($det_list as $ditem) {
+                            if (isset($ditem['visto'])) {
+                                $rv = $ditem['visto'];
+                                if (is_string($rv)) $rv = in_array(strtolower($rv), ['t','true','1'], true);
+                                $val = ($rv === true) ? true : false;
+                                if ($val === false) { $has_unread = true; break; }
+                                continue;
+                            }
+
+                            $vkey = getVkeyFromDetalhe($ditem);
+                            if ($vkey !== null) {
+                                if (array_key_exists($vkey, $vistos_index)) {
+                                    if ($vistos_index[$vkey] === false) { $has_unread = true; break; }
+                                } else {
+                                    $has_unread = true; break;
+                                }
+                            } else {
+                                $has_unread = true; break;
+                            }
+                        }
+                        $categoria_has_unread[$kname] = $has_unread;
+                    }
+                }
+
+                // Mapear categorias -> categoria_pai (usando dados de despesas) para computar flags nos pais
+                $categoria_to_parent = [];
+                if (!empty($dados_despesa) && is_array($dados_despesa)) {
+                    foreach ($dados_despesa as $row) {
+                        $cat = strtoupper(trim($row['categoria'] ?? ''));
+                        $parent = strtoupper(trim($row['categoria_pai'] ?? ''));
+                        if ($cat !== '') $categoria_to_parent[$cat] = $parent;
+                    }
+                }
+
+                $categoria_pai_has_unread = [];
+                foreach ($categoria_has_unread as $catname => $has) {
+                    $parent = $categoria_to_parent[strtoupper(trim($catname))] ?? null;
+                    if ($parent) {
+                        if (!isset($categoria_pai_has_unread[$parent])) $categoria_pai_has_unread[$parent] = false;
+                        if ($has) $categoria_pai_has_unread[$parent] = true;
+                    }
+                }
+
+                // Helpers para renderizar badges compactas para categoria/pai
+                function renderCategoryUnreadBadge($categoria) {
+                    global $categoria_has_unread;
+                    $k = strtoupper(trim($categoria));
+                    if ($k === '') return '';
+                    if (!empty($categoria_has_unread[$k])) {
+                        return ' <span class="ml-2 inline-block w-2 h-2 rounded-full bg-orange-500" title="Contém não lidos" style="vertical-align:middle"></span>';
+                    }
+                    return '';
+                }
+
+                function renderParentUnreadBadge($parent) {
+                    global $categoria_pai_has_unread;
+                    $k = strtoupper(trim($parent));
+                    if ($k === '') return '';
+                    if (!empty($categoria_pai_has_unread[$k])) {
+                        return ' <span class="ml-2 inline-block w-2 h-2 rounded-full bg-orange-500" title="Contém não lidos" style="vertical-align:middle"></span>';
+                    }
+                    return '';
+                }
 
                 // if inline debug requested, prepare HTML with diagnostics collected by the helper
                 if ($show_debug_vistos_inline) {
@@ -965,7 +1065,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITA OPERACIONAL
+                                RECEITA OPERACIONAL<?= renderParentUnreadBadge('RECEITA OPERACIONAL') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1027,7 +1127,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
                             <td class="px-3 py-2 border-b border-gray-700 pl-12">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1063,7 +1163,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('tributos')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) TRIBUTOS
+                                (-) TRIBUTOS<?= renderParentUnreadBadge('TRIBUTOS') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1094,7 +1194,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('tributo-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1117,7 +1217,10 @@ require_once __DIR__ . '/../../sidebar.php';
                         </tr>
                         
                         <!-- Detalhes individuais da categoria (ocultos inicialmente) -->
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-tributo-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1133,7 +1236,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                     <?php
                                                     // Priorizar a coluna 'visto' vinda da view (se existir). Caso contrário, usar fallback pelo índice em memória
                                                     if (isset($detalhe['visto'])) {
@@ -1232,7 +1335,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-variavel')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) CUSTO VARIÁVEL
+                                (-) CUSTO VARIÁVEL<?= renderParentUnreadBadge('CUSTO VARIÁVEL') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1263,7 +1366,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('custo-variavel-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1285,7 +1388,11 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
+                        <tr class="detalhes-categoria" id="det-tributo-<?= md5($linha['categoria']) ?>" style="display: none;">
                         <tr class="detalhes-categoria" id="det-custo-variavel-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1301,7 +1408,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                     <?php
                                                     if (isset($detalhe['visto'])) {
                                                         $val = $detalhe['visto'];
@@ -1395,7 +1502,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-fixo')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) CUSTO FIXO
+                                (-) CUSTO FIXO<?= renderParentUnreadBadge('CUSTO FIXO') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1426,7 +1533,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('custo-fixo-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1448,7 +1555,10 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-custo-fixo-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1464,7 +1574,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
                                                     if (isset($detalhe['visto'])) {
                                                         $val = $detalhe['visto'];
@@ -1528,7 +1638,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-fixa')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) DESPESA FIXA
+                                (-) DESPESA FIXA<?= renderParentUnreadBadge('DESPESA FIXA') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1559,7 +1669,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('despesa-fixa-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1581,7 +1691,10 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-despesa-fixa-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1597,7 +1710,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
                                                     $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
                                                     $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
@@ -1655,7 +1768,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-venda')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) DESPESAS DE VENDA
+                                (-) DESPESAS DE VENDA<?= renderParentUnreadBadge('DESPESAS DE VENDA') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1686,7 +1799,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('despesa-venda-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1708,7 +1821,10 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-despesa-venda-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1724,7 +1840,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
                                                     $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
                                                     $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
@@ -1812,7 +1928,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-400" onclick="toggleReceita('investimento-interno')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) INVESTIMENTO INTERNO
+                                (-) INVESTIMENTO INTERNO<?= renderParentUnreadBadge('INVESTIMENTO INTERNO') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1843,7 +1959,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('investimento-interno-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -1865,7 +1981,10 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-investimento-interno-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -1881,7 +2000,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
                                                     $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
                                                     $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
@@ -1939,7 +2058,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300" onclick="toggleReceita('nao-operacional')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITAS NÃO OPERACIONAIS
+                                RECEITAS NÃO OPERACIONAIS<?= renderParentUnreadBadge('RECEITAS NÃO OPERACIONAIS') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -1970,7 +2089,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -2005,7 +2124,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-red-400" onclick="toggleReceita('saidas-nao-operacionais')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                (-) SAÍDAS NÃO OPERACIONAIS
+                                (-) SAÍDAS NÃO OPERACIONAIS<?= renderParentUnreadBadge('SAÍDAS NÃO OPERACIONAIS') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <div class="w-full">
@@ -2036,7 +2155,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300 cursor-pointer" onclick="toggleDetalhes('saidas-nao-operacionais-<?= md5($linha['categoria']) ?>')">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                <?= htmlspecialchars($categoria_individual) ?>
+                                <?= htmlspecialchars($categoria_individual) ?><?= renderCategoryUnreadBadge($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <?php if ($meta_individual > 0): ?>
@@ -2058,7 +2177,10 @@ require_once __DIR__ . '/../../sidebar.php';
                             </td>
                         </tr>
                         
-                        <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
+                        <?php
+                            $cat_key = strtoupper(trim($linha['categoria'] ?? ''));
+                            if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                            if (isset($detalhes_por_categoria[$cat_key])): ?>
                         <tr class="detalhes-categoria" id="det-saidas-nao-operacionais-<?= md5($linha['categoria']) ?>" style="display: none;">
                             <td colspan="2" class="px-0 py-0 border-b border-gray-700">
                                 <div class="bg-gray-900 rounded-lg m-2">
@@ -2074,7 +2196,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
                                                     $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
                                                     $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
