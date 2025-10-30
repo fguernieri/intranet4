@@ -153,6 +153,99 @@ function listarMetasDisponiveis($periodo = null) {
     }
 }
 
+// --- Helpers adicionados (copiados/portados de index2) --------------------------------
+// Função utilitária: retornar vkey canônica a partir de um detalhe
+function getVkeyFromDetalhe($detalhe) {
+    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
+    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
+    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
+    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
+    if ($k_e === '' || $k_f === '' || $k_l === '' || $k_s === '') return null;
+    return $k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s;
+}
+
+// Renderiza um badge legível para o status 'visto'
+function renderVistoLabel($detalhe, $visto_val = null) {
+    $val = null;
+    if (isset($detalhe['visto'])) {
+        $rv = $detalhe['visto'];
+        if (is_string($rv)) $rv = in_array(strtolower($rv), ['t','true','1'], true);
+        $val = ($rv === true) ? true : false;
+    } else {
+        if ($visto_val === true) $val = true;
+        elseif ($visto_val === false) $val = false;
+        else $val = null;
+    }
+
+    if ($val === true) {
+        return '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+    } elseif ($val === false) {
+        return '<span class="text-xs px-2 py-0.5 rounded bg-orange-500 text-white">Não lido</span>';
+    } else {
+        return '<span class="text-xs text-gray-500">—</span>';
+    }
+}
+
+// Formata percentual do valor sobre a RECEITA OPERACIONAL (total_geral_operacional)
+function percentOfReceitaOperacional($valor) {
+    global $total_geral_operacional;
+    $total = floatval($total_geral_operacional ?? 0);
+    if ($total <= 0) return '0,0%';
+    $p = ($valor / $total) * 100.0;
+    return number_format($p, 1, ',', '.') . '%';
+}
+
+// Renderiza valor monetário com percentual ao lado (pequeno)
+function renderValorComPercent($valor) {
+    $v = floatval($valor ?? 0);
+    $formatted = 'R$ ' . number_format($v, 2, ',', '.');
+    $pct = percentOfReceitaOperacional($v);
+    return $formatted . ' <span class="text-xs text-gray-400 ml-2">(' . $pct . ')</span>';
+}
+
+// Helper: construir índice local de vistos com paginação robusta (usa tabela wab)
+function buildVistosIndex($pageSize = 2000) {
+    global $supabase;
+    $index = [];
+    $offset = 0;
+    $total_processed = 0;
+
+    while (true) {
+        try {
+            $rows = $supabase->select('fcontaspagawb_vistos', [ 'select' => '*', 'limit' => $pageSize, 'offset' => $offset ]);
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        if (!$rows || !is_array($rows) || count($rows) === 0) break;
+
+        foreach ($rows as $v) {
+            $ne = isset($v['nr_empresa']) ? strval(intval($v['nr_empresa'])) : '';
+            $nf = isset($v['nr_filial']) ? strval(intval($v['nr_filial'])) : '';
+            $nl = isset($v['nr_lanc']) ? strval(intval($v['nr_lanc'])) : '';
+            $ns = isset($v['seq_lanc']) ? strval(intval($v['seq_lanc'])) : '';
+            if ($ne === '' || $nf === '' || $nl === '' || $ns === '') continue;
+            $k = $ne . '|' . $nf . '|' . $nl . '|' . $ns;
+            $val = $v['visto'] ?? false;
+            if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
+            $index[$k] = ($val === true) ? true : false;
+            $total_processed++;
+        }
+
+        $offset += count($rows);
+    }
+
+    return $index;
+}
+
+// Pré-carregar o índice de vistos (wab)
+$vistos_index = [];
+try {
+    $vistos_index = buildVistosIndex();
+} catch (Exception $e) {
+    error_log('Erro ao pré-carregar fcontaspagawb_vistos: ' . $e->getMessage());
+}
+
 require_once __DIR__ . '/../../sidebar.php';
 ?>
 
@@ -564,7 +657,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_geral_operacional) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -594,7 +687,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_operacional, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_operacional) ?>
                             </td>
                         </tr>
                         <?php endif; ?>
@@ -630,7 +723,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-green-400">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -662,7 +755,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_tributos, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_tributos) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -697,7 +790,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -725,7 +818,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -765,7 +858,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($receita_liquida, 2, ',', '.') ?>
+                                <?= renderValorComPercent($receita_liquida) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -794,7 +887,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_custo_variavel, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_custo_variavel) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -829,7 +922,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -856,7 +949,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -896,7 +989,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($lucro_bruto, 2, ',', '.') ?>
+                                <?= renderValorComPercent($lucro_bruto) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -925,7 +1018,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_custo_fixo, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_custo_fixo) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -960,7 +1053,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -987,7 +1080,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1026,7 +1119,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_despesa_fixa, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_despesa_fixa) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1061,7 +1154,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -1088,7 +1181,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1127,7 +1220,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_despesa_venda, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_despesa_venda) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1162,7 +1255,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -1189,7 +1282,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1260,7 +1353,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_amortizacao, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_amortizacao) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1295,7 +1388,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         <?php if (isset($detalhes_por_categoria[$linha['categoria']])): ?>
@@ -1321,7 +1414,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                                         <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-orange-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1360,7 +1453,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_investimento_interno, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_investimento_interno) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1395,7 +1488,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-blue-300">
-                                R$ <?= number_format($valor_individual, 2, ',', '.') ?>
+                                <?= renderValorComPercent($valor_individual) ?>
                             </td>
                         </tr>
                         
@@ -1416,13 +1509,45 @@ require_once __DIR__ . '/../../sidebar.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php
+                                                    if (isset($detalhe['visto'])) {
+                                                        $val = $detalhe['visto'];
+                                                        if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
+                                                        $visto_val = ($val === true) ? true : false;
+                                                    } else {
+                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
+                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
+                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
+                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
+                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
+                                                    }
+                                                ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
-                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
-                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
+                                                        <div class="flex items-start justify-between">
+                                                            <div>
+                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                <?php if (!empty($show_debug_keys)): ?>
+                                                                    <div class="text-xs font-mono text-gray-400 mt-1">vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?></div>
+                                                                <?php endif; ?>
+                                                                <div class="text-xs text-gray-400 mt-1">
+                                                                    <?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?>
+                                                                    <span class="ml-2 text-xs text-gray-500">NUMERO DA NOTA: <?= htmlspecialchars($detalhe['nr_documento'] ?? '') ?></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
+                                                                <?php if ($visto_val === false): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;"
+                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-blue-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1461,7 +1586,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_nao_operacional) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1527,7 +1652,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_saidas_nao_operacionais, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_saidas_nao_operacionais) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1587,13 +1712,45 @@ require_once __DIR__ . '/../../sidebar.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php
+                                                    if (isset($detalhe['visto'])) {
+                                                        $val = $detalhe['visto'];
+                                                        if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
+                                                        $visto_val = ($val === true) ? true : false;
+                                                    } else {
+                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
+                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
+                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
+                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
+                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
+                                                    }
+                                                ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
-                                                        <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
-                                                        <div class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?></div>
+                                                        <div class="flex items-start justify-between">
+                                                            <div>
+                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                <?php if (!empty($show_debug_keys)): ?>
+                                                                    <div class="text-xs font-mono text-gray-400 mt-1">vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?></div>
+                                                                <?php endif; ?>
+                                                                <div class="text-xs text-gray-400 mt-1">
+                                                                    <?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?>
+                                                                    <span class="ml-2 text-xs text-gray-500">NUMERO DA NOTA: <?= htmlspecialchars($detalhe['nr_documento'] ?? '') ?></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
+                                                                <?php if ($visto_val === false): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;"
+                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
                                                     </td>
                                                     <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200 align-top">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1659,12 +1816,45 @@ require_once __DIR__ . '/../../sidebar.php';
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$linha['categoria']] as $detalhe): ?>
+                                                <?php
+                                                    if (isset($detalhe['visto'])) {
+                                                        $val = $detalhe['visto'];
+                                                        if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
+                                                        $visto_val = ($val === true) ? true : false;
+                                                    } else {
+                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
+                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
+                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
+                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
+                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
+                                                    }
+                                                ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
-                                                    <td class="px-2 py-1 border-b border-gray-800">
-                                                        <?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 align-top">
+                                                        <div class="flex items-start justify-between">
+                                                            <div>
+                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                <?php if (!empty($show_debug_keys)): ?>
+                                                                    <div class="text-xs font-mono text-gray-400 mt-1">vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?></div>
+                                                                <?php endif; ?>
+                                                                <div class="text-xs text-gray-400 mt-1">
+                                                                    <?= htmlspecialchars($detalhe['cliente_fornecedor'] ?? '') ?>
+                                                                    <span class="ml-2 text-xs text-gray-500">NUMERO DA NOTA: <?= htmlspecialchars($detalhe['nr_documento'] ?? '') ?></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
+                                                                <?php if ($visto_val === false): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;"
+                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
                                                     </td>
-                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200">
-                                                        R$ <?= number_format(floatval($detalhe['vlr_total'] ?? 0), 2, ',', '.') ?>
+                                                    <td class="px-2 py-1 border-b border-gray-800 text-right font-mono text-red-200 align-top">
+                                                        <?= renderValorComPercent(floatval($detalhe['vlr_total'] ?? 0)) ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
@@ -1704,7 +1894,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 </div>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
-                                R$ <?= number_format($total_retirada_de_lucro, 2, ',', '.') ?>
+                                <?= renderValorComPercent($total_retirada_de_lucro) ?>
                             </td>
                         </tr>
                     </tbody>
@@ -1853,4 +2043,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<script>
+async function marcarComoLido(nr_empresa, nr_filial, nr_lanc, seq_lanc, btnEl) {
+    const isCheckbox = btnEl && btnEl.tagName === 'INPUT' && btnEl.type === 'checkbox';
+    let prevChecked = null;
+    if (isCheckbox) {
+        prevChecked = !btnEl.checked;
+        btnEl.disabled = true;
+        btnEl.classList.add('opacity-60');
+    } else {
+        try { btnEl.disabled = true; } catch (e) {}
+    }
+
+    try {
+    const resp = await fetch('/modules/financeiro_bar/toggle_visto_wab.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nr_empresa: nr_empresa, nr_filial: nr_filial, nr_lanc: nr_lanc, seq_lanc: seq_lanc }),
+            credentials: 'same-origin'
+        });
+
+        const j = await resp.json();
+        if (j.success) {
+            const container = btnEl.closest('div');
+            if (container) {
+                const badge = container.querySelector('.visto-badge');
+                if (badge) badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+            }
+            try { btnEl.remove(); } catch (e) {}
+        } else {
+            alert('Erro: ' + (j.error || 'unknown'));
+            if (isCheckbox) {
+                try { btnEl.checked = prevChecked; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+            } else {
+                try { btnEl.disabled = false; } catch (e) {}
+            }
+        }
+    } catch (err) {
+        alert('Erro de rede: ' + err.message);
+        if (isCheckbox) {
+            try { btnEl.checked = prevChecked; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+        } else {
+            try { btnEl.disabled = false; } catch (e) {}
+        }
+    }
+}
 </script>
