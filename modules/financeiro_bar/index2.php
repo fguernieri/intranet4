@@ -489,7 +489,10 @@ require_once __DIR__ . '/../../sidebar.php';
         
         <?php if ($periodo_selecionado): ?>
         <div class="mt-3 text-sm text-gray-400">
-            📅 Período selecionado: <?= htmlspecialchars($periodos_disponiveis[$periodo_selecionado] ?? $periodo_selecionado) ?>
+            <span id="periodo-label">📅 Período selecionado: <?= htmlspecialchars($periodos_disponiveis[$periodo_selecionado] ?? $periodo_selecionado) ?></span>
+            <button id="markAllBtn" class="ml-3 inline-flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded" title="Marcar todos como lidos">
+                Marcar tudo como lido
+            </button>
         </div>
         <?php endif; ?>
     </div>
@@ -2233,6 +2236,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+// current period for bulk operations (YYYY/MM)
+const __current_periodo = <?= json_encode($periodo_selecionado) ?>;
+
 // Toggle menu de página
 document.addEventListener('DOMContentLoaded', function(){
     var btn = document.getElementById('pageMenuBtn');
@@ -2296,4 +2302,47 @@ async function marcarComoLido(nr_empresa, nr_filial, nr_lanc, seq_lanc, btnEl) {
         }
     }
 }
+</script>
+
+<script>
+async function marcarTodosComoLidos() {
+    const periodo = __current_periodo || document.getElementById('periodo-label')?.innerText || '';
+    if (!periodo) {
+        alert('Nenhum período selecionado. Selecione um período antes de marcar.');
+        return;
+    }
+
+    if (!confirm('Marcar todos os lançamentos do período selecionado como lidos?')) return;
+
+    const btn = document.getElementById('markAllBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Marcando...'; }
+
+    try {
+        const resp = await fetch('/modules/financeiro_bar/mark_all_vistos_tap.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ periodo: __current_periodo }),
+            credentials: 'same-origin'
+        });
+        const j = await resp.json();
+        if (j.success) {
+            // Update UI: set all badges to Lido and remove checkboxes
+            document.querySelectorAll('.visto-badge').forEach(b => { b.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>'; });
+            document.querySelectorAll('input[type=checkbox]').forEach(c => { try { c.remove(); } catch(e){} });
+            if (btn) { btn.textContent = 'Marcado'; setTimeout(()=>{ if(btn) btn.textContent = 'Marcar tudo como lido'; }, 2500); }
+            alert('Todos os lançamentos do período foram marcados como lidos.');
+        } else {
+            alert('Erro: ' + (j.error || 'unknown'));
+            if (btn) { btn.disabled = false; btn.textContent = 'Marcar tudo como lido'; }
+        }
+    } catch (err) {
+        alert('Erro de rede: ' + err.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Marcar tudo como lido'; }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    var mk = document.getElementById('markAllBtn');
+    if (mk) mk.addEventListener('click', function(e){ e.stopPropagation(); marcarTodosComoLidos(); });
+});
 </script>
