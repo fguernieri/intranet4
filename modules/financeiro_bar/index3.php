@@ -1934,10 +1934,10 @@ require_once __DIR__ . '/../../sidebar.php';
                                                                     $__nl = $__keys['nl'];
                                                                     $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)">
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
