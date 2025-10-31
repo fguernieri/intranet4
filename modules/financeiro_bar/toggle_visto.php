@@ -31,7 +31,7 @@ if ($ne <= 0 || $nf <= 0 || $nl <= 0 || $ns < 0) {
 
 try {
     $supabase = new SupabaseConnection();
-    // Tentar atualizar primeiro
+    // Build filters
     $filters = [
         'nr_empresa' => 'eq.' . $ne,
         'nr_filial' => 'eq.' . $nf,
@@ -39,33 +39,57 @@ try {
         'seq_lanc' => 'eq.' . $ns,
     ];
 
-    $updateResp = $supabase->update('fcontaspagartap_vistos', ['visto' => true], $filters);
+    // First, try to read existing record to determine current state
+    $selectResp = $supabase->select('fcontaspagartap_vistos', ['select' => 'visto', 'filters' => $filters, 'limit' => 1]);
+    if ($selectResp === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'supabase_error_select']);
+        exit;
+    }
 
+$desiredProvided = array_key_exists('visto', $data);
+$desiredVisto = null;
+if ($desiredProvided) {
+    $v = $data['visto'];
+    if (is_string($v)) {
+        $desiredVisto = in_array(strtolower($v), ['1','true','t','yes','y','on'], true);
+    } else {
+        $desiredVisto = boolval($v);
+    }
+}
+
+$newVisto = true; // default insertion when no row and no explicit value
+if (!empty($selectResp) && isset($selectResp[0]['visto'])) {
+    $current = boolval($selectResp[0]['visto']);
+    $target = $desiredProvided ? $desiredVisto : !$current; // set explicit or flip
+
+    // Update existing row
+    $updateResp = $supabase->update('fcontaspagartap_vistos', ['visto' => $target], $filters);
     if ($updateResp === false) {
-        // erro de requisição
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => 'supabase_error_update']);
         exit;
     }
-
-    // Se updateResp é vazio (nenhuma linha afetada) tentamos inserir
-    if (empty($updateResp)) {
-        $payload = [
-            'nr_empresa' => $ne,
-            'nr_filial' => $nf,
-            'nr_lanc' => $nl,
-            'seq_lanc' => $ns,
-            'visto' => true
-        ];
-        $insertResp = $supabase->insert('fcontaspagartap_vistos', $payload);
-        if ($insertResp === false) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'supabase_error_insert']);
-            exit;
-        }
+    $newVisto = $target;
+} else {
+    // No existing row: insert new with provided value or default true
+    $payload = [
+        'nr_empresa' => $ne,
+        'nr_filial' => $nf,
+        'nr_lanc' => $nl,
+        'seq_lanc' => $ns,
+        'visto' => $desiredProvided ? $desiredVisto : true
+    ];
+    $insertResp = $supabase->insert('fcontaspagartap_vistos', $payload);
+    if ($insertResp === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'supabase_error_insert']);
+        exit;
     }
+    $newVisto = $payload['visto'];
+}
 
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'visto' => $newVisto]);
     exit;
 } catch (Exception $e) {
     http_response_code(500);

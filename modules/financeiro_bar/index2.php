@@ -1270,12 +1270,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <!-- Visibilidade reforçada para temas escuros: forçar aparência de checkbox e cor de destaque -->
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1438,11 +1435,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1604,11 +1599,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1734,11 +1727,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1864,11 +1855,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -2024,11 +2013,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                                             </div>
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
-                                                                <?php if ($visto_val === false): ?>
-                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
-                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)">
-                                                                <?php endif; ?>
+                                                                <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                    style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                    onclick="marcarComoLido(<?= intval($detalhe['nr_empresa'] ?? 0) ?>, <?= intval($detalhe['nr_filial'] ?? 0) ?>, <?= intval($detalhe['nr_lanc'] ?? 0) ?>, <?= intval($detalhe['seq_lanc'] ?? 0) ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                             </div>
                                                         </div>
                                                     </td>
@@ -2394,19 +2381,26 @@ async function marcarComoLido(nr_empresa, nr_filial, nr_lanc, seq_lanc, btnEl) {
         const resp = await fetch('/modules/financeiro_bar/toggle_visto.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nr_empresa: nr_empresa, nr_filial: nr_filial, nr_lanc: nr_lanc, seq_lanc: seq_lanc }),
+            body: JSON.stringify({ nr_empresa: nr_empresa, nr_filial: nr_filial, nr_lanc: nr_lanc, seq_lanc: seq_lanc, visto: isCheckbox ? btnEl.checked : undefined }),
             credentials: 'same-origin'
         });
 
         const j = await resp.json();
         if (j.success) {
+            const newVisto = (typeof j.visto !== 'undefined') ? Boolean(j.visto) : btnEl.checked;
             const container = btnEl.closest('div');
             if (container) {
                 const badge = container.querySelector('.visto-badge');
-                if (badge) badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+                if (badge) {
+                    if (newVisto) {
+                        badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+                    } else {
+                        badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-orange-500 text-white">Não lido</span>';
+                    }
+                }
             }
-            // remove the control (checkbox) to avoid further action
-            try { btnEl.remove(); } catch (e) {}
+            // manter o checkbox visível e clicável
+            try { btnEl.checked = newVisto; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
         } else {
             alert('Erro: ' + (j.error || 'unknown'));
             if (isCheckbox) {
