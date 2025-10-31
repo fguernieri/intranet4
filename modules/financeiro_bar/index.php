@@ -20,7 +20,7 @@ require_once __DIR__ . '/../../sidebar.php';
 ?>
 
 <div id="financeiro-content" class="p-6 ml-4">
-    <h2 class="text-xl text-blue-400 mb-4">Menu Financeiro - Bar da Fabrica</h2>
+    <h2 class="text-xl text-blue-400 mb-4">Menu Financeiro - Bares</h2>
     
     <div class="bg-gray-800 rounded-lg p-6">
         <h3 class="text-lg text-gray-300 mb-6">Sistema de Gestão Financeira</h3>
