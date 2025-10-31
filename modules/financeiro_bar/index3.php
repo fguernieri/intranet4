@@ -442,7 +442,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     Selecionar Bar ▾
                 </button>
                 <div id="pageMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                    <a href="index3.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
+                    <a href="index2.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar Da Fabrica</a>
                 </div>
             </div>
             <script>
@@ -2584,4 +2584,5 @@ document.addEventListener('DOMContentLoaded', function(){
     var mk = document.getElementById('markAllBtn');
     if (mk) mk.addEventListener('click', function(e){ e.stopPropagation(); marcarTodosComoLidos(); });
 });
+
 </script>
