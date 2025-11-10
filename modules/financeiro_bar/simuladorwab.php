@@ -1170,8 +1170,36 @@ require_once __DIR__ . '/../../sidebar.php';
             </button>
         </div>
         
-        <p class="text-gray-600 mb-4">Selecione os meses para salvar as metas financeiras:</p>
+        <p class="text-gray-600 mb-4">Selecione os anos e os meses para salvar as metas financeiras:</p>
         
+        <!-- Seletor de Anos (múltiplos) -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">📅 Anos:</label>
+            <div class="grid grid-cols-3 gap-2 mb-2">
+                <?php
+                $anoAtual = date('Y');
+                for ($ano = $anoAtual - 1; $ano <= $anoAtual + 5; $ano++) {
+                    $checked = ($ano == $anoAtual) ? 'checked' : '';
+                    echo "
+                    <label class='flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded border border-gray-200'>
+                        <input type='checkbox' value='$ano' class='ano-checkbox' id='ano-$ano' $checked>
+                        <span class='text-sm font-medium'>$ano</span>
+                    </label>
+                    ";
+                }
+                ?>
+            </div>
+            <div class="flex gap-2 text-xs">
+                <button type="button" onclick="selecionarTodosAnos()" class="text-blue-600 hover:text-blue-800">
+                    ✅ Selecionar Todos
+                </button>
+                <button type="button" onclick="desmarcarTodosAnos()" class="text-gray-600 hover:text-gray-800">
+                    ❌ Desmarcar Todos
+                </button>
+            </div>
+        </div>
+        
+        <label class="block text-sm font-medium text-gray-700 mb-2">📅 Meses:</label>
         <div class="grid grid-cols-2 gap-3 mb-6">
             <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
                 <input type="checkbox" value="01" class="mes-checkbox" id="mes-01">
@@ -2114,7 +2142,34 @@ function desmarcarTodosMeses() {
     });
 }
 
+function selecionarTodosAnos() {
+    const checkboxes = document.querySelectorAll('.ano-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function desmarcarTodosAnos() {
+    const checkboxes = document.querySelectorAll('.ano-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
 function salvarMetasFinanceiras() {
+    // Obter anos selecionados
+    const anosSelecionados = [];
+    const checkboxesAnos = document.querySelectorAll('.ano-checkbox:checked');
+    
+    if (checkboxesAnos.length === 0) {
+        alert('⚠️ Selecione pelo menos um ano para salvar as metas!');
+        return;
+    }
+    
+    checkboxesAnos.forEach(checkbox => {
+        anosSelecionados.push(checkbox.value);
+    });
+    
     // Obter meses selecionados
     const mesesSelecionados = [];
     const checkboxes = document.querySelectorAll('.mes-checkbox:checked');
@@ -2133,6 +2188,7 @@ function salvarMetasFinanceiras() {
     
     // Debug: Mostrar dados coletados
     console.log('📊 Metas coletadas:', metasFinanceiras);
+    console.log('📅 Anos selecionados:', anosSelecionados);
     
     if (metasFinanceiras.length === 0) {
         alert('⚠️ Nenhuma meta com valor foi encontrada no simulador!');
@@ -2164,9 +2220,12 @@ function salvarMetasFinanceiras() {
     }
     
     // Confirmar com usuário
+    const totalCombinacoes = anosSelecionados.length * mesesSelecionados.length;
     const confirmacao = confirm(
         `🎯 SALVAR METAS FINANCEIRAS\n\n` +
-        `📅 Meses selecionados: ${mesesSelecionados.length}\n` +
+        `📅 Anos: ${anosSelecionados.join(', ')}\n` +
+        `📅 Meses: ${mesesSelecionados.length} selecionado(s)\n` +
+        `📊 Total de combinações: ${totalCombinacoes} (anos × meses)\n` +
         `📊 Metas encontradas: ${metasFinanceiras.length}\n\n` +
         `Dados coletados da coluna "Valor Simulador (R$)":\n` +
         previewMetas +
@@ -2176,7 +2235,7 @@ function salvarMetasFinanceiras() {
     if (!confirmacao) return;
     
     // Enviar dados para salvamento
-    enviarMetasParaServidor(mesesSelecionados, metasFinanceiras);
+    enviarMetasParaServidor(mesesSelecionados, metasFinanceiras, anosSelecionados);
 }
 
 function coletarMetasDoSimulador() {
@@ -2433,7 +2492,7 @@ function coletarMetasDoSimulador() {
     return metas;
 }
 
-function enviarMetasParaServidor(meses, metas) {
+function enviarMetasParaServidor(meses, metas, anos) {
     // Mostrar loading
     const btnSalvar = document.querySelector('[onclick="salvarMetasFinanceiras()"]');
     const textoOriginal = btnSalvar.innerHTML;
@@ -2445,7 +2504,7 @@ function enviarMetasParaServidor(meses, metas) {
         action: 'salvar_metas',
         meses: meses,
         metas: metas,
-        ano: new Date().getFullYear()
+        anos: Array.isArray(anos) ? anos : [anos] // Garantir que seja array
     };
     
     fetch('salvar_metas_wab.php', {
@@ -2453,7 +2512,8 @@ function enviarMetasParaServidor(meses, metas) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dados)
+        body: JSON.stringify(dados),
+        signal: AbortSignal.timeout(120000) // 120 segundos de timeout
     })
     .then(response => {
         // Verificar se a resposta é OK
@@ -2476,7 +2536,12 @@ function enviarMetasParaServidor(meses, metas) {
         btnSalvar.disabled = false;
         
         if (data.success) {
-            alert(`✅ Metas salvas com sucesso!\n\n📊 ${data.total_registros} registros salvos`);
+            alert(
+                `✅ Metas salvas com sucesso!\n\n` +
+                `� Anos: ${data.anos ? data.anos.join(', ') : 'N/A'}\n` +
+                `�📊 ${data.total_registros} registros salvos\n` +
+                `📆 ${data.meses_processados} meses × ${data.anos_processados || 1} anos processados`
+            );
             fecharModalMetas();
         } else {
             alert(`❌ Erro ao salvar metas:\n${data.message}`);

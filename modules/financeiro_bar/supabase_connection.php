@@ -12,7 +12,7 @@ class SupabaseConnection {
         $config = require_once __DIR__ . '/config/supabase_config.php';
         
         $this->url = rtrim($config['url'], '/');
-        $this->timeout = $config['timeout'] ?? 90;
+        $this->timeout = $config['timeout'] ?? 200;
         
         // Configura headers com a chave apropriada
         $api_key = $config['use_service_key'] ? $config['service_key'] : $config['anon_key'];
@@ -70,6 +70,33 @@ class SupabaseConnection {
     }
     
     /**
+     * Executa requisição POST com UPSERT para Supabase
+     * Insere novos registros ou atualiza existentes baseado em chave única
+     * 
+     * @param string $table Nome da tabela
+     * @param array $data Dados a serem inseridos/atualizados (pode ser array de arrays para batch)
+     * @param array $options Opções adicionais (ex: on_conflict para especificar colunas únicas)
+     * @return mixed Resultado da requisição ou false em caso de erro
+     */
+    public function upsert($table, $data, $options = []) {
+        $url = $this->url . '/rest/v1/' . $table;
+        
+        // Headers especiais para upsert
+        $upsertHeaders = $this->headers;
+        
+        // Adicionar header de resolução de conflito
+        if (isset($options['on_conflict'])) {
+            $upsertHeaders[] = 'Prefer: resolution=merge-duplicates';
+            $url .= '?on_conflict=' . $options['on_conflict'];
+        } else {
+            // Usar merge-duplicates como padrão
+            $upsertHeaders[] = 'Prefer: resolution=merge-duplicates';
+        }
+        
+        return $this->makeRequestWithHeaders('POST', $url, $data, $upsertHeaders);
+    }
+    
+    /**
      * Executa requisição PATCH para Supabase (UPDATE)
      */
     public function update($table, $data, $filters = []) {
@@ -99,14 +126,23 @@ class SupabaseConnection {
      * Faz a requisição HTTP
      */
     private function makeRequest($method, $url, $data = null) {
+        return $this->makeRequestWithHeaders($method, $url, $data, $this->headers);
+    }
+    
+    /**
+     * Faz a requisição HTTP com headers customizados
+     */
+    private function makeRequestWithHeaders($method, $url, $data = null, $headers = null) {
         $curl = curl_init();
+        
+        $requestHeaders = $headers ?? $this->headers;
         
         curl_setopt_array($curl, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_HTTPHEADER => $this->headers,
+            CURLOPT_HTTPHEADER => $requestHeaders,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
         

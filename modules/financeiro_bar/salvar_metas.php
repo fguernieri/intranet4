@@ -46,7 +46,17 @@ try {
     
     $meses = $dados['meses'];
     $metas = $dados['metas'];
-    $ano = $dados['ano'] ?? date('Y');
+    
+    // Suportar múltiplos anos (array) ou ano único (retrocompatibilidade)
+    $anos = [];
+    if (isset($dados['anos']) && is_array($dados['anos']) && !empty($dados['anos'])) {
+        $anos = $dados['anos'];
+    } elseif (isset($dados['ano'])) {
+        $anos = [$dados['ano']];
+    } else {
+        $anos = [date('Y')];
+    }
+    
     // Determinar target (tap ou wab). Default = tap
     $target = strtolower(trim($dados['target'] ?? 'tap'));
     $allowed = ['tap' => 'fmetastap', 'wab' => 'fmetaswab'];
@@ -56,11 +66,15 @@ try {
     }
     $table = $allowed[$target];
     
+    // Aumentar timeout para processamento de muitos registros
+    set_time_limit(120);
+    
     // DEBUG: Log dos dados recebidos
     error_log("=== DEBUG SALVAR METAS ===");
     error_log("Meses recebidos: " . print_r($meses, true));
+    error_log("Anos recebidos: " . print_r($anos, true));
     error_log("Metas recebidas: " . print_r($metas, true));
-    error_log("Ano: " . $ano);
+    error_log("Target table: " . $table);
     
     // Incluir a classe de conexão com Supabase
     require_once __DIR__ . '/supabase_connection.php';
@@ -68,76 +82,72 @@ try {
     // Criar instância da conexão Supabase
     $supabase = new SupabaseConnection();
     
-    $totalRegistros = 0;
+    // Construir array com TODOS os registros para batch insert/upsert
+    $todosRegistros = [];
     $registrosProcessados = [];
     
-    // Para cada mês selecionado
-    foreach ($meses as $mes) {
-        $dataMeta = sprintf('%04d-%02d-01', $ano, intval($mes));
-        
-        // Para cada meta financeira
-        foreach ($metas as $meta) {
-            // Pular metas com valor zero
-            if (($meta['meta'] ?? 0) == 0) {
-                continue;
-            }
+    // Para cada ano selecionado
+    foreach ($anos as $ano) {
+        // Para cada mês selecionado
+        foreach ($meses as $mes) {
+            $dataMeta = sprintf('%04d-%02d-01', intval($ano), intval($mes));
             
-            // Verificar se já existe uma meta para essa categoria/subcategoria no mês
-            $filtros = [
-                'CATEGORIA' => 'eq.' . trim($meta['categoria'] ?? ''),
-                'DATA_META' => 'eq.' . $dataMeta
-            ];
-            
-            // Adicionar filtro de subcategoria baseado no valor
-            if (isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '') {
-                $filtros['SUBCATEGORIA'] = 'eq.' . trim($meta['subcategoria']);
-            } else {
-                $filtros['SUBCATEGORIA'] = 'is.null';
-            }
-            
-            $existentes = $supabase->select($table, [
-                'filters' => $filtros,
-                'select' => 'ID'
-            ]);
-            
-            // Tratar subcategoria vazia como NULL para o banco
-            $subcategoria = isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '' 
-                            ? trim($meta['subcategoria']) 
-                            : null;
-            
-            $registro = [
-                'CATEGORIA' => trim($meta['categoria'] ?? ''),
-                'SUBCATEGORIA' => $subcategoria,
-                'META' => floatval($meta['meta'] ?? 0),
-                'PERCENTUAL' => floatval($meta['percentual'] ?? 0),
-                'DATA' => date('Y-m-d H:i:s'),
-                'DATA_META' => $dataMeta,
-                'DATA_CRI' => date('Y-m-d H:i:s')
-            ];
-            
-            // DEBUG: Log do registro a ser salvo
-            error_log("Registro para " . $dataMeta . ": " . print_r($registro, true));
-            
-            if (!empty($existentes) && isset($existentes[0]['ID'])) {
-                // Atualizar registro existente
-                $resultado = $supabase->update($table, $registro, [
-                    'ID' => 'eq.' . $existentes[0]['ID']
-                ]);
-            } else {
-                // Inserir novo registro
-                $resultado = $supabase->insert($table, $registro);
-            }
-            
-            if ($resultado !== false) {
-                $totalRegistros++;
+            // Para cada meta financeira
+            foreach ($metas as $meta) {
+                // Pular metas com valor zero
+                if (($meta['meta'] ?? 0) == 0) {
+                    continue;
+                }
+                
+                // Tratar subcategoria vazia como NULL para o banco
+                $subcategoria = isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '' 
+                                ? trim($meta['subcategoria']) 
+                                : null;
+                
+                $registro = [
+                    'CATEGORIA' => trim($meta['categoria'] ?? ''),
+                    'SUBCATEGORIA' => $subcategoria,
+                    'META' => floatval($meta['meta'] ?? 0),
+                    'PERCENTUAL' => floatval($meta['percentual'] ?? 0),
+                    'DATA' => date('Y-m-d H:i:s'),
+                    'DATA_META' => $dataMeta,
+                    'DATA_CRI' => date('Y-m-d H:i:s')
+                ];
+                
+                $todosRegistros[] = $registro;
+                
                 $registrosProcessados[] = [
                     'categoria' => $meta['categoria'],
-                    'subcategoria' => $meta['subcategoria'],
+                    'subcategoria' => $subcategoria,
+                    'ano' => $ano,
                     'mes' => $mes,
                     'meta' => $meta['meta']
                 ];
             }
         }
+    }
+    
+    // DEBUG: Log do total de registros a serem salvos
+    error_log("Total de registros a salvar: " . count($todosRegistros));
+    
+    // Se não houver registros, retornar erro
+    if (empty($todosRegistros)) {
+        throw new Exception('Nenhum registro válido para salvar');
+    }
+    
+    // UPSERT em batch - uma única requisição para todos os registros
+    // O Supabase vai inserir novos e atualizar existentes baseado na chave única
+    $resultado = $supabase->upsert($table, $todosRegistros, [
+        'on_conflict' => 'CATEGORIA,SUBCATEGORIA,DATA_META'
+    ]);
+    
+    $totalRegistros = count($todosRegistros);
+    
+    // DEBUG: Log do resultado
+    error_log("Resultado do upsert: " . ($resultado !== false ? 'sucesso' : 'falha'));
+    
+    if ($resultado === false) {
+        throw new Exception('Falha ao salvar metas no Supabase');
     }
     
     // Resposta de sucesso
@@ -146,6 +156,8 @@ try {
         'message' => 'Metas salvas com sucesso no Supabase',
         'table' => $table,
         'target' => $target,
+        'anos' => $anos,
+        'anos_processados' => count($anos),
         'total_registros' => $totalRegistros,
         'meses_processados' => count($meses),
         'metas_processadas' => count($metas),

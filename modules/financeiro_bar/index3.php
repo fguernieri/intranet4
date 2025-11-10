@@ -734,6 +734,25 @@ require_once __DIR__ . '/../../sidebar.php';
                     }
                 }
 
+                // Renderiza badge de status de pagamento
+                function renderStatusBadge($detalhe) {
+                    $status = isset($detalhe['status']) ? trim(strtolower($detalhe['status'])) : '';
+                    
+                    if ($status === 'pago') {
+                        return '<span class="inline-flex items-center text-xs px-2 py-1 rounded bg-green-600 text-white">
+                                    <span class="w-2 h-2 rounded-sm bg-green-300 mr-1.5"></span>
+                                    Pago
+                                </span>';
+                    } elseif ($status === 'pendente') {
+                        return '<span class="inline-flex items-center text-xs px-2 py-1 rounded bg-orange-500 text-white">
+                                    <span class="w-2 h-2 rounded-sm bg-orange-300 mr-1.5"></span>
+                                    Pendente
+                                </span>';
+                    } else {
+                        return '<span class="text-xs text-gray-500">—</span>';
+                    }
+                }
+
                 // Formata percentual do valor sobre a RECEITA OPERACIONAL (total_geral_operacional)
                 function percentOfReceitaOperacional($valor) {
                     global $total_geral_operacional;
@@ -1267,8 +1286,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">
                                                                         vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?>
@@ -1456,8 +1478,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">
                                                                         vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?>
@@ -1632,8 +1657,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">
                                                                         vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?>
@@ -1772,8 +1800,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">
                                                                         vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?>
@@ -1912,8 +1943,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                     <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">
                                                                         vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?>
@@ -2082,8 +2116,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?></div>
                                                                 <?php endif; ?>
@@ -2286,8 +2323,11 @@ require_once __DIR__ . '/../../sidebar.php';
                                                 <tr class="hover:bg-gray-800 text-gray-300">
                                                     <td class="px-2 py-1 border-b border-gray-800 align-top">
                                                         <div class="flex items-start justify-between">
-                                                            <div>
-                                                                <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <div class="font-medium text-sm text-gray-100"><?= htmlspecialchars($detalhe['descricao'] ?? 'SEM DESCRIÇÃO') ?></div>
+                                                                    <?= renderStatusBadge($detalhe) ?>
+                                                                </div>
                                                                 <?php if (!empty($show_debug_keys)): ?>
                                                                     <div class="text-xs font-mono text-gray-400 mt-1">vkey: <?= htmlspecialchars(getVkeyFromDetalhe($detalhe) ?? 'null') ?></div>
                                                                 <?php endif; ?>
