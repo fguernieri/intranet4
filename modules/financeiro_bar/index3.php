@@ -517,6 +517,13 @@ require_once __DIR__ . '/../../sidebar.php';
             <button id="markAllBtn" class="ml-3 inline-flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded" title="Marcar todos como lidos">
                 Marcar tudo como lido
             </button>
+            <button id="showUnreadBtn" class="ml-2 inline-flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded relative" title="Ver lançamentos não lidos">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Novos (<span id="unreadCount">0</span>)
+            </button>
         </div>
         <?php endif; ?>
     </div>
@@ -2653,6 +2660,169 @@ async function marcarTodosComoLidos() {
 document.addEventListener('DOMContentLoaded', function(){
     var mk = document.getElementById('markAllBtn');
     if (mk) mk.addEventListener('click', function(e){ e.stopPropagation(); marcarTodosComoLidos(); });
+    
+    // Coletar lançamentos não lidos e atualizar contador
+    updateUnreadCount();
+    
+    // Botão para mostrar lançamentos não lidos
+    var showUnreadBtn = document.getElementById('showUnreadBtn');
+    if (showUnreadBtn) {
+        showUnreadBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showUnreadModal();
+        });
+    }
 });
+
+function updateUnreadCount() {
+    const unreadBadges = document.querySelectorAll('.visto-badge');
+    let unreadCount = 0;
+    
+    unreadBadges.forEach(badge => {
+        const text = badge.textContent.trim();
+        if (text === 'Não lido') {
+            unreadCount++;
+        }
+    });
+    
+    const countEl = document.getElementById('unreadCount');
+    if (countEl) {
+        countEl.textContent = unreadCount;
+    }
+}
+
+function showUnreadModal() {
+    // Coletar todos os lançamentos não lidos
+    const unreadItems = [];
+    
+    // Buscar todos os badges de visto
+    document.querySelectorAll('.visto-badge').forEach(badge => {
+        const badgeText = badge.textContent.trim();
+        if (badgeText === 'Não lido') {
+            // Encontrar a linha (tr) que contém este badge
+            const row = badge.closest('tr');
+            if (row) {
+                // Tentar pegar categoria e subcategoria dos atributos data (se existirem)
+                let categoriaPai = row.getAttribute('data-categoria-pai') || '';
+                let subcategoria = row.getAttribute('data-subcategoria') || '';
+                
+                // Se não tiver nos atributos, tentar descobrir pela hierarquia DOM
+                if (!categoriaPai || !subcategoria) {
+                    // Buscar o container de detalhes (tr com td que contém a tabela interna)
+                    const detailsRow = row.closest('tr')?.closest('td')?.closest('tr');
+                    if (detailsRow && detailsRow.id && detailsRow.id.startsWith('det-')) {
+                        // Extrair subcategoria do cabeçalho da tabela interna
+                        const headerDiv = detailsRow.querySelector('.bg-gray-800.rounded-t-lg');
+                        if (headerDiv) {
+                            const headerText = headerDiv.textContent.trim();
+                            // Extrair texto após "Lançamentos individuais - "
+                            const match = headerText.match(/Lançamentos individuais - (.+)/);
+                            if (match) {
+                                subcategoria = match[1].trim();
+                            }
+                        }
+                        
+                        // Buscar categoria pai navegando para o tbody pai
+                        let currentElement = detailsRow;
+                        while (currentElement) {
+                            currentElement = currentElement.parentElement;
+                            if (currentElement && currentElement.tagName === 'TBODY' && currentElement.id) {
+                                // IDs como "sub-tributos", "sub-custo-variavel", etc.
+                                if (currentElement.id.startsWith('sub-')) {
+                                    const catId = currentElement.id.replace('sub-', '');
+                                    // Mapear IDs para nomes legíveis
+                                    const categoryMap = {
+                                        'tributos': 'TRIBUTOS',
+                                        'custo-variavel': 'CUSTO VARIÁVEL',
+                                        'custo-fixo': 'CUSTO FIXO',
+                                        'despesa-fixa': 'DESPESA FIXA',
+                                        'despesa-venda': 'DESPESAS DE VENDA',
+                                        'investimento-interno': 'INVESTIMENTO INTERNO',
+                                        'saidas-nao-operacionais': 'SAÍDAS NÃO OPERACIONAIS'
+                                    };
+                                    categoriaPai = categoryMap[catId] || catId.toUpperCase();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Pegar as células da linha
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 2) {
+                    // Primeira célula geralmente contém descrição e fornecedor
+                    const firstCell = cells[0];
+                    const descricaoEl = firstCell.querySelector('.font-medium');
+                    const fornecedorEl = firstCell.querySelector('.text-xs.text-gray-400');
+                    
+                    const descricao = descricaoEl ? descricaoEl.textContent.trim() : '';
+                    const fornecedor = fornecedorEl ? fornecedorEl.textContent.trim() : '';
+                    
+                    // Última célula geralmente é o valor
+                    const valorCell = cells[cells.length - 1];
+                    const valor = valorCell ? valorCell.textContent.trim() : '';
+                    
+                    if (descricao || fornecedor) {
+                        unreadItems.push({ 
+                            categoriaPai, 
+                            subcategoria, 
+                            descricao, 
+                            fornecedor, 
+                            valor 
+                        });
+                    }
+                }
+            }
+        }
+    });
+    
+    if (unreadItems.length === 0) {
+        alert('Não há lançamentos não lidos no período selecionado.');
+        return;
+    }
+    
+    // Criar div flutuante
+    const floatingDiv = document.createElement('div');
+    floatingDiv.id = 'unreadFloating';
+    floatingDiv.className = 'fixed top-20 right-4 bg-gray-800 rounded-lg shadow-2xl p-4 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col z-50 border border-gray-700';
+    floatingDiv.innerHTML = `
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
+            <h3 class="text-base font-semibold text-yellow-400 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                Lançamentos Não Lidos (${unreadItems.length})
+            </h3>
+            <button id="closeFloatingBtn" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="overflow-y-auto flex-1 pr-2 space-y-2">
+            ${unreadItems.map((item, idx) => `
+                <div class="bg-gray-900 rounded p-3 border border-gray-700 hover:border-yellow-500 transition-colors">
+                    ${item.categoriaPai ? `<div class="text-xs text-blue-400 font-medium mb-1">📁 ${item.categoriaPai}</div>` : ''}
+                    ${item.subcategoria ? `<div class="text-xs text-purple-400 mb-1">└─ ${item.subcategoria}</div>` : ''}
+                    <div class="text-sm text-gray-100 font-medium mb-1">${item.descricao}</div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-400">${item.fornecedor}</span>
+                        <span class="text-orange-400 font-mono font-semibold">${item.valor}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    document.body.appendChild(floatingDiv);
+    
+    // Fechar div ao clicar no botão
+    const closeBtn = floatingDiv.querySelector('#closeFloatingBtn');
+    closeBtn.addEventListener('click', () => floatingDiv.remove());
+    
+    // Adicionar animação de entrada
+    setTimeout(() => floatingDiv.style.opacity = '1', 10);
+}
 
 </script>
