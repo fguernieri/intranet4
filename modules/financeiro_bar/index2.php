@@ -73,10 +73,18 @@ if ($conexao_ok) {
             }
         }
         
-        // Se nenhum período foi selecionado, selecionar automaticamente o mais recente
+        // Se nenhum período foi selecionado, selecionar automaticamente o mês atual
         if (empty($periodo_selecionado) && !empty($periodos_disponiveis)) {
-            // Os períodos já vêm ordenados por data_mes.desc, então o primeiro é o mais recente
-            $periodo_selecionado = array_keys($periodos_disponiveis)[0];
+            // Obter o mês atual no formato YYYY/MM
+            $mes_atual = date('Y/m');
+            
+            // Se o mês atual existe nos períodos disponíveis, usar ele
+            if (isset($periodos_disponiveis[$mes_atual])) {
+                $periodo_selecionado = $mes_atual;
+            } else {
+                // Caso contrário, usar o período mais recente disponível
+                $periodo_selecionado = array_keys($periodos_disponiveis)[0];
+            }
         }
         
         // Buscar dados se um período foi selecionado (automaticamente ou pelo usuário)
@@ -734,14 +742,16 @@ require_once __DIR__ . '/../../sidebar.php';
                     $status = isset($detalhe['status']) ? trim(strtolower($detalhe['status'])) : '';
                     
                     if ($status === 'pago') {
-                        return '<span class="inline-flex items-center text-xs px-2 py-1 rounded bg-green-600 text-white">
-                                    <span class="w-2 h-2 rounded-sm bg-green-300 mr-1.5"></span>
-                                    Pago
+                        return '<span class="inline-flex items-center" title="Pago">
+                                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
                                 </span>';
                     } elseif ($status === 'pendente') {
-                        return '<span class="inline-flex items-center text-xs px-2 py-1 rounded bg-orange-500 text-white">
-                                    <span class="w-2 h-2 rounded-sm bg-orange-300 mr-1.5"></span>
-                                    Pendente
+                        return '<span class="inline-flex items-center" title="Pendente">
+                                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                </span>';
+                    } elseif ($status === 'vencido') {
+                        return '<span class="inline-flex items-center" title="Vencido">
+                                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
                                 </span>';
                     } else {
                         return '<span class="text-xs text-gray-500">—</span>';
