@@ -72,10 +72,16 @@ if ($conexao_ok) {
             }
         }
         
-        // Se nenhum período foi selecionado, selecionar automaticamente o mais recente
+        // Se nenhum período foi selecionado, selecionar automaticamente o mês atual
         if (empty($periodo_selecionado) && !empty($periodos_disponiveis)) {
-            // Os períodos já vêm ordenados por data_mes.desc, então o primeiro é o mais recente
-            $periodo_selecionado = array_keys($periodos_disponiveis)[0];
+            // Tentar usar o mês atual (formato YYYY/MM)
+            $mes_atual = date('Y/m');
+            if (isset($periodos_disponiveis[$mes_atual])) {
+                $periodo_selecionado = $mes_atual;
+            } else {
+                // Se o mês atual não estiver disponível, usar o mais recente
+                $periodo_selecionado = array_keys($periodos_disponiveis)[0];
+            }
         }
         
         // Buscar dados se um período foi selecionado (automaticamente ou pelo usuário)

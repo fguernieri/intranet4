@@ -25,7 +25,7 @@ require_once __DIR__ . '/../../sidebar.php';
     <div class="bg-gray-800 rounded-lg p-6">
         <h3 class="text-lg text-gray-300 mb-6">Sistema de Gestão Financeira</h3>
         
-        <div class="grid md:grid-cols-2 gap-6">
+        <div class="grid md:grid-cols-3 gap-6">
             <!-- Card Simulador -->
             <div class="bg-gray-700 rounded-lg p-6 hover:bg-gray-600 transition-colors">
                 <div class="text-center">
@@ -65,12 +65,32 @@ require_once __DIR__ . '/../../sidebar.php';
                     </a>
                 </div>
             </div>
+
+            <!-- Card KPI's Financeiros -->
+            <div class="bg-gray-700 rounded-lg p-6 hover:bg-gray-600 transition-colors">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📈</div>
+                    <h4 class="text-lg font-semibold text-purple-400 mb-3">KPI's Financeiros</h4>
+                    <p class="text-gray-300 text-sm mb-4">
+                        Análise detalhada de indicadores-chave de desempenho com DRE completa e comparações mensais.
+                    </p>
+                    <ul class="text-xs text-gray-400 mb-6 space-y-1">
+                        <li>✓ DRE analítica com 6 meses</li>
+                        <li>✓ Análise de tendências por categoria</li>
+                        <li>✓ Comparação vs média 3 e 6 meses</li>
+                        <li>✓ Visão TAP e WAB</li>
+                    </ul>
+                    <a href="kpi/kpitap.php" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded transition-colors">
+                        Acessar KPI's
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Fluxo recomendado -->
         <div class="mt-8 bg-gray-600 rounded-lg p-4">
             <h5 class="text-sm font-medium text-gray-300 mb-3 text-center">Fluxo de Trabalho Recomendado</h5>
-            <div class="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-6 text-sm">
+            <div class="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-4 text-sm">
                 <div class="flex items-center text-gray-400">
                     <span class="bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs mr-2">1</span>
                     Use o Simulador para planejar
@@ -82,7 +102,12 @@ require_once __DIR__ . '/../../sidebar.php';
                 </div>
                 <div class="text-gray-500 hidden md:block">→</div>
                 <div class="flex items-center text-gray-400">
-                    <span class="bg-yellow-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs mr-2">3</span>
+                    <span class="bg-purple-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs mr-2">3</span>
+                    Analise KPI's detalhados
+                </div>
+                <div class="text-gray-500 hidden md:block">→</div>
+                <div class="flex items-center text-gray-400">
+                    <span class="bg-yellow-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs mr-2">4</span>
                     Ajuste conforme necessário
                 </div>
             </div>
