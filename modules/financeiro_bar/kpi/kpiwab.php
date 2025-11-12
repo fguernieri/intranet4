@@ -240,6 +240,7 @@ require_once __DIR__ . '/../../../sidebar.php';
             <h3 class="text-lg text-gray-300 mb-3">
                 DRE Analítico - <?= htmlspecialchars($periodos_disponiveis[$periodo_selecionado] ?? $periodo_selecionado) ?>
             </h3>
+            <div id="dre-search-container" class="mb-4"></div>
             <div id="dre-analysis-container">
                 <p class="text-gray-400 text-center py-4">Carregando análise DRE...</p>
             </div>
@@ -1121,21 +1122,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                         seriesName: 'Receita Operacional',
                                         title: { text: 'Valor (R$)' },
                                         min: 0,
-                                        max: <?= $abs_max ?>,
                                         labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                         opposite: false
                                     },
                                     {
                                         seriesName: 'Receita Operacional',
                                         show: false,
-                                        min: 0,
-                                        max: <?= $abs_max ?>
+                                        min: 0
                                     },
                                     {
                                         seriesName: '% Custo Fixo',
                                         title: { text: '% Custo Fixo' },
                                         min: 0,
-                                        max: <?= $pct_max ?>,
                                         labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                         opposite: true
                                     }
@@ -1302,21 +1300,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                                         seriesName: 'Receita Operacional',
                                                         title: { text: 'Valor (R$)' },
                                                         min: 0,
-                                                        max: <?= $abs_max_cv ?>,
                                                         labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                                         opposite: false
                                                     },
                                                     {
                                                         seriesName: 'Receita Operacional',
                                                         show: false,
-                                                        min: 0,
-                                                        max: <?= $abs_max_cv ?>
+                                                        min: 0
                                                     },
                                                     {
                                                         seriesName: '% Custo Variável',
                                                         title: { text: '% Custo Variável' },
                                                         min: 0,
-                                                        max: <?= $pct_max_cv ?>,
                                                         labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                                         opposite: true
                                                     }
@@ -1438,21 +1433,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                                             seriesName: 'Receita Operacional',
                                                             title: { text: 'Valor (R$)' },
                                                             min: 0,
-                                                            max: <?= $abs_max_tr ?>,
                                                             labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                                             opposite: false
                                                         },
                                                         {
                                                             seriesName: 'Receita Operacional',
                                                             show: false,
-                                                            min: 0,
-                                                            max: <?= $abs_max_tr ?>
+                                                            min: 0
                                                         },
                                                         {
                                                             seriesName: '% Tributos',
                                                             title: { text: '% Tributos' },
                                                             min: 0,
-                                                            max: <?= $pct_max_tr ?>,
                                                             labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                                             opposite: true
                                                         }
@@ -1573,21 +1565,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                             seriesName: 'Receita Operacional',
                                             title: { text: 'Valor (R$)' },
                                             min: 0,
-                                            max: <?= $abs_max_dv ?>,
                                             labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                             opposite: false
                                         },
                                         {
                                             seriesName: 'Receita Operacional',
                                             show: false,
-                                            min: 0,
-                                            max: <?= $abs_max_dv ?>
+                                            min: 0
                                         },
                                         {
                                             seriesName: '% Despesas de Venda',
                                             title: { text: '% Despesas de Venda' },
                                             min: 0,
-                                            max: <?= $pct_max_dv ?>,
                                             labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                             opposite: true
                                         }
@@ -1708,21 +1697,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                             seriesName: 'Receita Operacional',
                                             title: { text: 'Valor (R$)' },
                                             min: 0,
-                                            max: <?= $abs_max_ii ?>,
                                             labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                             opposite: false
                                         },
                                         {
                                             seriesName: 'Receita Operacional',
                                             show: false,
-                                            min: 0,
-                                            max: <?= $abs_max_ii ?>
+                                            min: 0
                                         },
                                         {
                                             seriesName: '% Investimento Interno',
                                             title: { text: '% Investimento Interno' },
                                             min: 0,
-                                            max: <?= $pct_max_ii ?>,
                                             labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                             opposite: true
                                         }
@@ -1843,21 +1829,18 @@ require_once __DIR__ . '/../../../sidebar.php';
                                             seriesName: 'Receita Operacional',
                                             title: { text: 'Valor (R$)' },
                                             min: 0,
-                                            max: <?= $abs_max_df ?>,
                                             labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } },
                                             opposite: false
                                         },
                                         {
                                             seriesName: 'Receita Operacional',
                                             show: false,
-                                            min: 0,
-                                            max: <?= $abs_max_df ?>
+                                            min: 0
                                         },
                                         {
                                             seriesName: '% Despesa Fixa',
                                             title: { text: '% Despesa Fixa' },
                                             min: 0,
-                                            max: <?= $pct_max_df ?>,
                                             labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } },
                                             opposite: true
                                         }
@@ -1983,10 +1966,10 @@ require_once __DIR__ . '/../../../sidebar.php';
 <?php require_once __DIR__ . '/components/category_detail_modal.php'; ?>
 
 <!-- CSS do Modal -->
-<link rel="stylesheet" href="css/kpi_modals.css?v=4.1">
+<link rel="stylesheet" href="css/kpi_modals.css?v=5.1">
 
 <!-- JavaScript do Modal -->
-<script src="js/kpi_details_wab.js?v=4.1"></script>
+<script src="js/kpi_details_wab.js?v=5.1"></script>
 
 <!-- Função helper para abrir modal com período -->
 <script>
@@ -2068,6 +2051,28 @@ function renderDRETable(linhas) {
         return 'text-gray-400';
     };
     
+    // Obter termo de busca atual
+    const searchTerm = (window.dreSearchTerm || '').toLowerCase().trim();
+    
+    // Criar input de busca apenas na primeira renderização
+    const searchContainer = document.getElementById('dre-search-container');
+    if (searchContainer && !document.getElementById('dre-search-input')) {
+        searchContainer.innerHTML = `
+            <input 
+                type="text" 
+                id="dre-search-input" 
+                placeholder="🔍 Buscar subcategoria..." 
+                class="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded border border-gray-600 focus:border-yellow-400 focus:outline-none"
+            />
+        `;
+        
+        // Adicionar event listener
+        const searchInput = document.getElementById('dre-search-input');
+        searchInput.addEventListener('input', function(e) {
+            filterDRETable(e.target.value);
+        });
+    }
+    
     let html = `
         <div class="overflow-x-auto">
             <table class="w-full text-sm" style="border-collapse: collapse;">
@@ -2092,33 +2097,62 @@ function renderDRETable(linhas) {
         const varClassMes = getVariationClass(linha.variacao_mes, isReceita);
         
         const hasSubcategorias = linha.subcategorias && linha.subcategorias.length > 0;
-        const isExpanded = dreExpandedRows.has(chave);
         
-        html += `
-            <tr class="${rowClass}" style="border-bottom: 1px solid #374151;">
-                <td class="py-2 px-4 ${hasSubcategorias ? 'cursor-pointer hover:bg-gray-700/30' : ''}" 
-                    ${hasSubcategorias ? `onclick="toggleDRERow('${chave}')"` : ''}
-                    style="user-select: none;">
-                    ${linha.nome}
-                </td>
-                <td class="text-right py-2 px-3">${formatCurrency(linha.media_6m)}</td>
-                <td class="text-right py-2 px-3">${formatCurrency(linha.media_3m)}</td>
-                <td class="text-right py-2 px-3">${formatCurrency(linha.valor_anterior)}</td>
-                <td class="text-right py-2 px-3 font-bold">${formatCurrency(linha.valor_atual)}</td>
-                <td class="text-right py-2 px-3 ${varClassVsM3}">${formatPercent(linha.vs_media_3m)}</td>
-                <td class="text-right py-2 px-3 ${varClassMes}">${formatPercent(linha.variacao_mes)}</td>
-            </tr>
-        `;
+        // Verificar se há subcategorias que correspondem à busca
+        let matchingSubcategorias = [];
+        let hasMatchingSubcategoria = false;
         
-        // Renderizar subcategorias se expandido
+        if (hasSubcategorias && searchTerm) {
+            matchingSubcategorias = linha.subcategorias.filter(sub => 
+                sub.nome.toLowerCase().includes(searchTerm)
+            );
+            hasMatchingSubcategoria = matchingSubcategorias.length > 0;
+        }
+        
+        // Auto-expandir se houver correspondência ou se não houver busca mas já estava expandido
+        const isExpanded = searchTerm ? hasMatchingSubcategoria : dreExpandedRows.has(chave);
+        
+        // Mostrar categoria pai apenas se:
+        // 1. Não há busca ativa, OU
+        // 2. Há busca e existe subcategoria correspondente
+        const shouldShowParent = !searchTerm || hasMatchingSubcategoria;
+        
+        if (shouldShowParent) {
+            html += `
+                <tr class="${rowClass}" style="border-bottom: 1px solid #374151;">
+                    <td class="py-2 px-4 ${hasSubcategorias ? 'cursor-pointer hover:bg-gray-700/30' : ''}" 
+                        ${hasSubcategorias ? `onclick="toggleDRERow('${chave}')"` : ''}
+                        style="user-select: none;">
+                        ${hasSubcategorias ? (isExpanded ? '▼' : '▶') : ''} ${linha.nome}
+                    </td>
+                    <td class="text-right py-2 px-3">${formatCurrency(linha.media_6m)}</td>
+                    <td class="text-right py-2 px-3">${formatCurrency(linha.media_3m)}</td>
+                    <td class="text-right py-2 px-3">${formatCurrency(linha.valor_anterior)}</td>
+                    <td class="text-right py-2 px-3 font-bold">${formatCurrency(linha.valor_atual)}</td>
+                    <td class="text-right py-2 px-3 ${varClassVsM3}">${formatPercent(linha.vs_media_3m)}</td>
+                    <td class="text-right py-2 px-3 ${varClassMes}">${formatPercent(linha.variacao_mes)}</td>
+                </tr>
+            `;
+        }
+        
+        // Renderizar subcategorias se expandido (ou se há busca ativa com matches)
         if (hasSubcategorias && isExpanded) {
-            linha.subcategorias.forEach(sub => {
+            const subsToShow = searchTerm ? matchingSubcategorias : linha.subcategorias;
+            
+            subsToShow.forEach(sub => {
                 const subVarClassVsM3 = getVariationClass(sub.vs_media_3m, isReceita);
                 const subVarClassMes = getVariationClass(sub.variacao_mes, isReceita);
                 
+                // Destacar termo de busca no nome da subcategoria
+                let displayName = sub.nome;
+                if (searchTerm) {
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    displayName = displayName.replace(regex, '<mark style="background-color: #fbbf24; color: #000; padding: 2px 4px; border-radius: 2px;">$1</mark>');
+                }
+                
                 html += `
                     <tr class="text-gray-400 text-xs bg-gray-800/30" style="border-bottom: 1px solid #374151;">
-                        <td class="py-2 px-4 pl-10">${sub.nome}</td>
+                        <td class="py-2 px-4 pl-10">${displayName}</td>
                         <td class="text-right py-2 px-3">${formatCurrency(sub.media_6m)}</td>
                         <td class="text-right py-2 px-3">${formatCurrency(sub.media_3m)}</td>
                         <td class="text-right py-2 px-3">${formatCurrency(sub.valor_anterior)}</td>
@@ -2147,6 +2181,16 @@ window.toggleDRERow = (chave) => {
     } else {
         dreExpandedRows.add(chave);
     }
+    
+    // Re-renderizar com os dados já carregados
+    if (dreLastData) {
+        renderDRETable(dreLastData);
+    }
+};
+
+// Função global para filtrar tabela DRE por busca
+window.filterDRETable = (searchValue) => {
+    window.dreSearchTerm = searchValue;
     
     // Re-renderizar com os dados já carregados
     if (dreLastData) {
