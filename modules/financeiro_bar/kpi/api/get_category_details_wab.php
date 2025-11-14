@@ -326,9 +326,8 @@ try {
             $variacao_periodo = 100;
         }
         
-        // 3. Tendência dos últimos 3 meses (regressão linear simples)
-        $ultimos_3_valores = array_slice($valores, -3);
-        $n = count($ultimos_3_valores);
+        // 3. Regressão linear nos 12 meses completos para ver inclinação da tendência
+        $n = count($valores);
         $soma_x = 0;
         $soma_y = 0;
         $soma_xy = 0;
@@ -336,7 +335,7 @@ try {
         
         for ($i = 0; $i < $n; $i++) {
             $x = $i;
-            $y = $ultimos_3_valores[$i];
+            $y = $valores[$i];
             $soma_x += $x;
             $soma_y += $y;
             $soma_xy += $x * $y;
@@ -349,63 +348,23 @@ try {
             $coeficiente_angular = (($n * $soma_xy) - ($soma_x * $soma_y)) / $denominador;
         }
         
-        // 4. Decisão de tendência baseada em múltiplos fatores
-        $pontos_subida = 0;
-        $pontos_descida = 0;
+        // Calcular inclinação percentual (quanto % cresce por mês em média)
+        $media_valores = $media > 0 ? $media : 1;
+        $inclinacao_percentual = ($coeficiente_angular / $media_valores) * 100;
         
-        // Fator 1: Valor atual vs Média 6M (peso 2)
-        if ($valor_vs_media_6m > 5) {
-            $pontos_subida += 2;
-        } elseif ($valor_vs_media_6m < -5) {
-            $pontos_descida += 2;
-        }
-        
-        // Fator 2: Valor atual vs Média 3M (peso 3 - mais recente)
-        if ($valor_vs_media_3m > 5) {
-            $pontos_subida += 3;
-        } elseif ($valor_vs_media_3m < -5) {
-            $pontos_descida += 3;
-        }
-        
-        // Fator 3: Variação mês a mês (peso 2)
-        if ($variacao_mes > 5) {
-            $pontos_subida += 2;
-        } elseif ($variacao_mes < -5) {
-            $pontos_descida += 2;
-        }
-        
-        // Fator 4: Coeficiente angular últimos 3 meses (peso 3)
-        $media_valores_3m = $media_3m > 0 ? $media_3m : 1;
-        $inclinacao_percentual = ($coeficiente_angular / $media_valores_3m) * 100;
-        
-        if ($inclinacao_percentual > 3) {
-            $pontos_subida += 3;
-        } elseif ($inclinacao_percentual < -3) {
-            $pontos_descida += 3;
-        }
-        
-        // Fator 5: Variação entre primeiros 3 vs últimos 3 (peso 1)
-        if ($variacao_periodo > 10) {
-            $pontos_subida += 1;
-        } elseif ($variacao_periodo < -10) {
-            $pontos_descida += 1;
-        }
-        
-        // Classificar tendência baseado na pontuação
+        // 4. Decisão de tendência baseada em Regressão Linear Simples
+        // Threshold: ±2% ao mês (±24% ao ano)
         $tendencia = 'Estável';
         $tendencia_status = 'neutro';
-        $variacao_tendencia = $valor_vs_media_3m; // usar a comparação mais relevante
+        $variacao_tendencia = $inclinacao_percentual;
         
-        $diferenca_pontos = $pontos_subida - $pontos_descida;
-        
-        if ($diferenca_pontos >= 3) {
+        if ($inclinacao_percentual > 2) {
             $tendencia = 'Subindo';
             $tendencia_status = 'ruim'; // custo subindo é ruim
-        } elseif ($diferenca_pontos <= -3) {
+        } elseif ($inclinacao_percentual < -2) {
             $tendencia = 'Descendo';
             $tendencia_status = 'bom'; // custo descendo é bom
         }
-        // Se diferença é entre -2 e +2, mantém Estável
         
         // ========== FIM ANÁLISE DE TENDÊNCIA ==========
         

@@ -41,25 +41,51 @@ try {
     // Calcular data inicial (6 meses atrás)
     $data_inicial = date('Y-m-01', strtotime($data_final . ' -5 months'));
     
-    // Buscar receitas dos últimos 6 meses
-    $receitas = $supabase->select('freceitatap', [
-        'select' => '*',
-        'filters' => [
-            'data_mes' => "gte.$data_inicial",
-            'data_mes' => "lte.$data_final"
-        ],
-        'order' => 'data_mes.asc'
-    ]);
+    // Buscar receitas dos últimos 6 meses com paginação
+    $receitas = [];
+    $offset = 0;
+    $limit = 1000;
+    do {
+        $batch = $supabase->select('freceitatap', [
+            'select' => '*',
+            'filters' => [
+                'data_mes' => "gte.$data_inicial",
+                'data_mes' => "lte.$data_final"
+            ],
+            'order' => 'data_mes.asc',
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+        if ($batch && count($batch) > 0) {
+            $receitas = array_merge($receitas, $batch);
+            $offset += $limit;
+        }
+    } while ($batch && count($batch) == $limit);
     
-    // Buscar despesas dos últimos 6 meses
-    $despesas = $supabase->select('fdespesastap', [
-        'select' => '*',
-        'filters' => [
-            'data_mes' => "gte.$data_inicial",
-            'data_mes' => "lte.$data_final"
-        ],
-        'order' => 'data_mes.asc'
-    ]);
+    // Buscar despesas dos últimos 6 meses com paginação
+    $despesas = [];
+    $offset = 0;
+    do {
+        $batch = $supabase->select('fdespesastap', [
+            'select' => '*',
+            'filters' => [
+                'data_mes' => "gte.$data_inicial",
+                'data_mes' => "lte.$data_final"
+            ],
+            'order' => 'data_mes.asc',
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+        if ($batch && count($batch) > 0) {
+            $despesas = array_merge($despesas, $batch);
+            $offset += $limit;
+        }
+    } while ($batch && count($batch) == $limit);
+    
+    // DEBUG: Log das queries
+    error_log("DEBUG DRE TAP - Data inicial: $data_inicial, Data final: $data_final");
+    error_log("DEBUG DRE TAP - Receitas count: " . count($receitas));
+    error_log("DEBUG DRE TAP - Despesas count: " . count($despesas));
     
     // Organizar dados por mês
     $meses = [];
