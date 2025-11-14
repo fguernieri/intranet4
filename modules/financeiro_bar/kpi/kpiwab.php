@@ -245,6 +245,26 @@ require_once __DIR__ . '/../../../sidebar.php';
                 <p class="text-gray-400 text-center py-4">Carregando análise DRE...</p>
             </div>
         </div>
+
+        <!-- Primeira linha: Faturamento e Impacto Caixa -->
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
+            <!-- Gráfico de Faturamento Comparativo -->
+            <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
+                <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;min-height:40px;">
+                    <span>Faturamento Comparativo</span>
+                </h3>
+                <div id="chart-faturamento-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+            </div>
+
+            <!-- Gráfico de Impacto Caixa Comparativo -->
+            <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
+                <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;min-height:40px;">
+                    <span>Impacto Caixa Comparativo</span>
+                </h3>
+                <div id="chart-impacto-caixa-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+            </div>
+        </div>
+
                 <?php
                 // Processar dados para criar estrutura hierárquica
                 $total_geral = 0;
@@ -944,56 +964,68 @@ require_once __DIR__ . '/../../../sidebar.php';
                     $abs_max_ii = ceil($abs_max_ii * 1.2);
                     ?>
 
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
                         <!-- card para CUSTO FIXO -->
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>CUSTO FIXO</span>
                                 <button onclick="openDetailWithPeriod('CUSTO FIXO')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-custo-fixo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-custo-fixo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - CUSTO FIXO</h3>
+                            <div id="chart-custo-fixo-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
-                        <!-- card para DESPESA FIXA (comparativo lado a lado) -->
+                        <!-- card para DESPESA FIXA -->
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>DESPESA FIXA</span>
                                 <button onclick="openDetailWithPeriod('DESPESA FIXA')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-despesa-fixa" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-despesa-fixa" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - DESPESA FIXA</h3>
+                            <div id="chart-despesa-fixa-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                     </div>
                     <!-- segunda linha: CUSTO VARIÁVEL e TRIBUTOS lado a lado (2 por linha) -->
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>CUSTO VARIÁVEL</span>
                                 <button onclick="openDetailWithPeriod('CUSTO VARIAVEL')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-custo-variavel" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-custo-variavel" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - CUSTO VARIÁVEL</h3>
+                            <div id="chart-custo-variavel-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>TRIBUTOS</span>
                                 <button onclick="openDetailWithPeriod('TRIBUTOS')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-tributos" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-tributos" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - TRIBUTOS</h3>
+                            <div id="chart-tributos-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                     </div>
                     <!-- terceira linha: DESPESAS DE VENDA -->
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>DESPESAS DE VENDA</span>
                                 <button onclick="openDetailWithPeriod('DESPESAS DE VENDA')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-despesas-venda" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-despesas-venda" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - DESPESAS DE VENDA</h3>
+                            <div id="chart-despesas-venda-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
                             <h3 style="color:#fbbf24;font-size:16px;font-weight:600;margin:0 0 12px 0;padding:0 8px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;">
                                 <span>INVESTIMENTO INTERNO</span>
                                 <button onclick="openDetailWithPeriod('INVESTIMENTO INTERNO')" class="detail-btn">🔍 Detalhar</button>
                             </h3>
-                            <div id="chart-investimento-interno" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:44px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <div id="chart-investimento-interno" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:14px;font-weight:600;margin:16px 0 12px 0;padding:0 8px;text-align:center;">COMPARATIVO - INVESTIMENTO INTERNO</h3>
+                            <div id="chart-investimento-interno-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                     </div>
 
@@ -1140,9 +1172,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 ],
                                 colors: ['#10b981', '#991b1b', '#000000'],
                                 markers: { 
-                                    size: [5, 7, 4],
+                                    size: [5, 4, 4],
                                     strokeWidth: [2, 2, 2],
-                                    hover: { size: [7, 9, 6] }
+                                    hover: { size: [7, 6, 6] }
                                 },
                                 tooltip: {
                                     enabled: true,
@@ -1318,9 +1350,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                                 ],
                                                 colors: ['#10b981', '#991b1b', '#000000'],
                                                 markers: { 
-                                                    size: [5, 7, 4],
+                                                    size: [5, 4, 4],
                                                     strokeWidth: [2, 2, 2],
-                                                    hover: { size: [7, 9, 6] }
+                                                    hover: { size: [7, 6, 6] }
                                                 },
                                                 tooltip: {
                                                     enabled: true,
@@ -1451,9 +1483,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                                     ],
                                                     colors: ['#10b981', '#991b1b', '#000000'],
                                                     markers: { 
-                                                        size: [5, 7, 4],
+                                                        size: [5, 4, 4],
                                                         strokeWidth: [2, 2, 2],
-                                                        hover: { size: [7, 9, 6] }
+                                                        hover: { size: [7, 6, 6] }
                                                     },
                                                     tooltip: {
                                                         enabled: true,
@@ -1583,9 +1615,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                     ],
                                     colors: ['#10b981', '#991b1b', '#000000'],
                                     markers: { 
-                                        size: [5, 7, 4],
+                                        size: [5, 4, 4],
                                         strokeWidth: [2, 2, 2],
-                                        hover: { size: [7, 9, 6] }
+                                        hover: { size: [7, 6, 6] }
                                     },
                                     tooltip: {
                                         enabled: true,
@@ -1715,9 +1747,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                     ],
                                     colors: ['#10b981', '#991b1b', '#000000'],
                                     markers: { 
-                                        size: [5, 7, 4],
+                                        size: [5, 4, 4],
                                         strokeWidth: [2, 2, 2],
-                                        hover: { size: [7, 9, 6] }
+                                        hover: { size: [7, 6, 6] }
                                     },
                                     tooltip: {
                                         enabled: true,
@@ -1847,9 +1879,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                     ],
                                     colors: ['#10b981', '#991b1b', '#000000'],
                                     markers: { 
-                                        size: [5, 7, 4],
+                                        size: [5, 4, 4],
                                         strokeWidth: [2, 2, 2],
-                                        hover: { size: [7, 9, 6] }
+                                        hover: { size: [7, 6, 6] }
                                     },
                                     tooltip: {
                                         enabled: true,
@@ -1966,13 +1998,31 @@ require_once __DIR__ . '/../../../sidebar.php';
 <?php require_once __DIR__ . '/components/category_detail_modal.php'; ?>
 
 <!-- CSS do Modal -->
-<link rel="stylesheet" href="css/kpi_modals.css?v=5.1">
+<link rel="stylesheet" href="css/kpi_modals.css?v=5.2">
 
 <!-- JavaScript do Modal -->
-<script src="js/kpi_details_wab.js?v=5.1"></script>
+<script src="js/kpi_details_wab.js?v=5.2"></script>
 
 <!-- Função helper para abrir modal com período -->
 <script>
+// CSS customizado para forçar cor verde na 5ª barra (ATUAL) dos gráficos compostos
+const customCSS = `
+    #chart-despesa-fixa-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-custo-variavel-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-tributos-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-despesas-venda-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-investimento-interno-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-custo-fixo-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-impacto-caixa-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"] {
+        fill: #059669 !important;
+    }
+`;
+
+// Injetar CSS no documento
+const styleSheet = document.createElement("style");
+styleSheet.textContent = customCSS;
+document.head.appendChild(styleSheet);
+
 function openDetailWithPeriod(categoria) {
     const selectPeriodo = document.getElementById('selectPeriodo');
     const periodoSelecionado = selectPeriodo ? selectPeriodo.value : '';
@@ -2005,6 +2055,14 @@ async function loadDREAnalysis(periodo) {
         
         dreLastData = data.linhas; // Armazenar dados
         renderDRETable(data.linhas);
+        renderFaturamentoComparativo(data.linhas);
+        renderImpactoCaixaComparativo(data.linhas);
+        renderCustoFixoComparativo(data.linhas);
+        renderDespesaFixaComparativo(data.linhas);
+        renderCustoVariavelComparativo(data.linhas);
+        renderTributosComparativo(data.linhas);
+        renderDespesaVendaComparativo(data.linhas);
+        renderInvestimentoInternoComparativo(data.linhas);
         
     } catch (error) {
         console.error('Erro ao carregar DRE:', error);
@@ -2015,6 +2073,1221 @@ async function loadDREAnalysis(periodo) {
             </div>
         `;
     }
+}
+
+function renderFaturamentoComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-faturamento-comparativo');
+    if (!chartContainer) return;
+    
+    // Pegar dados da RECEITA OPERACIONAL
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!receitaOperacional) return;
+    
+    // Extrair valores
+    const atual = receitaOperacional.valor_atual || 0;
+    const media3m = receitaOperacional.media_3m || 0;
+    const media6m = receitaOperacional.media_6m || 0;
+    const media12m = receitaOperacional.media_12_meses || 0;
+    const ly = receitaOperacional.ly || 0;
+    
+    // Calcular variação vs média 3m
+    const variacao = media3m !== 0 ? ((atual - media3m) / media3m * 100) : 0;
+    const variacaoPositiva = variacao >= 0;
+    const corVariacao = variacaoPositiva ? '#059669' : '#ef4444';
+    const sinalVariacao = variacaoPositiva ? '+' : '';
+    
+    // Configurar gráfico
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff',
+            events: {
+                mounted: function(chartContext, config) {
+                    // Adicionar badge de variação após renderização
+                    const chartEl = chartContainer.querySelector('.apexcharts-canvas');
+                    if (chartEl && !chartContainer.querySelector('.variation-badge')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'variation-badge';
+                        badge.style.cssText = `
+                            position: absolute;
+                            top: 10px;
+                            right: 15px;
+                            background: ${corVariacao};
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 13px;
+                            font-weight: 600;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            z-index: 10;
+                        `;
+                        badge.textContent = `${sinalVariacao}${variacao.toFixed(1)}% vs 3M`;
+                        chartContainer.style.position = 'relative';
+                        chartContainer.appendChild(badge);
+                    }
+                }
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                distributed: true,
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Faturamento',
+            data: [ly, media12m, media6m, media3m, atual]
+        }],
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        },
+        colors: ['#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#059669'],
+        tooltip: {
+            theme: 'light',
+            y: {
+                formatter: function(val) {
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: false
+        }
+    };
+    
+    // Renderizar gráfico
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderLucroLiquidoComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-lucro-liquido-comparativo');
+    if (!chartContainer) return;
+    
+    const lucroLiquido = linhas['lucro_liquido'];
+    if (!lucroLiquido) return;
+    
+    const atual = lucroLiquido.valor_atual || 0;
+    const media3m = lucroLiquido.media_3m || 0;
+    const media6m = lucroLiquido.media_6m || 0;
+    const media12m = lucroLiquido.media_12_meses || 0;
+    const ly = lucroLiquido.ly || 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                distributed: true,
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Lucro Líquido',
+            data: [ly, media12m, media6m, media3m, atual]
+        }],
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        },
+        colors: ['#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#059669'],
+        tooltip: {
+            theme: 'light',
+            y: {
+                formatter: function(val) {
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: false
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderImpactoCaixaComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-impacto-caixa-comparativo');
+    if (!chartContainer) return;
+    
+    const impactoCaixa = linhas['impacto_caixa'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!impactoCaixa || !receitaOperacional) return;
+    
+    const atual = impactoCaixa.valor_atual || 0;
+    const media3m = impactoCaixa.media_3m || 0;
+    const media6m = impactoCaixa.media_6m || 0;
+    const media12m = impactoCaixa.media_12_meses || 0;
+    const ly = impactoCaixa.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'line',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -10,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            },
+            background: {
+                enabled: false
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: {
+                    color: '#000000',
+                    fontSize: '11px',
+                    fontWeight: 600
+                }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            title: {
+                text: '% s/ Faturamento',
+                style: {
+                    color: '#000000',
+                    fontSize: '11px',
+                    fontWeight: 600
+                }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, { seriesIndex }) {
+                    if (seriesIndex === 0) {
+                        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    } else {
+                        return val.toFixed(2) + '%';
+                    }
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderDespesaFixaComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-despesa-fixa-comparativo');
+    if (!chartContainer) return;
+    
+    const despesaFixa = linhas['despesa_fixa'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!despesaFixa || !receitaOperacional) return;
+    
+    const atual = despesaFixa.valor_atual || 0;
+    const media3m = despesaFixa.media_3m || 0;
+    const media6m = despesaFixa.media_6m || 0;
+    const media12m = despesaFixa.media_12_meses || 0;
+    const ly = despesaFixa.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderCustoVariavelComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-custo-variavel-comparativo');
+    if (!chartContainer) return;
+    
+    const custoVariavel = linhas['custo_variavel'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!custoVariavel || !receitaOperacional) return;
+    
+    const atual = custoVariavel.valor_atual || 0;
+    const media3m = custoVariavel.media_3m || 0;
+    const media6m = custoVariavel.media_6m || 0;
+    const media12m = custoVariavel.media_12_meses || 0;
+    const ly = custoVariavel.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: '#000000',
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderTributosComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-tributos-comparativo');
+    if (!chartContainer) return;
+    
+    const tributos = linhas['tributos'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!tributos || !receitaOperacional) return;
+    
+    const atual = tributos.valor_atual || 0;
+    const media3m = tributos.media_3m || 0;
+    const media6m = tributos.media_6m || 0;
+    const media12m = tributos.media_12_meses || 0;
+    const ly = tributos.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderDespesaVendaComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-despesas-venda-comparativo');
+    if (!chartContainer) return;
+    
+    const despesaVenda = linhas['despesa_venda'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!despesaVenda || !receitaOperacional) return;
+    
+    const atual = despesaVenda.valor_atual || 0;
+    const media3m = despesaVenda.media_3m || 0;
+    const media6m = despesaVenda.media_6m || 0;
+    const media12m = despesaVenda.media_12_meses || 0;
+    const ly = despesaVenda.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderInvestimentoInternoComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-investimento-interno-comparativo');
+    if (!chartContainer) return;
+    
+    const investimentoInterno = linhas['investimento_interno'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!investimentoInterno || !receitaOperacional) return;
+    
+    const atual = investimentoInterno.valor_atual || 0;
+    const media3m = investimentoInterno.media_3m || 0;
+    const media6m = investimentoInterno.media_6m || 0;
+    const media12m = investimentoInterno.media_12_meses || 0;
+    const ly = investimentoInterno.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderCustoFixoComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-custo-fixo-comparativo');
+    if (!chartContainer) return;
+    
+    const custoFixo = linhas['custo_fixo'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!custoFixo || !receitaOperacional) return;
+    
+    const atual = custoFixo.valor_atual || 0;
+    const media3m = custoFixo.media_3m || 0;
+    const media6m = custoFixo.media_6m || 0;
+    const media12m = custoFixo.media_12_meses || 0;
+    const ly = custoFixo.ly || 0;
+    
+    // Calcular percentuais sobre faturamento
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+    
+    const options = {
+        chart: { type: 'bar',
+            height: 400,
+            toolbar: { show: false },
+            background: '#ffffff'
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            enabledOnSeries: [0],
+            formatter: function(val) {
+                return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+            },
+            offsetY: -25,
+            style: {
+                fontSize: '12px',
+                fontWeight: 'bold',
+                colors: ['#374151']
+            }
+        },
+        series: [{
+            name: 'Valor',
+            type: 'bar',
+            data: [ly, media12m, media6m, media3m, atual]
+        }, {
+            name: '% s/ Faturamento',
+            type: 'line',
+            data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual]
+        }],
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth'
+        },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
+        colors: ['#d1d5db', '#000000'],
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 0
+        },
+        xaxis: {
+            categories: ['LY', 'MÉDIA 12M', 'MÉDIA 6M', 'MÉDIA 3M', 'ATUAL'],
+            labels: {
+                style: {
+                    colors: '#374151',
+                    fontSize: '10px',
+                    fontWeight: 600
+                }
+            }
+        },
+        yaxis: [{
+            title: {
+                text: 'Valor (R$)',
+                style: { color: '#374151', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return 'R$ ' + (val / 1000).toFixed(0) + 'k';
+                },
+                style: {
+                    colors: '#374151',
+                    fontSize: '11px'
+                }
+            }
+        }, {
+            opposite: true,
+            min: 0,
+            title: {
+                text: '% s/ Faturamento',
+                style: { color: '#000000', fontSize: '11px' }
+            },
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(1) + '%';
+                },
+                style: {
+                    colors: ['#000000'],
+                    fontSize: '11px'
+                }
+            }
+        }],
+        tooltip: {
+            theme: 'light',
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function(val, opts) {
+                    if (opts.seriesIndex === 1) {
+                        return val.toFixed(2) + '%';
+                    }
+                    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+            }
+        },
+        grid: {
+            borderColor: '#e5e7eb',
+            strokeDashArray: 3
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center'
+        }
+    };
+    
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
 }
 
 function renderDRETable(linhas) {
@@ -2198,3 +3471,5 @@ window.filterDRETable = (searchValue) => {
     }
 };
 </script>
+
+
