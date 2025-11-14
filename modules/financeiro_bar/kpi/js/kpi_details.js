@@ -239,7 +239,7 @@ const KPIDetailsModal = {
                         <div style="font-size:10px;color:#6b7280;margin-top:2px;font-weight:600;">📅 ${mesReferencia}</div>
                     </div>
                     <div class="resumo-card">
-                        <div class="resumo-label" title="Tendência calculada por sistema de pontos considerando 5 fatores: Valor Atual vs Médias 6M/3M, Variação Mês, Regressão Linear últimos 3M, e Comparação Primeiros vs Últimos 3M">
+                        <div class="resumo-label" title="Tendência baseada em Regressão Linear sobre os 12 meses. Calcula a inclinação percentual da linha de tendência. Threshold: ±2% ao mês (±24% ao ano)">
                             Tendência Geral 
                             <span style="font-size:9px;color:#9ca3af;font-weight:400;margin-left:3px;cursor:help;">💡</span>
                         </div>
@@ -340,11 +340,11 @@ const KPIDetailsModal = {
                 break;
             case 'tendencia_alta':
                 valorDestaque = `${data.tendencia} ${data.variacao_tendencia > 0 ? '+' : ''}${data.variacao_tendencia.toFixed(1)}%`;
-                detalhe = `${data.nome} (últimos 3m vs primeiros 3m)`;
+                detalhe = `${data.nome} (regressão linear 12m)`;
                 break;
             case 'tendencia_baixa':
                 valorDestaque = `${data.tendencia} ${data.variacao_tendencia > 0 ? '+' : ''}${data.variacao_tendencia.toFixed(1)}%`;
-                detalhe = `${data.nome} (últimos 3m vs primeiros 3m)`;
+                detalhe = `${data.nome} (regressão linear 12m)`;
                 break;
         }
         
@@ -455,14 +455,16 @@ const KPIDetailsModal = {
                                     % Cat.
                                     <span style="font-size:9px;color:#9ca3af;font-weight:400;margin-left:3px;">💡</span>
                                 </th>
-                                <th class="text-center sortable-header" data-sort="tendencia" title="Tendência calculada por sistema de pontos considerando 5 fatores: 
-1) Valor Atual vs Média 6M (peso 2)
-2) Valor Atual vs Média 3M (peso 3) 
-3) Variação mês a mês (peso 2)
-4) Regressão linear últimos 3 meses (peso 3)
-5) Comparação primeiros 3 vs últimos 3 meses (peso 1)
+                                <th class="text-center sortable-header" data-sort="tendencia" title="Tendência baseada em Regressão Linear sobre os 12 meses.
 
-Decisão: Diferença ≥3 pts = Subindo | ≤-3 pts = Descendo | Entre -2 e +2 = Estável
+Cálculo: Inclinação da linha de tendência convertida em percentual ao mês.
+
+Decisão:
+• Inclinação > +2%/mês → Subindo 🔺
+• Inclinação < -2%/mês → Descendo 🔻  
+• Entre -2% e +2% → Estável ➡️
+
+Usa todos os 12 meses para análise robusta.
 
 Clique para ordenar">
                                     Tend. <span class="sort-icon">${getSortIcon('tendencia')}</span>
