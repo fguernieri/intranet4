@@ -62,13 +62,20 @@ foreach ($tiposMetas as $tipo) {
 }
 
 // Consultar os valores das metas por tipo e mês
-$stmtValores = $pdoMetas->prepare("
+$sqlGrafico = "
     SELECT id_tipo, mes, SUM(valor) as total
     FROM metas_valores
     WHERE ano = ?
-    GROUP BY id_tipo, mes
-");
-$stmtValores->execute([$anoFiltro]);
+";
+$paramsGrafico = [$anoFiltro];
+if (!empty($permissoes)) {
+    $placeholders = implode(',', array_fill(0, count($permissoes), '?'));
+    $sqlGrafico .= " AND id_vendedor IN ($placeholders)";
+    $paramsGrafico = array_merge($paramsGrafico, $permissoes);
+}
+$sqlGrafico .= " GROUP BY id_tipo, mes";
+$stmtValores = $pdoMetas->prepare($sqlGrafico);
+$stmtValores->execute($paramsGrafico);
 $resultados = $stmtValores->fetchAll(PDO::FETCH_ASSOC);
 
 // Preencher os dados do gráfico com os valores obtidos
