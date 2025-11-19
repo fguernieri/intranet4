@@ -24,8 +24,16 @@ $stmt = $pdoMetas->query("SELECT * FROM metas_tipos WHERE ativo = 1 ORDER BY nom
 $tipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Buscar vendedores
-$stmt = $pdoMain->query("SELECT id, nome FROM vendedores WHERE ativo = 1 ORDER BY nome");
-$vendedores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// $stmt = $pdoMain->query("SELECT id, nome FROM vendedores WHERE ativo = 1 ORDER BY nome");
+// $vendedores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$vendedores = [];
+if (!empty($permissoes)) {
+    $ph = implode(',', array_fill(0, count($permissoes), '?'));
+    $stmt = $pdoMain->prepare("SELECT nome FROM vendedores WHERE id IN ($ph)");
+    $stmt->execute($permissoes);
+    $vendedores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Buscar metas existentes
 $stmt = $pdoMetas->prepare("SELECT * FROM metas_valores WHERE ano = ? AND mes = ?");
