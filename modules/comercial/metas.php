@@ -4,6 +4,17 @@ $pdoMain = $pdo;
 require_once '../../config/db.php';
 $pdoMetas = $pdo;
 
+// 2) Conexão DW — para dados de pedidos
+require_once __DIR__ . '/../../vendedor_alias.php';
+
+$aliasData = getVendedorAliasMap($pdoMain);
+$aliasMap = $aliasData['alias_to_nome'];
+$nomeToTodos = $aliasData['nome_to_todos'];
+
+
+// 3) Permissões de vendedores vindas da sessão
+$permissoes = $_SESSION['vendedores_permitidos'] ?? [];
+
 // Filtros
 $anoAtual = isset($_GET['ano']) ? (int) $_GET['ano'] : (int) date('Y');
 $mesAtual = isset($_GET['mes']) ? (int) $_GET['mes'] : (int) date('m');
