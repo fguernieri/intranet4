@@ -26,7 +26,7 @@ try {
     $erro_conexao = $e->getMessage();
 }
 
-require_once __DIR__ . '/../../sidebar.php';
+require_once 'sidebar.php';
 ?>
 
 <div id="marketing-content" class="p-6 ml-4">
@@ -86,23 +86,3 @@ body {
     background-color: #0f172a;
 }
 </style>
-
-<script>
-// Garantir que o conteúdo do módulo seja movido para dentro do <main id="content"> que a sidebar injeta
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        var container = document.getElementById('content');
-        var mine = document.getElementById('marketing-content');
-        if (container && mine && !container.contains(mine)) {
-            container.appendChild(mine);
-        }
-        // Aplicar estilo escuro ao content caso necessário (mesma estratégia usada em outras páginas)
-        if (container) {
-            container.style.background = '#111827';
-            container.style.paddingLeft = '2rem';
-        }
-    } catch (e) {
-        console.warn('sidebar integration fallback failed', e && e.message ? e.message : e);
-    }
-});
-</script>
