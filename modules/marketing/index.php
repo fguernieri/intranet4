@@ -26,7 +26,7 @@ try {
     $erro_conexao = $e->getMessage();
 }
 
-require_once 'sidebar.php';
+require_once __DIR__ . '/../../sidebar.php';
 ?>
 
 <div id="marketing-content" class="p-6 ml-4">
