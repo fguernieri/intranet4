@@ -86,3 +86,27 @@ body {
     background-color: #0f172a;
 }
 </style>
+
+<script>
+// Garantir que o conteúdo do módulo esteja dentro do container principal
+// sem modificar o `sidebar.php`. Isto restaura o comportamento responsivo
+// quando a aplicação de produção não coloca automaticamente o conteúdo em `#content`.
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        var myContent = document.getElementById('marketing-content');
+        var mainContent = document.getElementById('content');
+        if (myContent && mainContent && !mainContent.contains(myContent)) {
+            mainContent.appendChild(myContent);
+            // pequenos ajustes visuais para casar com outras páginas
+            mainContent.style.background = '#0f172a';
+            mainContent.style.padding = mainContent.style.padding || '16px';
+        }
+        // fallback: se #content não existir, reduz margem para evitar deslocamento grande
+        if (myContent && !mainContent) {
+            myContent.style.marginLeft = myContent.style.marginLeft || '0px';
+        }
+    } catch (err) {
+        console && console.error && console.error('Erro ao posicionar conteúdo do módulo:', err);
+    }
+});
+</script>
