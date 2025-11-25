@@ -72,15 +72,34 @@ if ($conexao_ok) {
             }
         }
         
-        // Se nenhum período foi selecionado, selecionar automaticamente o mês atual
+        // Se nenhum período foi selecionado, selecionar automaticamente o último mês fechado (mês anterior)
         if (empty($periodo_selecionado) && !empty($periodos_disponiveis)) {
-            // Tentar usar o mês atual (formato YYYY/MM)
-            $mes_atual = date('Y/m');
-            if (isset($periodos_disponiveis[$mes_atual])) {
-                $periodo_selecionado = $mes_atual;
+            // último mês fechado: mês anterior ao mês corrente
+            $last_closed = date('Y/m', strtotime('first day of -1 month'));
+
+            // Se existir, usar diretamente
+            if (isset($periodos_disponiveis[$last_closed])) {
+                $periodo_selecionado = $last_closed;
             } else {
-                // Se o mês atual não estiver disponível, usar o mais recente
-                $periodo_selecionado = array_keys($periodos_disponiveis)[0];
+                // Caso não exista, procurar o período mais recente que não seja futuro (<= last_closed)
+                $periods_keys = array_keys($periodos_disponiveis);
+                $found = null;
+                foreach ($periods_keys as $p) {
+                    // comparar datas convertendo para o primeiro dia do mês
+                    $p_ts = strtotime(str_replace('/', '-', $p) . '-01');
+                    $lc_ts = strtotime(str_replace('/', '-', $last_closed) . '-01');
+                    if ($p_ts <= $lc_ts) {
+                        $found = $p;
+                        break;
+                    }
+                }
+
+                // se encontrou um período passado, usar ele; senão usar o mais recente disponível
+                if ($found) {
+                    $periodo_selecionado = $found;
+                } else {
+                    $periodo_selecionado = $periods_keys[0];
+                }
             }
         }
         
@@ -588,6 +607,8 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 'tr' => 0.0, // tributos
                                 'dv' => 0.0, // despesas de venda
                                 'ii' => 0.0  // investimento interno
+                                , 'amortizacao' => 0.0
+                                , 'retirada_lucro' => 0.0
                             ];
                         }
 
@@ -600,7 +621,7 @@ require_once __DIR__ . '/../../../sidebar.php';
                             ]) ?: [];
 
                             $all_despesas = $supabase->select('fdespesastap', [
-                                'select' => 'data_mes,total_receita_mes,categoria_pai',
+                                'select' => 'data_mes,total_receita_mes,categoria_pai,categoria',
                                 'order' => 'data_mes.desc',
                                 'limit' => 1000
                             ]) ?: [];
@@ -619,6 +640,7 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 $mk = date('Y-m', strtotime($d['data_mes']));
                                 if (!isset($months[$mk])) continue;
                                 $catpai = strtoupper(trim($d['categoria_pai'] ?? ''));
+                                $catsub = strtoupper(trim($d['categoria'] ?? ''));
                                 if ($catpai === 'CUSTO FIXO') {
                                     $months[$mk]['fixed'] += floatval($d['total_receita_mes'] ?? 0);
                                 }
@@ -637,10 +659,50 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 if ($catpai === 'INVESTIMENTO INTERNO') {
                                     $months[$mk]['ii'] += floatval($d['total_receita_mes'] ?? 0);
                                 }
+                                // AMORTIZAÇÃO é categoria pai
+                                if ($catpai === 'AMORTIZAÇÃO' || $catpai === 'AMORTIZACAO') {
+                                    $months[$mk]['amortizacao'] += floatval($d['total_receita_mes'] ?? 0);
+                                }
+                                // RETIRADA DE LUCRO - algumas bases gravam no campo categoria (subcategoria)
+                                if (in_array($catsub, ['RETIRADA DE LUCRO', 'RETIRADA_LUCRO', 'RETIRADA'])) {
+                                    $months[$mk]['retirada_lucro'] += floatval($d['total_receita_mes'] ?? 0);
+                                }
                             }
 
                         } catch (Exception $e) {
                             // Se falhar, deixar arrays vazios — o gráfico exibirá zeros
+                        }
+
+                        // Construir arrays finais ordenados cronologicamente (AMORTIZAÇÃO)
+                        $chart_am_labels = [];
+                        $chart_am_revenue = [];
+                        $chart_am_am = [];
+                        $chart_am_pct = [];
+                        foreach ($months as $m => $vals) {
+                            $chart_am_labels[] = $vals['label'];
+                            $chart_am_revenue[] = round($vals['revenue'], 2);
+                            $chart_am_am[] = round($vals['amortizacao'] ?? 0, 2);
+                            if ($vals['revenue'] > 0) {
+                                $chart_am_pct[] = round((($vals['amortizacao'] ?? 0) / $vals['revenue']) * 100, 2);
+                            } else {
+                                $chart_am_pct[] = null;
+                            }
+                        }
+
+                        // Construir arrays finais ordenados cronologicamente (RETIRADA DE LUCRO)
+                        $chart_rt_labels = [];
+                        $chart_rt_revenue = [];
+                        $chart_rt_rt = [];
+                        $chart_rt_pct = [];
+                        foreach ($months as $m => $vals) {
+                            $chart_rt_labels[] = $vals['label'];
+                            $chart_rt_revenue[] = round($vals['revenue'], 2);
+                            $chart_rt_rt[] = round($vals['retirada_lucro'] ?? 0, 2);
+                            if ($vals['revenue'] > 0) {
+                                $chart_rt_pct[] = round((($vals['retirada_lucro'] ?? 0) / $vals['revenue']) * 100, 2);
+                            } else {
+                                $chart_rt_pct[] = null;
+                            }
                         }
 
                         // Construir arrays finais ordenados cronologicamente (CUSTO FIXO)
@@ -962,6 +1024,78 @@ require_once __DIR__ . '/../../../sidebar.php';
                     if (!empty($numeric_iis)) $abs_max_ii = max($abs_max_ii, max($numeric_iis));
                     if ($abs_max_ii <= 0) $abs_max_ii = 1000;
                     $abs_max_ii = ceil($abs_max_ii * 1.2);
+
+                    // --- Filtrar meses sem dados para AMORTIZAÇÃO ---
+                    $f_am_labels = [];
+                    $f_am_revenue = [];
+                    $f_am_am = [];
+                    $f_am_pct = [];
+                    for ($i = 0; $i < count($chart_am_labels); $i++) {
+                        $rev = $chart_am_revenue[$i] ?? 0;
+                        $amv = $chart_am_am[$i] ?? 0;
+                        if (abs($rev) < 0.0001 && abs($amv) < 0.0001) continue;
+                        $f_am_labels[] = $chart_am_labels[$i];
+                        $f_am_revenue[] = $rev;
+                        $f_am_am[] = $amv;
+                        $f_am_pct[] = $chart_am_pct[$i] ?? null;
+                    }
+
+                    $chart_payload_amortizacao = [
+                        'labels' => $f_am_labels,
+                        'revenue' => $f_am_revenue,
+                        'amortizacao' => $f_am_am,
+                        'pct' => $f_am_pct
+                    ];
+
+                    $pct_max_am = 100;
+                    $numeric_pcts_am = array_filter($f_am_pct, function($v){ return is_numeric($v) && $v !== null; });
+                    if (!empty($numeric_pcts_am)) {
+                        $m = max($numeric_pcts_am);
+                        $pct_max_am = max(100, ceil($m * 1.2));
+                    }
+                    $abs_max_am = 0;
+                    $numeric_revs_am = array_filter($f_am_revenue, function($v){ return is_numeric($v); });
+                    $numeric_ams = array_filter($f_am_am, function($v){ return is_numeric($v); });
+                    if (!empty($numeric_revs_am)) $abs_max_am = max($abs_max_am, max($numeric_revs_am));
+                    if (!empty($numeric_ams)) $abs_max_am = max($abs_max_am, max($numeric_ams));
+                    if ($abs_max_am <= 0) $abs_max_am = 1000;
+                    $abs_max_am = ceil($abs_max_am * 1.2);
+
+                    // --- Filtrar meses sem dados para RETIRADA DE LUCRO ---
+                    $f_rt_labels = [];
+                    $f_rt_revenue = [];
+                    $f_rt_rt = [];
+                    $f_rt_pct = [];
+                    for ($i = 0; $i < count($chart_rt_labels); $i++) {
+                        $rev = $chart_rt_revenue[$i] ?? 0;
+                        $rtv = $chart_rt_rt[$i] ?? 0;
+                        if (abs($rev) < 0.0001 && abs($rtv) < 0.0001) continue;
+                        $f_rt_labels[] = $chart_rt_labels[$i];
+                        $f_rt_revenue[] = $rev;
+                        $f_rt_rt[] = $rtv;
+                        $f_rt_pct[] = $chart_rt_pct[$i] ?? null;
+                    }
+
+                    $chart_payload_retirada = [
+                        'labels' => $f_rt_labels,
+                        'revenue' => $f_rt_revenue,
+                        'retirada' => $f_rt_rt,
+                        'pct' => $f_rt_pct
+                    ];
+
+                    $pct_max_rt = 100;
+                    $numeric_pcts_rt = array_filter($f_rt_pct, function($v){ return is_numeric($v) && $v !== null; });
+                    if (!empty($numeric_pcts_rt)) {
+                        $m = max($numeric_pcts_rt);
+                        $pct_max_rt = max(100, ceil($m * 1.2));
+                    }
+                    $abs_max_rt = 0;
+                    $numeric_revs_rt = array_filter($f_rt_revenue, function($v){ return is_numeric($v); });
+                    $numeric_rts = array_filter($f_rt_rt, function($v){ return is_numeric($v); });
+                    if (!empty($numeric_revs_rt)) $abs_max_rt = max($abs_max_rt, max($numeric_revs_rt));
+                    if (!empty($numeric_rts)) $abs_max_rt = max($abs_max_rt, max($numeric_rts));
+                    if ($abs_max_rt <= 0) $abs_max_rt = 1000;
+                    $abs_max_rt = ceil($abs_max_rt * 1.2);
                     ?>
 
                     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
@@ -986,6 +1120,8 @@ require_once __DIR__ . '/../../../sidebar.php';
                             <div id="chart-despesa-fixa-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:75px;box-sizing:border-box;height:320px;position:relative;overflow:visible;"></div>
                         </div>
                     </div>
+
+                    
                     <!-- segunda linha: CUSTO VARIÁVEL e TRIBUTOS lado a lado (2 por linha) -->
                     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:center;">
                         <div class="kpi-chart-card" style="width:calc(50% - 12px);max-width:640px;margin:12px 0;background:#111827;border-radius:10px;padding:12px;box-sizing:border-box;overflow:hidden;position:relative;">
@@ -1055,7 +1191,9 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 'custo_variavel' => 0,
                                 'tributos' => 0,
                                 'despesas_venda' => 0,
-                                'investimento_interno' => 0
+                                'investimento_interno' => 0,
+                                'amortizacao' => 0,
+                                'retirada_lucro' => 0
                             ];
                         }
                         
@@ -1076,7 +1214,7 @@ require_once __DIR__ . '/../../../sidebar.php';
                             
                             // Buscar despesas
                             $all_despesas = $supabase->select('fdespesastap', [
-                                'select' => 'data_mes,total_receita_mes,categoria_pai',
+                                'select' => 'data_mes,total_receita_mes,categoria_pai,categoria',
                                 'order' => 'data_mes.desc',
                                 'limit' => 1000
                             ]) ?: [];
@@ -1086,6 +1224,7 @@ require_once __DIR__ . '/../../../sidebar.php';
                                 $mk = date('Y-m', strtotime($d['data_mes']));
                                 if (!isset($meses_analise[$mk])) continue;
                                 $catpai = strtoupper(trim($d['categoria_pai'] ?? ''));
+                                $catsub = strtoupper(trim($d['categoria'] ?? ''));
                                 $valor = floatval($d['total_receita_mes'] ?? 0);
                                 
                                 if ($catpai === 'CUSTO FIXO') {
@@ -1100,6 +1239,14 @@ require_once __DIR__ . '/../../../sidebar.php';
                                     $meses_analise[$mk]['despesas_venda'] += $valor;
                                 } elseif ($catpai === 'INVESTIMENTO INTERNO') {
                                     $meses_analise[$mk]['investimento_interno'] += $valor;
+                                }
+                                // AMORTIZAÇÃO
+                                elseif ($catpai === 'AMORTIZAÇÃO' || $catpai === 'AMORTIZACAO') {
+                                    $meses_analise[$mk]['amortizacao'] += $valor;
+                                }
+                                // RETIRADA DE LUCRO gravada na subcategoria
+                                elseif (in_array($catsub, ['RETIRADA DE LUCRO', 'RETIRADA_LUCRO', 'RETIRADA'])) {
+                                    $meses_analise[$mk]['retirada_lucro'] += $valor;
                                 }
                             }
                             
@@ -1822,6 +1969,159 @@ require_once __DIR__ . '/../../../sidebar.php';
                             } catch (e) {
                                 console.log('failed to render investimento interno chart', e && e.message ? e.message : e);
                             }
+
+                            // --- build AMORTIZAÇÃO chart data (cronológico) ---
+                            try {
+                                var dataAm = <?= json_encode($chart_payload_amortizacao, JSON_UNESCAPED_UNICODE) ?>;
+                                dataAm.labels = dataAm.labels || [];
+                                dataAm.revenue = dataAm.revenue || [];
+                                dataAm.amortizacao = dataAm.amortizacao || [];
+                                dataAm.pct = dataAm.pct || [];
+
+                                var optionsAm = {
+                                    chart: { height: 320, width: '100%', type: 'line', toolbar: { show: false }, zoom: { enabled: false }, selection: { enabled: false }, background: '#ffffff' },
+                                    stroke: { width: [3,4,2], curve: 'smooth', dashArray: [0,0,5] },
+                                    series: [
+                                        { name: 'Receita Operacional', type: 'line', data: dataAm.revenue },
+                                        { name: 'Amortização', type: 'line', data: dataAm.amortizacao },
+                                        { name: '% Amortização', type: 'line', data: dataAm.pct }
+                                    ],
+                                    xaxis: { categories: dataAm.labels || [], type: 'category', axisBorder: { show: false }, axisTicks: { show: false } },
+                                    yaxis: [
+                                        { seriesName: 'Receita Operacional', title: { text: 'Valor (R$)' }, min: 0, labels: { formatter: function(val){ return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); } }, opposite: false },
+                                        { seriesName: 'Receita Operacional', show: false, min: 0 },
+                                        { seriesName: '% Amortização', title: { text: '% Amortização' }, min: 0, labels: { formatter: function(val){ return (val === null || typeof val === 'undefined') ? '-' : val + '%'; } }, opposite: true }
+                                    ],
+                                    colors: ['#10b981', '#991b1b', '#000000'],
+                                    markers: { size: [5,4,4], strokeWidth: [2,2,2], hover: { size: [7,6,6] } },
+                                    tooltip: { enabled: true, shared: false, custom: function(opts){ var i = opts.dataPointIndex; if (typeof i === 'undefined' || i === null) i = 0; var categories = (opts.w && opts.w.config && opts.w.config.xaxis && opts.w.config.xaxis.categories) ? opts.w.config.xaxis.categories : (opts.w && opts.w.config && opts.w.config.labels ? opts.w.config.labels : []); var label = categories[i] || ''; var rev = (dataAm.revenue && dataAm.revenue[i] != null) ? Number(dataAm.revenue[i]) : 0; var am = (dataAm.amortizacao && dataAm.amortizacao[i] != null) ? Number(dataAm.amortizacao[i]) : 0; var pct = (dataAm.pct && dataAm.pct[i] != null) ? dataAm.pct[i] : null; var revStr = rev.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); var amStr = am.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); var pctStr = pct === null ? '-' : pct + '%'; return '<div style="padding:8px;font-size:13px;background:#fff;color:#000;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);">'+ '<div style="font-weight:600;margin-bottom:6px;">' + label + '</div>' + '<div>Receita: <strong>' + revStr + '</strong></div>' + '<div>Amortização: <strong>' + amStr + '</strong></div>' + '<div style="margin-top:6px">% sobre receita: <strong>' + pctStr + '</strong></div>' + '</div>'; } },
+                                    legend: { show: true, position: 'bottom', horizontalAlign: 'center', fontSize: '9px', itemMargin: { horizontal: 3, vertical: 0 }, floating: false, offsetY: 0, markers: { width: 8, height: 8 } },
+                                    grid: { show: false }, theme: { mode: 'light' }
+                                };
+
+                                optionsAm.series[0].yAxis = 0; optionsAm.series[0].yaxis = 0; optionsAm.series[0].yAxisIndex = 0;
+                                optionsAm.series[1].yAxis = 1; optionsAm.series[1].yaxis = 1; optionsAm.series[1].yAxisIndex = 1;
+                                optionsAm.series[2].yAxis = 2; optionsAm.series[2].yaxis = 2; optionsAm.series[2].yAxisIndex = 2;
+
+                                // helper para montar charts somente quando o container existir
+                                function mountChart(selector, options, onRendered) {
+                                    function tryMount() {
+                                        var el = document.querySelector(selector);
+                                        if (!el) return false;
+                                        var chart = new ApexCharts(el, options);
+                                        chart.render().then(function(){ try { if (onRendered) onRendered(chart); } catch(e){} });
+                                        return true;
+                                    }
+                                    if (!tryMount()) {
+                                        if (document.readyState === 'loading') {
+                                            document.addEventListener('DOMContentLoaded', tryMount);
+                                        } else {
+                                            setTimeout(tryMount, 50);
+                                        }
+                                        window.addEventListener('load', tryMount);
+                                        setTimeout(tryMount, 500);
+                                    }
+                                }
+
+                                mountChart('#chart-amortizacao', optionsAm, function(chart) {
+                                    try {
+                                        var legend = document.querySelector('#chart-amortizacao .apexcharts-legend');
+                                        if (legend) {
+                                            legend.style.whiteSpace = 'nowrap';
+                                            legend.style.display = 'flex';
+                                            legend.style.justifyContent = 'center';
+                                            legend.style.flexWrap = 'nowrap';
+                                            legend.style.gap = '6px';
+                                            legend.style.fontSize = '9px';
+                                            legend.style.overflowX = 'auto';
+                                            legend.style.maxWidth = '100%';
+                                            legend.style.padding = '6px 4px 0 4px';
+                                        }
+                                        var css = "#chart-amortizacao .apexcharts-legend{white-space:nowrap!important;display:flex!important;flex-direction:row!important;justify-content:center!important;align-items:center!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding:6px 4px!important;max-width:100%!important;width:100%!important;} ";
+                                        css += "#chart-amortizacao .apexcharts-legend .apexcharts-legend-series{white-space:nowrap!important;display:inline-flex!important;align-items:center!important;margin:0 4px!important;flex-shrink:0!important;} ";
+                                        css += "#chart-amortizacao .apexcharts-legend .apexcharts-legend-text{font-size:10px!important;margin-left:3px!important;}";
+                                        css += "#chart-amortizacao .apexcharts-series path{opacity:1!important;}";
+                                        css += "#chart-amortizacao .apexcharts-series .apexcharts-marker{opacity:1!important;}";
+                                        var style = document.createElement('style');
+                                        style.type = 'text/css';
+                                        style.appendChild(document.createTextNode(css));
+                                        document.head.appendChild(style);
+                                    } catch (e) {}
+                                });
+                            } catch (e) {
+                                console.log('failed to render amortizacao chart', e && e.message ? e.message : e);
+                            }
+
+                            // --- build RETIRADA DE LUCRO chart data (cronológico) ---
+                            try {
+                                var dataRt = <?= json_encode($chart_payload_retirada, JSON_UNESCAPED_UNICODE) ?>;
+                                dataRt.labels = dataRt.labels || [];
+                                dataRt.revenue = dataRt.revenue || [];
+                                dataRt.retirada = dataRt.retirada || [];
+                                dataRt.pct = dataRt.pct || [];
+
+                                var optionsRt = JSON.parse(JSON.stringify(optionsAm));
+                                optionsRt.series = [
+                                    { name: 'Receita Operacional', type: 'line', data: dataRt.revenue },
+                                    { name: 'Retirada de Lucro', type: 'line', data: dataRt.retirada },
+                                    { name: '% Retirada', type: 'line', data: dataRt.pct }
+                                ];
+                                optionsRt.yaxis = optionsAm.yaxis;
+                                optionsRt.xaxis = { categories: dataRt.labels || [], type: 'category', axisBorder: { show: false }, axisTicks: { show: false } };
+
+                                // garantir tooltip custom que usa dataRt (não herdar referência a dataAm)
+                                optionsRt.tooltip = {
+                                    enabled: true,
+                                    shared: false,
+                                    custom: function(opts) {
+                                        var i = opts.dataPointIndex;
+                                        if (typeof i === 'undefined' || i === null) i = 0;
+                                        var w = opts.w || {};
+                                        var categories = (w.config && w.config.xaxis && w.config.xaxis.categories) ? w.config.xaxis.categories : (w.config && w.config.labels ? w.config.labels : []);
+                                        var label = categories[i] || '';
+                                        var rev = (dataRt.revenue && dataRt.revenue[i] != null) ? Number(dataRt.revenue[i]) : 0;
+                                        var rt = (dataRt.retirada && dataRt.retirada[i] != null) ? Number(dataRt.retirada[i]) : 0;
+                                        var pct = (dataRt.pct && dataRt.pct[i] != null) ? dataRt.pct[i] : null;
+                                        var revStr = rev.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+                                        var rtStr = rt.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+                                        var pctStr = pct === null ? '-' : pct + '%';
+                                        return '<div style="padding:8px;font-size:13px;background:#fff;color:#000;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.12);">'
+                                            + '<div style="font-weight:600;margin-bottom:6px;">' + label + '</div>'
+                                            + '<div>Receita: <strong>' + revStr + '</strong></div>'
+                                            + '<div>Retirada de Lucro: <strong>' + rtStr + '</strong></div>'
+                                            + '<div style="margin-top:6px">% sobre receita: <strong>' + pctStr + '</strong></div>'
+                                            + '</div>';
+                                    }
+                                };
+
+                                mountChart('#chart-retirada-lucro', optionsRt, function(chart) {
+                                    try {
+                                        var legend = document.querySelector('#chart-retirada-lucro .apexcharts-legend');
+                                        if (legend) {
+                                            legend.style.whiteSpace = 'nowrap';
+                                            legend.style.display = 'flex';
+                                            legend.style.justifyContent = 'center';
+                                            legend.style.flexWrap = 'nowrap';
+                                            legend.style.gap = '6px';
+                                            legend.style.fontSize = '9px';
+                                            legend.style.overflowX = 'auto';
+                                            legend.style.maxWidth = '100%';
+                                            legend.style.padding = '6px 4px 0 4px';
+                                        }
+                                        var css = "#chart-retirada-lucro .apexcharts-legend{white-space:nowrap!important;display:flex!important;flex-direction:row!important;justify-content:center!important;align-items:center!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding:6px 4px!important;max-width:100%!important;width:100%!important;} ";
+                                        css += "#chart-retirada-lucro .apexcharts-legend .apexcharts-legend-series{white-space:nowrap!important;display:inline-flex!important;align-items:center!important;margin:0 4px!important;flex-shrink:0!important;} ";
+                                        css += "#chart-retirada-lucro .apexcharts-legend .apexcharts-legend-text{font-size:10px!important;margin-left:3px!important;}";
+                                        css += "#chart-retirada-lucro .apexcharts-series path{opacity:1!important;}";
+                                        css += "#chart-retirada-lucro .apexcharts-series .apexcharts-marker{opacity:1!important;}";
+                                        var style = document.createElement('style');
+                                        style.type = 'text/css';
+                                        style.appendChild(document.createTextNode(css));
+                                        document.head.appendChild(style);
+                                    } catch (e) {}
+                                });
+                            } catch (e) {
+                                console.log('failed to render retirada chart', e && e.message ? e.message : e);
+                            }
                             // --- build second chart data for DESPESA FIXA ---
                             try {
                                 var data2 = <?= json_encode($chart_payload_df, JSON_UNESCAPED_UNICODE) ?>;
@@ -1995,6 +2295,27 @@ require_once __DIR__ . '/../../../sidebar.php';
 </div>
 
 <!-- Incluir Modal de Detalhamento -->
+                    <!-- quarta linha: AMORTIZAÇÃO e RETIRADA DE LUCRO lado a lado (inserido no final) -->
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:center;">
+                        <div class="kpi-chart-card" style="width:calc(50% - 8px);max-width:640px;margin:8px 0;background:#111827;border-radius:10px;padding:10px;box-sizing:border-box;overflow:hidden;position:relative;">
+                            <h3 style="color:#fbbf24;font-size:15px;font-weight:600;margin:0 0 8px 0;padding:0 6px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <span>AMORTIZAÇÃO</span>
+                                <button onclick="openDetailWithPeriod('AMORTIZAÇÃO')" class="detail-btn">🔍 Detalhar</button>
+                            </h3>
+                            <div id="chart-amortizacao" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:60px;box-sizing:border-box;height:260px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:13px;font-weight:600;margin:12px 0 8px 0;padding:0 6px;text-align:center;">COMPARATIVO - AMORTIZAÇÃO</h3>
+                            <div id="chart-amortizacao-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:60px;box-sizing:border-box;height:260px;position:relative;overflow:visible;"></div>
+                        </div>
+                        <div class="kpi-chart-card" style="width:calc(50% - 8px);max-width:640px;margin:8px 0;background:#111827;border-radius:10px;padding:10px;box-sizing:border-box;overflow:hidden;position:relative;">
+                            <h3 style="color:#fbbf24;font-size:15px;font-weight:600;margin:0 0 8px 0;padding:0 6px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <span>RETIRADA DE LUCRO</span>
+                                <button onclick="openDetailWithPeriod('RETIRADA DE LUCRO')" class="detail-btn">🔍 Detalhar</button>
+                            </h3>
+                            <div id="chart-retirada-lucro" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:60px;box-sizing:border-box;height:260px;position:relative;overflow:visible;"></div>
+                            <h3 style="color:#fbbf24;font-size:13px;font-weight:600;margin:12px 0 8px 0;padding:0 6px;text-align:center;">COMPARATIVO - RETIRADA DE LUCRO</h3>
+                            <div id="chart-retirada-lucro-comparativo" class="kpi-chart-inner" style="width:100%;background:#ffffff;border-radius:6px;padding:6px;padding-right:60px;box-sizing:border-box;height:260px;position:relative;overflow:visible;"></div>
+                        </div>
+                    </div>
 <?php require_once __DIR__ . '/components/category_detail_modal.php'; ?>
 
 <!-- CSS do Modal -->
@@ -2013,6 +2334,8 @@ const customCSS = `
     #chart-despesas-venda-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
     #chart-investimento-interno-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
     #chart-custo-fixo-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-amortizacao-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
+    #chart-retirada-lucro-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"],
     #chart-impacto-caixa-comparativo .apexcharts-bar-series .apexcharts-series path[j="4"] {
         fill: #059669 !important;
     }
@@ -2063,6 +2386,8 @@ async function loadDREAnalysis(periodo) {
         renderTributosComparativo(data.linhas);
         renderDespesaVendaComparativo(data.linhas);
         renderInvestimentoInternoComparativo(data.linhas);
+        renderAmortizacaoComparativo(data.linhas);
+        renderRetiradaLucroComparativo(data.linhas);
         
     } catch (error) {
         console.error('Erro ao carregar DRE:', error);
@@ -2198,7 +2523,22 @@ function renderFaturamentoComparativo(linhas) {
     // Renderizar gráfico
     chartContainer.innerHTML = '';
     const chart = new ApexCharts(chartContainer, options);
-    chart.render();
+    chart.render().then(function(){
+        try {
+            setTimeout(function(){
+                try {
+                    var bars = chartContainer.querySelectorAll('.apexcharts-bar-series .apexcharts-series path, .apexcharts-bar-series .apexcharts-series rect');
+                    var target = null;
+                    if (bars && bars.length > 4) target = bars[4];
+                    if (!target) target = chartContainer.querySelector('.apexcharts-bar-series .apexcharts-series path[j="4"]');
+                    if (target) {
+                        try { target.setAttribute('fill', '#059669'); } catch(e){}
+                        try { target.style.fill = '#059669'; } catch(e){}
+                    }
+                } catch(e){}
+            }, 60);
+        } catch(e){}
+    });
 }
 
 function renderLucroLiquidoComparativo(linhas) {
@@ -2288,7 +2628,22 @@ function renderLucroLiquidoComparativo(linhas) {
     
     chartContainer.innerHTML = '';
     const chart = new ApexCharts(chartContainer, options);
-    chart.render();
+    chart.render().then(function(){
+        try {
+            setTimeout(function(){
+                try {
+                    var bars = chartContainer.querySelectorAll('.apexcharts-bar-series .apexcharts-series path, .apexcharts-bar-series .apexcharts-series rect');
+                    var target = null;
+                    if (bars && bars.length > 4) target = bars[4];
+                    if (!target) target = chartContainer.querySelector('.apexcharts-bar-series .apexcharts-series path[j="4"]');
+                    if (target) {
+                        try { target.setAttribute('fill', '#059669'); } catch(e){}
+                        try { target.style.fill = '#059669'; } catch(e){}
+                    }
+                } catch(e){}
+            }, 60);
+        } catch(e){}
+    });
 }
 
 function renderImpactoCaixaComparativo(linhas) {
@@ -2503,6 +2858,11 @@ function renderDespesaFixaComparativo(linhas) {
         stroke: {
             width: [0, 3],
             curve: 'smooth'
+        },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
         },
         colors: ['#d1d5db', '#000000'],
         legend: {
@@ -2931,6 +3291,11 @@ function renderDespesaVendaComparativo(linhas) {
             width: [0, 3],
             curve: 'smooth'
         },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
         colors: ['#d1d5db', '#000000'],
         legend: {
             position: 'bottom',
@@ -3070,6 +3435,11 @@ function renderInvestimentoInternoComparativo(linhas) {
             width: [0, 3],
             curve: 'smooth'
         },
+        markers: {
+            size: [0, 4],
+            strokeWidth: 2,
+            hover: { size: [0, 6] }
+        },
         colors: ['#d1d5db', '#000000'],
         legend: {
             position: 'bottom',
@@ -3141,6 +3511,78 @@ function renderInvestimentoInternoComparativo(linhas) {
         }
     };
     
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderAmortizacaoComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-amortizacao-comparativo');
+    if (!chartContainer) return;
+
+    const amortizacao = linhas['amortizacao'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!amortizacao || !receitaOperacional) return;
+
+    const atual = amortizacao.valor_atual || 0;
+    const media3m = amortizacao.media_3m || 0;
+    const media6m = amortizacao.media_6m || 0;
+    const media12m = amortizacao.media_12_meses || 0;
+    const ly = amortizacao.ly || 0;
+
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+
+    const options = {
+        chart: { type: 'bar', height: 400, toolbar: { show: false }, background: '#ffffff' },
+        plotOptions: { bar: { horizontal: false, columnWidth: '60%', endingShape: 'rounded', dataLabels: { position: 'top' } } },
+        dataLabels: { enabled: true, enabledOnSeries: [0], formatter: function(val){ return 'R$ ' + (val / 1000).toFixed(0) + 'k'; }, offsetY: -25, style: { fontSize: '12px', fontWeight: 'bold', colors: ['#374151'] } },
+        series: [{ name: 'Valor', type: 'bar', data: [ly, media12m, media6m, media3m, atual] }, { name: '% s/ Faturamento', type: 'line', data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual] }],
+        stroke: { width: [0,3], curve: 'smooth' }, markers: { size: [0,4], strokeWidth: 2, hover: { size: [0,6] } }, colors: ['#d1d5db', '#000000'], legend: { position: 'bottom', horizontalAlign: 'center', offsetY: 0 },
+        xaxis: { categories: ['LY','MÉDIA 12M','MÉDIA 6M','MÉDIA 3M','ATUAL'], labels: { style: { colors: '#374151', fontSize: '10px', fontWeight: 600 } } },
+        yaxis: [{ title: { text: 'Valor (R$)', style: { color: '#374151', fontSize: '11px' } }, labels: { formatter: function(val){ return 'R$ ' + (val / 1000).toFixed(0) + 'k'; }, style: { colors: '#374151', fontSize: '11px' } } }, { opposite: true, min: 0, title: { text: '% s/ Faturamento', style: { color: '#000000', fontSize: '11px' } }, labels: { formatter: function(val){ return val.toFixed(1) + '%'; }, style: { colors: ['#000000'], fontSize: '11px' } } }],
+        tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: function(val, { seriesIndex }) { if (seriesIndex === 0) { return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); } else { return val.toFixed(2) + '%'; } } } }, grid: { borderColor: '#e5e7eb', strokeDashArray: 3 }
+    };
+
+    chartContainer.innerHTML = '';
+    const chart = new ApexCharts(chartContainer, options);
+    chart.render();
+}
+
+function renderRetiradaLucroComparativo(linhas) {
+    const chartContainer = document.getElementById('chart-retirada-lucro-comparativo');
+    if (!chartContainer) return;
+
+    const retirada = linhas['retirada_lucro'];
+    const receitaOperacional = linhas['receita_operacional'];
+    if (!retirada || !receitaOperacional) return;
+
+    const atual = retirada.valor_atual || 0;
+    const media3m = retirada.media_3m || 0;
+    const media6m = retirada.media_6m || 0;
+    const media12m = retirada.media_12_meses || 0;
+    const ly = retirada.ly || 0;
+
+    const percLy = receitaOperacional.ly ? (ly / receitaOperacional.ly * 100) : 0;
+    const percMedia12m = receitaOperacional.media_12_meses ? (media12m / receitaOperacional.media_12_meses * 100) : 0;
+    const percMedia6m = receitaOperacional.media_6m ? (media6m / receitaOperacional.media_6m * 100) : 0;
+    const percMedia3m = receitaOperacional.media_3m ? (media3m / receitaOperacional.media_3m * 100) : 0;
+    const percAtual = receitaOperacional.valor_atual ? (atual / receitaOperacional.valor_atual * 100) : 0;
+
+    const options = {
+        chart: { type: 'bar', height: 400, toolbar: { show: false }, background: '#ffffff' },
+        plotOptions: { bar: { horizontal: false, columnWidth: '60%', endingShape: 'rounded', dataLabels: { position: 'top' } } },
+        dataLabels: { enabled: true, enabledOnSeries: [0], formatter: function(val){ return 'R$ ' + (val / 1000).toFixed(0) + 'k'; }, offsetY: -25, style: { fontSize: '12px', fontWeight: 'bold', colors: ['#374151'] } },
+        series: [{ name: 'Valor', type: 'bar', data: [ly, media12m, media6m, media3m, atual] }, { name: '% s/ Faturamento', type: 'line', data: [percLy, percMedia12m, percMedia6m, percMedia3m, percAtual] }],
+        stroke: { width: [0,3], curve: 'smooth' }, markers: { size: [0,4], strokeWidth: 2, hover: { size: [0,6] } }, colors: ['#d1d5db', '#000000'], legend: { position: 'bottom', horizontalAlign: 'center', offsetY: 0 },
+        xaxis: { categories: ['LY','MÉDIA 12M','MÉDIA 6M','MÉDIA 3M','ATUAL'], labels: { style: { colors: '#374151', fontSize: '10px', fontWeight: 600 } } },
+        yaxis: [{ title: { text: 'Valor (R$)', style: { color: '#374151', fontSize: '11px' } }, labels: { formatter: function(val){ return 'R$ ' + (val / 1000).toFixed(0) + 'k'; }, style: { colors: '#374151', fontSize: '11px' } } }, { opposite: true, min: 0, title: { text: '% s/ Faturamento', style: { color: '#000000', fontSize: '11px' } }, labels: { formatter: function(val){ return val.toFixed(1) + '%'; }, style: { colors: ['#000000'], fontSize: '11px' } } }],
+        tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: function(val, { seriesIndex }) { if (seriesIndex === 0) { return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); } else { return val.toFixed(2) + '%'; } } } }, grid: { borderColor: '#e5e7eb', strokeDashArray: 3 }
+    };
+
     chartContainer.innerHTML = '';
     const chart = new ApexCharts(chartContainer, options);
     chart.render();
@@ -3300,6 +3742,13 @@ function renderDRETable(linhas) {
         const icon = val > 0 ? '🔺' : (val < 0 ? '🔻' : '➡️');
         return `${sign}${val.toFixed(1)}% ${icon}`;
     };
+    const formatSimplePercent = (val) => {
+        if (val === null || typeof val === 'undefined' || !isFinite(val)) return '-';
+        return `${val.toFixed(1)}%`;
+    };
+
+    // Valor atual da receita operacional (para cálculo dos percentuais)
+    const receitaOperacionalValor = (linhas && linhas['receita_operacional'] && Number(linhas['receita_operacional'].valor_atual)) ? Number(linhas['receita_operacional'].valor_atual) : 0;
     
     const getRowClass = (tipo) => {
         switch(tipo) {
@@ -3356,6 +3805,7 @@ function renderDRETable(linhas) {
                         <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">Média 3M</th>
                         <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">Mês Ant.</th>
                         <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">Valor Atual</th>
+                        <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">% s/ Receita Op.</th>
                         <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">vs M3</th>
                         <th class="text-right py-3 px-3 text-gray-300 font-semibold" style="white-space:nowrap;">Var. M</th>
                     </tr>
@@ -3402,6 +3852,7 @@ function renderDRETable(linhas) {
                     <td class="text-right py-2 px-3">${formatCurrency(linha.media_3m)}</td>
                     <td class="text-right py-2 px-3">${formatCurrency(linha.valor_anterior)}</td>
                     <td class="text-right py-2 px-3 font-bold">${formatCurrency(linha.valor_atual)}</td>
+                    <td class="text-right py-2 px-3 font-semibold">${formatSimplePercent(receitaOperacionalValor ? (Number(linha.valor_atual) / receitaOperacionalValor) * 100 : 0)}</td>
                     <td class="text-right py-2 px-3 ${varClassVsM3}">${formatPercent(linha.vs_media_3m)}</td>
                     <td class="text-right py-2 px-3 ${varClassMes}">${formatPercent(linha.variacao_mes)}</td>
                 </tr>
@@ -3426,12 +3877,13 @@ function renderDRETable(linhas) {
                 html += `
                     <tr class="text-gray-400 text-xs bg-gray-800/30" style="border-bottom: 1px solid #374151;">
                         <td class="py-2 px-4 pl-10">${displayName}</td>
-                        <td class="text-right py-2 px-3">${formatCurrency(sub.media_6m)}</td>
-                        <td class="text-right py-2 px-3">${formatCurrency(sub.media_3m)}</td>
-                        <td class="text-right py-2 px-3">${formatCurrency(sub.valor_anterior)}</td>
-                        <td class="text-right py-2 px-3">${formatCurrency(sub.valor_atual)}</td>
-                        <td class="text-right py-2 px-3 ${subVarClassVsM3}">${formatPercent(sub.vs_media_3m)}</td>
-                        <td class="text-right py-2 px-3 ${subVarClassMes}">${formatPercent(sub.variacao_mes)}</td>
+                            <td class="text-right py-2 px-3">${formatCurrency(sub.media_6m)}</td>
+                            <td class="text-right py-2 px-3">${formatCurrency(sub.media_3m)}</td>
+                            <td class="text-right py-2 px-3">${formatCurrency(sub.valor_anterior)}</td>
+                            <td class="text-right py-2 px-3">${formatCurrency(sub.valor_atual)}</td>
+                            <td class="text-right py-2 px-3">${formatSimplePercent(receitaOperacionalValor ? (Number(sub.valor_atual) / receitaOperacionalValor) * 100 : 0)}</td>
+                            <td class="text-right py-2 px-3 ${subVarClassVsM3}">${formatPercent(sub.vs_media_3m)}</td>
+                            <td class="text-right py-2 px-3 ${subVarClassMes}">${formatPercent(sub.variacao_mes)}</td>
                     </tr>
                 `;
             });
@@ -3470,6 +3922,16 @@ window.filterDRETable = (searchValue) => {
         renderDRETable(dreLastData);
     }
 };
+
+// Após load completo, forçar um resize para o layout do ApexCharts (corrige gaps/containers vazios)
+window.addEventListener('load', function() {
+    try {
+        setTimeout(function(){
+            // disparar evento de resize para que charts reajam
+            window.dispatchEvent(new Event('resize'));
+        }, 300);
+    } catch (e) {
+        console.warn('failed to trigger resize for charts', e && e.message ? e.message : e);
+    }
+});
 </script>
-
-
