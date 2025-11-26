@@ -1371,7 +1371,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                     <?php if (!empty($tributos)): ?>
                     <tbody>
                         <?php 
-                        $meta_tributos = obterMeta('TRIBUTOS');
+                        // Prefer percentual-based metas (percentual sobre a receita realizada). Fallback para meta absoluta.
+                        $percent_meta_tributos = obterPercentualMeta('TRIBUTOS');
+                        if ($percent_meta_tributos > 0) {
+                            $meta_tributos = ($percent_meta_tributos / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_tributos = obterMeta('TRIBUTOS');
+                        }
                         $percentual_tributos = calcularPercentualMeta($total_tributos, $meta_tributos);
                         $cor_tributos = obterCorBarra($percentual_tributos, true); // é despesa
                         ?>
@@ -1402,7 +1408,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'TRIBUTOS');
+                        // Subcategorias: suportar percentual salvo na tabela (percentual sobre receita realizada)
+                        $percent_meta_ind = obterPercentualMeta($categoria_individual, 'TRIBUTOS');
+                        if ($percent_meta_ind > 0) {
+                            $meta_individual = ($percent_meta_ind / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_individual = obterMeta($categoria_individual, 'TRIBUTOS');
+                        }
                         $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
                         $cor_individual = obterCorBarra($percentual_individual, true); // é despesa
                         ?>
@@ -1565,7 +1577,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                     <?php if (!empty($custo_variavel)): ?>
                     <tbody>
                         <?php 
-                        $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
+                        // Prefer percentual-based metas (percentual sobre a receita realizada). Fallback para meta absoluta.
+                        $percent_meta_custo_var = obterPercentualMeta('CUSTO VARIÁVEL');
+                        if ($percent_meta_custo_var > 0) {
+                            $meta_custo_variavel = ($percent_meta_custo_var / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
+                        }
                         $percentual_custo_variavel = calcularPercentualMeta($total_custo_variavel, $meta_custo_variavel);
                         $cor_custo_variavel = obterCorBarra($percentual_custo_variavel, true); // é despesa
                         ?>
@@ -1596,7 +1614,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        // Subcategorias: suportar percentual salvo na tabela (percentual sobre receita realizada)
+                        $percent_meta_ind = obterPercentualMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        if ($percent_meta_ind > 0) {
+                            $meta_individual = ($percent_meta_ind / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_individual = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        }
                         $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
                         $cor_individual = obterCorBarra($percentual_individual, true); // é despesa
                         ?>
@@ -2036,7 +2060,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                     <?php if (!empty($despesa_venda)): ?>
                     <tbody>
                         <?php 
-                        $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
+                        // Prefer percentual-based metas (percentual sobre a receita realizada). Fallback para meta absoluta.
+                        $percent_meta_desp_venda = obterPercentualMeta('DESPESAS DE VENDA');
+                        if ($percent_meta_desp_venda > 0) {
+                            $meta_despesa_venda = ($percent_meta_desp_venda / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
+                        }
                         $percentual_despesa_venda = calcularPercentualMeta($total_despesa_venda, $meta_despesa_venda);
                         $cor_despesa_venda = obterCorBarra($percentual_despesa_venda, true); // é despesa
                         ?>
@@ -2067,7 +2097,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        // Subcategorias: suportar percentual salvo na tabela (percentual sobre receita realizada)
+                        $percent_meta_ind = obterPercentualMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        if ($percent_meta_ind > 0) {
+                            $meta_individual = ($percent_meta_ind / 100.0) * $total_geral_operacional;
+                        } else {
+                            $meta_individual = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        }
                         $percentual_individual = calcularPercentualMeta($valor_individual, $meta_individual);
                         $cor_individual = obterCorBarra($percentual_individual, true); // é despesa
                         ?>
