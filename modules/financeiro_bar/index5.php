@@ -512,7 +512,8 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                     Selecionar Bar ▾
                 </button>
                 <div id="pageMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                    <a href="index2.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
+                    <a href="index2.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar Da Fabrica</a>
+                    <a href="index3.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
                 </div>
             </div>
             <script>
@@ -1095,6 +1096,28 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                 usort($investimento_externo, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
+                // Deduplicate investimento_externo by normalized category name to avoid duplicate rows
+                if (!empty($investimento_externo)) {
+                    $tmp_map = [];
+                    foreach ($investimento_externo as $it) {
+                        $cat_raw = $it['categoria'] ?? '';
+                        $cat_key = strtoupper(trim($cat_raw));
+                        if ($cat_key === '') $cat_key = 'SEM CATEGORIA';
+                        if (!isset($tmp_map[$cat_key])) {
+                            // keep a copy of the first occurrence, but ensure numeric total is aggregated
+                            $tmp_map[$cat_key] = $it;
+                            $tmp_map[$cat_key]['total_receita_mes'] = floatval($it['total_receita_mes'] ?? 0);
+                        } else {
+                            // aggregate totals when duplicate category appears
+                            $tmp_map[$cat_key]['total_receita_mes'] += floatval($it['total_receita_mes'] ?? 0);
+                        }
+                    }
+                    // Rebuild investimento_externo preserving order by aggregated value
+                    $investimento_externo = array_values($tmp_map);
+                    usort($investimento_externo, function($a, $b) {
+                        return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
+                    });
+                }
                 usort($saidas_nao_operacionais, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
