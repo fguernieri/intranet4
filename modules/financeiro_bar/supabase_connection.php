@@ -21,7 +21,8 @@ class SupabaseConnection {
             'Content-Type: application/json',
             'apikey: ' . $api_key,
             'Authorization: Bearer ' . $api_key,
-            'Prefer: return=representation'
+            'Prefer: return=representation',
+            'Range: 0-999999'
         ];
     }
     
@@ -155,17 +156,23 @@ class SupabaseConnection {
         $error = curl_error($curl);
         
         curl_close($curl);
-        
+
+        // Log detalhado para diagnóstico de problemas com Supabase
+        $debugFile = __DIR__ . '/supabase_debug.log';
+        $now = date('Y-m-d H:i:s');
+        $logEntry = "[{$now}] METHOD={$method} URL={$url} HTTP_CODE={$http_code} CURL_ERROR='{$error}' RESPONSE='" . str_replace("\n", "\\n", substr($response ?? '', 0, 2000)) . "'\n";
+        @file_put_contents($debugFile, $logEntry, FILE_APPEND | LOCK_EX);
+
         if ($error) {
             error_log("Erro cURL Supabase: " . $error);
             return false;
         }
-        
+
         if ($http_code >= 400) {
             error_log("Erro HTTP Supabase: " . $http_code . " - " . $response);
             return false;
         }
-        
+
         return json_decode($response, true);
     }
     
