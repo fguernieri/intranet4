@@ -464,6 +464,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 </button>
                 <div id="pageMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
                     <a href="index2.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar Da Fabrica</a>
+                    <a href="index5.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Fábrica</a>
                 </div>
             </div>
             <script>
