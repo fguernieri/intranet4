@@ -182,7 +182,7 @@ function getEstoqueMinimo($cerveja, $medias_vendas_pcp) {
     $cerveja_upper = strtoupper($cerveja);
     
     if (isset($medias_vendas_pcp[$cerveja_upper]) && $medias_vendas_pcp[$cerveja_upper] > 0) {
-        return $medias_vendas_pcp[$cerveja_upper] * 15;
+        return $medias_vendas_pcp[$cerveja_upper] * 21;
     }
     
     return 1000;
@@ -583,4 +583,5 @@ try {
 </body>
 
 </html>
+
 
