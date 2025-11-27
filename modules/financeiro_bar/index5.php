@@ -258,12 +258,10 @@ function buildVistosIndex($pageSize = 10000) {
         }
 
         foreach ($rows as $v) {
-            $ne = isset($v['nr_empresa']) ? strval(intval($v['nr_empresa'])) : '';
-            $nf = isset($v['nr_filial']) ? strval(intval($v['nr_filial'])) : '';
-            $nl = isset($v['nr_lanc']) ? strval(intval($v['nr_lanc'])) : '';
-            $ns = isset($v['seq_lanc']) ? strval(intval($v['seq_lanc'])) : '';
-            if ($ne === '' || $nf === '' || $nl === '' || $ns === '') continue;
-            $k = $ne . '|' . $nf . '|' . $nl . '|' . $ns;
+            // Use explicit primary key `id` only (fábrica now stores relation by id).
+            if (!isset($v['id']) || !is_numeric($v['id']) || intval($v['id']) <= 0) continue;
+            $k = strval(intval($v['id']));
+
             $val = $v['visto'] ?? false;
             if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
             $index[$k] = ($val === true) ? true : false;
@@ -323,11 +321,8 @@ if (!empty($_GET['debug_vistos_matches']) && $_GET['debug_vistos_matches'] === '
     $total = 0;
     if ($detalhes && is_array($detalhes)) {
         foreach ($detalhes as $d) {
-            $k_e = isset($d['nr_empresa']) ? strval(intval($d['nr_empresa'])) : '';
-            $k_f = isset($d['nr_filial']) ? strval(intval($d['nr_filial'])) : '';
-            $k_l = isset($d['nr_lanc']) ? strval(intval($d['nr_lanc'])) : '';
-            $k_s = isset($d['seq_lanc']) ? strval(intval($d['seq_lanc'])) : '';
-            $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+            // Resolve vkey using id (preferred) or legacy keys via helper (kept for robustness)
+            $vkey = getVkeyFromDetalhe($d);
             $exists = ($vkey !== null && array_key_exists($vkey, $vistos_index));
             if ($exists) $found++;
             $total++;
@@ -375,10 +370,9 @@ if (!empty($_GET['debug_vistos_mismatch']) && $_GET['debug_vistos_mismatch'] ===
     }
 
     // Endpoint rápido: checar uma vkey específica no índice e na tabela
-    if (!empty($_GET['debug_check_key'])) {
+        if (!empty($_GET['debug_check_key'])) {
         $vkey_raw = $_GET['debug_check_key'];
         $vkey = trim($vkey_raw);
-        $parts = explode('|', $vkey);
         $resp = [ 'success' => true, 'vkey' => $vkey, 'in_index' => false, 'index_value' => null, 'db_rows' => [] ];
         try {
             $idx = buildVistosIndex();
@@ -388,19 +382,33 @@ if (!empty($_GET['debug_vistos_mismatch']) && $_GET['debug_vistos_mismatch'] ===
             $resp['index_error'] = $e->getMessage();
         }
 
-        if (count($parts) === 4) {
-            list($ne, $nf, $nl, $ns) = $parts;
-            try {
-                $filt = [
-                    'nr_empresa' => 'eq.' . intval($ne),
-                    'nr_filial' => 'eq.' . intval($nf),
-                    'nr_lanc' => 'eq.' . intval($nl),
-                    'seq_lanc' => 'eq.' . intval($ns),
-                ];
-                $db_rows = $supabase->select('fcontaspargwab_vistos', [ 'select' => '*', 'filters' => $filt, 'limit' => 10 ]);
-                $resp['db_rows'] = $db_rows ?: [];
-            } catch (Exception $e) {
-                $resp['db_error'] = $e->getMessage();
+        // If the provided key is composite (contains '|') try the legacy lookup
+        if (strpos($vkey, '|') !== false) {
+            $parts = explode('|', $vkey);
+            if (count($parts) === 4) {
+                list($ne, $nf, $nl, $ns) = $parts;
+                try {
+                    $filt = [
+                        'nr_empresa' => 'eq.' . intval($ne),
+                        'nr_filial' => 'eq.' . intval($nf),
+                        'nr_lanc' => 'eq.' . intval($nl),
+                        'seq_lanc' => 'eq.' . intval($ns),
+                    ];
+                    $db_rows = $supabase->select('fcontaspargwab_vistos', [ 'select' => '*', 'filters' => $filt, 'limit' => 10 ]);
+                    $resp['db_rows'] = $db_rows ?: [];
+                } catch (Exception $e) {
+                    $resp['db_error'] = $e->getMessage();
+                }
+            }
+        } else {
+            // Treat as numeric id key and query by id
+            if (is_numeric($vkey)) {
+                try {
+                    $db_rows = $supabase->select('fcontaspagarfabrica_vistos', [ 'select' => '*', 'filters' => [ 'id' => 'eq.' . intval($vkey) ], 'limit' => 10 ]);
+                    $resp['db_rows'] = $db_rows ?: [];
+                } catch (Exception $e) {
+                    $resp['db_error'] = $e->getMessage();
+                }
             }
         }
 
@@ -415,28 +423,24 @@ if (!empty($_GET['debug_vistos_mismatch']) && $_GET['debug_vistos_mismatch'] ===
     if ($detalhes && is_array($detalhes)) {
         foreach ($detalhes as $d) {
             $total++;
-            $k_e = isset($d['nr_empresa']) ? strval(intval($d['nr_empresa'])) : '';
-            $k_f = isset($d['nr_filial']) ? strval(intval($d['nr_filial'])) : '';
-            $k_l = isset($d['nr_lanc']) ? strval(intval($d['nr_lanc'])) : '';
-            $k_s = isset($d['seq_lanc']) ? strval(intval($d['seq_lanc'])) : '';
-            $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+            // Prefer id-based vkey
+            $vkey = getVkeyFromDetalhe($d);
 
             $exists_in_index = ($vkey !== null && array_key_exists($vkey, $temp_vistos_index));
             if ($exists_in_index) $found++;
 
             $db_rows = [];
-            // se não existe no índice, buscar no banco por valores brutos (sem normalização)
+            // If not present and we have a numeric id vkey, try a direct id lookup in the vistos table
             if (!$exists_in_index && $vkey !== null) {
-                try {
-                    $filt = [
-                        'nr_empresa' => 'eq.' . $k_e,
-                        'nr_filial' => 'eq.' . $k_f,
-                        'nr_lanc' => 'eq.' . $k_l,
-                        'seq_lanc' => 'eq.' . $k_s,
-                    ];
-                    $db_rows = $supabase->select('fcontaspagarwab_vistos', [ 'select' => '*', 'filters' => $filt, 'limit' => 10 ]);
-                } catch (Exception $e) {
-                    $db_rows = [ 'error' => $e->getMessage() ];
+                if (is_numeric($vkey)) {
+                    try {
+                        $db_rows = $supabase->select('fcontaspagarfabrica_vistos', [ 'select' => '*', 'filters' => [ 'id' => 'eq.' . intval($vkey) ], 'limit' => 10 ]);
+                    } catch (Exception $e) {
+                        $db_rows = [ 'error' => $e->getMessage() ];
+                    }
+                } else {
+                    // No numeric id; legacy composite lookups are not available in fábrica tables
+                    $db_rows = [];
                 }
             }
 
@@ -780,6 +784,11 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
 
                 // Função utilitária: retornar vkey canônica a partir de um detalhe (usa extractNumericKeys)
                 function getVkeyFromDetalhe($detalhe) {
+                    // Prefer explicit primary key `id` if available (newer schema)
+                    if (isset($detalhe['id']) && is_numeric($detalhe['id']) && intval($detalhe['id']) > 0) {
+                        return strval(intval($detalhe['id']));
+                    }
+
                     $keys = extractNumericKeys($detalhe);
                     $k_e = strval($keys['ne']);
                     $k_f = strval($keys['nf']);
@@ -1464,17 +1473,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                     <?php
-                                                    // Priorizar a coluna 'visto' vinda da view (se existir). Caso contrário, usar fallback pelo índice em memória
+                                                    // Priorizar a coluna 'visto' vinda da view (se existir). Caso contrário, usar o índice por `id`.
                                                     if (isset($detalhe['visto'])) {
                                                         $val = $detalhe['visto'];
                                                         if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
                                                         $visto_val = ($val === true) ? true : false;
                                                     } else {
-                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $vkey = getVkeyFromDetalhe($detalhe);
                                                         $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                     }
                                                 ?>
@@ -1510,17 +1515,13 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    // Pre-compute keys and only render the clickable checkbox when all required keys exist
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    // Render checkbox when detalhe contains `id` (new schema). Use marcarComoLidoById.
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1674,11 +1675,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                         if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
                                                         $visto_val = ($val === true) ? true : false;
                                                     } else {
-                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $vkey = getVkeyFromDetalhe($detalhe);
                                                         $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                     }
                                                 ?>
@@ -1704,16 +1701,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1853,11 +1846,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                         if (is_string($val)) $val = in_array(strtolower($val), ['t','true','1'], true);
                                                         $visto_val = ($val === true) ? true : false;
                                                     } else {
-                                                        $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                        $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                        $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                        $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                        $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                        $vkey = getVkeyFromDetalhe($detalhe);
                                                         $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                     }
                                                 ?>
@@ -1883,16 +1872,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1997,11 +1982,8 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    // Use id-based lookup when available
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2026,16 +2008,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2152,11 +2130,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2339,11 +2313,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$catNorm] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2365,16 +2335,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($visto_val !== true && $__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2479,11 +2445,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2505,16 +2467,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($visto_val !== true && $__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2619,11 +2577,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2645,16 +2599,12 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($visto_val !== true && $__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2825,11 +2775,7 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                             <tbody>
                                                 <?php foreach ($detalhes_por_categoria[$cat_key] as $detalhe): ?>
                                                 <?php
-                                                    $k_e = isset($detalhe['nr_empresa']) ? strval(intval($detalhe['nr_empresa'])) : '';
-                                                    $k_f = isset($detalhe['nr_filial']) ? strval(intval($detalhe['nr_filial'])) : '';
-                                                    $k_l = isset($detalhe['nr_lanc']) ? strval(intval($detalhe['nr_lanc'])) : '';
-                                                    $k_s = isset($detalhe['seq_lanc']) ? strval(intval($detalhe['seq_lanc'])) : '';
-                                                    $vkey = ($k_e !== '' && $k_f !== '' && $k_l !== '' && $k_s !== '') ? ($k_e . '|' . $k_f . '|' . $k_l . '|' . $k_s) : null;
+                                                    $vkey = getVkeyFromDetalhe($detalhe);
                                                     $visto_val = ($vkey !== null && array_key_exists($vkey, $vistos_index)) ? $vistos_index[$vkey] : null;
                                                 ?>
                                                 <tr class="hover:bg-gray-800 text-gray-300">
@@ -2851,15 +2797,11 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    $__keys = extractNumericKeys($detalhe);
-                                                                    $__ne = $__keys['ne'];
-                                                                    $__nf = $__keys['nf'];
-                                                                    $__nl = $__keys['nl'];
-                                                                    $__ns = $__keys['ns'];
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($visto_val !== true && $__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);" aria-label="Marcar como lido"
-                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -3104,6 +3046,58 @@ async function marcarComoLido(nr_empresa, nr_filial, nr_lanc, seq_lanc, btnEl) {
 </script>
 
 <script>
+async function marcarComoLidoById(id, btnEl) {
+    const isCheckbox = btnEl && btnEl.tagName === 'INPUT' && btnEl.type === 'checkbox';
+    let prevChecked = null;
+    if (isCheckbox) {
+        prevChecked = !btnEl.checked;
+        btnEl.disabled = true;
+        btnEl.classList.add('opacity-60');
+    } else {
+        try { btnEl.disabled = true; } catch (e) {}
+    }
+
+    try {
+        const resp = await fetch('/modules/financeiro_bar/toggle_visto_fabrica.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, visto: isCheckbox ? btnEl.checked : undefined }),
+            credentials: 'same-origin'
+        });
+
+        const j = await resp.json();
+        if (j.success) {
+            const newVisto = (typeof j.visto !== 'undefined') ? Boolean(j.visto) : btnEl.checked;
+            const container = btnEl.closest('div');
+            if (container) {
+                const badge = container.querySelector('.visto-badge');
+                if (badge) {
+                    if (newVisto) {
+                        badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+                    } else {
+                        badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-orange-500 text-white">Não lido</span>';
+                    }
+                }
+            }
+            try { btnEl.checked = newVisto; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+        } else {
+            alert('Erro: ' + (j.error || 'unknown'));
+            if (isCheckbox) {
+                try { btnEl.checked = prevChecked; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+            } else {
+                try { btnEl.disabled = false; } catch (e) {}
+            }
+        }
+    } catch (err) {
+        alert('Erro de rede: ' + err.message);
+        if (isCheckbox) {
+            try { btnEl.checked = prevChecked; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+        } else {
+            try { btnEl.disabled = false; } catch (e) {}
+        }
+    }
+}
+
 async function marcarTodosComoLidos() {
     const periodo = __current_periodo || document.getElementById('periodo-label')?.innerText || '';
     if (!periodo) {
@@ -3117,7 +3111,7 @@ async function marcarTodosComoLidos() {
     if (btn) { btn.disabled = true; btn.textContent = 'Marcando...'; }
 
     try {
-        const resp = await fetch('/modules/financeiro_bar/mark_all_vistos_wab.php', {
+        const resp = await fetch('/modules/financeiro_bar/mark_all_vistos_fabrica.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ periodo: __current_periodo }),
