@@ -566,58 +566,96 @@ require_once __DIR__ . '/../../sidebar.php';
                 $retirada_de_lucro = [];
                 
                 // Função para obter meta da tabela fmetastap
+                // Prioriza PERCENTUAL para as categorias pai TRIBUTOS, CUSTO VARIÁVEL e DESPESAS DE VENDA
+                // e para todas as suas subcategorias quando PERCENTUAL > 0.
                 function obterMeta($categoria, $categoria_pai = null, $periodo = null) {
-                    global $supabase, $periodo_selecionado;
-                    
+                    global $supabase, $periodo_selecionado, $total_geral_operacional, $total_geral;
+
                     if (!$supabase) {
                         return 0; // Se conexão não existe, retorna 0
                     }
-                    
+
                     // Usar período passado ou período selecionado globalmente
                     $periodo_busca = $periodo ?: $periodo_selecionado;
-                    
+
                     // Converter período YYYY/MM para DATA_META YYYY-MM-01
                     $data_meta = null;
                     if ($periodo_busca && preg_match('/^(\d{4})\/(\d{2})$/', $periodo_busca, $matches)) {
                         $data_meta = $matches[1] . '-' . $matches[2] . '-01';
                     }
-                    
+
                     $categoria_upper = strtoupper(trim($categoria));
-                    
+                    $categoria_pai_upper = $categoria_pai ? strtoupper(trim($categoria_pai)) : null;
+
+                    // Conjunto de categorias que devem usar percentual quando presente
+                    $forcar_percentual_parents = [
+                        'TRIBUTOS',
+                        'CUSTO VARIÁVEL',
+                        'CUSTO VARIAVEL',
+                        'DESPESAS DE VENDA',
+                        'DESPESA DE VENDA',
+                        '(-) DESPESAS DE VENDA'
+                    ];
+
                     try {
+                        // Construir filtros para buscar META e PERCENTUAL
                         $filtros = [];
-                        
-                        // Adicionar filtro de DATA_META se período foi especificado
                         if ($data_meta) {
                             $filtros['DATA_META'] = "eq.$data_meta";
                         }
-                        
+
                         if ($categoria_pai) {
-                            // Buscar subcategoria: CATEGORIA = pai E SUBCATEGORIA = filha
-                            $categoria_pai_upper = strtoupper(trim($categoria_pai));
                             $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
                             $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
                         } else {
-                            // Buscar categoria pai: CATEGORIA = categoria E SUBCATEGORIA IS NULL
                             $filtros['CATEGORIA'] = "eq.$categoria_upper";
                             $filtros['SUBCATEGORIA'] = "is.null";
                         }
-                        
+
                         $resultado = $supabase->select('fmetaswab', [
                             'select' => 'META, PERCENTUAL',
                             'filters' => $filtros,
                             'order' => 'DATA_CRI.desc',
                             'limit' => 1
                         ]);
-                        
-                        // Verifica se encontrou resultado válido
-                        if (!empty($resultado) && isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
-                            return floatval($resultado[0]['META']);
+
+                        $meta_val = 0;
+                        $percentual_val = 0;
+                        if (!empty($resultado) && is_array($resultado) && isset($resultado[0])) {
+                            if (isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
+                                $meta_val = floatval($resultado[0]['META']);
+                            }
+                            if (isset($resultado[0]['PERCENTUAL']) && is_numeric($resultado[0]['PERCENTUAL'])) {
+                                $percentual_val = floatval($resultado[0]['PERCENTUAL']);
+                            }
                         }
-                        
-                        // Meta não encontrada, retorna 0
+
+                        // Decidir uso do percentual: se o percentual existe (>0) e a categoria (ou seu pai)
+                        // pertencer ao conjunto que deve usar percentual, então calcular a meta a partir
+                        // do percentual sobre a receita operacional (preferencialmente) ou receita total.
+                        $deve_usar_percentual = false;
+                        if ($percentual_val > 0) {
+                            if (in_array($categoria_upper, $forcar_percentual_parents, true) ||
+                                ($categoria_pai_upper && in_array($categoria_pai_upper, $forcar_percentual_parents, true))) {
+                                $deve_usar_percentual = true;
+                            }
+                        }
+
+                        if ($deve_usar_percentual) {
+                            $base = floatval($total_geral_operacional ?? 0);
+                            if ($base <= 0) $base = floatval($total_geral ?? 0);
+                            if ($base > 0) {
+                                return ($base * $percentual_val) / 100.0;
+                            }
+                            // se base zerada, fallback para meta absoluta se existir
+                            if ($meta_val > 0) return $meta_val;
+                            return 0;
+                        }
+
+                        // Caso padrão: retornar META absoluta se existente, caso contrário 0
+                        if ($meta_val > 0) return $meta_val;
                         return 0;
-                        
+
                     } catch (Exception $e) {
                         error_log("Erro ao buscar meta para '$categoria' (pai: '$categoria_pai', período: '$periodo_busca'): " . $e->getMessage());
                         return 0; // Em caso de erro, sempre retorna 0

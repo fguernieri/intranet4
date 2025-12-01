@@ -167,14 +167,50 @@ try {
     $resultado = $supabase->upsert($table, $todosRegistros, [
         'on_conflict' => 'CATEGORIA,SUBCATEGORIA,DATA_META'
     ]);
-    
+
     $totalRegistros = count($todosRegistros);
-    
+
     // DEBUG: Log do resultado
     error_log("Resultado do upsert: " . ($resultado !== false ? 'sucesso' : 'falha'));
-    
+
+    // Se o upsert falhar (ex: erro 42P10 no Postgres - falta de constraint UNIQUE),
+    // tentar fallback: deletar registros para cada DATA_META e inserir o batch novamente.
     if ($resultado === false) {
-        throw new Exception('Falha ao salvar metas no Supabase');
+        error_log("Upsert falhou; iniciando fallback DELETE por DATA_META seguido de INSERT batch.");
+
+        // Coletar datas únicas a partir dos registros
+        $datasUnicas = [];
+        foreach ($todosRegistros as $r) {
+            if (!empty($r['DATA_META'])) {
+                $datasUnicas[$r['DATA_META']] = true;
+            }
+        }
+
+        // Para cada DATA_META, remover registros existentes
+        foreach (array_keys($datasUnicas) as $data_meta) {
+            error_log("Fallback: deletando registros existentes para DATA_META: $data_meta");
+            $delResult = $supabase->delete($table, [
+                'filters' => [
+                    'DATA_META' => "eq.$data_meta"
+                ]
+            ]);
+
+            if ($delResult === false) {
+                error_log("Falha ao deletar registros para DATA_META $data_meta durante fallback.");
+                throw new Exception("Falha ao executar fallback de deleção para DATA_META $data_meta");
+            }
+        }
+
+        // Inserir todos os registros (INSERT em batch)
+        error_log("Fallback: inserindo registros (INSERT batch) após DELETE");
+        $insertResult = $supabase->insert($table, $todosRegistros);
+        if ($insertResult === false) {
+            error_log("Falha ao inserir registros no fallback INSERT.");
+            throw new Exception('Falha ao salvar metas no Supabase (fallback insert falhou)');
+        }
+
+        // Considerar o fallback como resultado válido
+        $resultado = $insertResult;
     }
     
     // Resposta de sucesso

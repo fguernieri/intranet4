@@ -218,8 +218,9 @@ require_once __DIR__ . '/../../sidebar.php';
                 $saidas_nao_operacionais = [];
                 
                 // Função para obter meta da tabela fmetaswab
+                // Prioriza o campo PERCENTUAL para categorias-pai TRIBUTOS, CUSTO VARIÁVEL e DESPESAS DE VENDA (e subcategorias)
                 function obterMeta($categoria, $categoria_pai = null) {
-                    global $supabase, $periodo_selecionado;
+                    global $supabase, $periodo_selecionado, $total_geral_operacional, $total_geral;
 
                     if (!$supabase) {
                         return 0; // Se conexão não existe, retorna 0
@@ -234,17 +235,27 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     $categoria_upper = strtoupper(trim($categoria));
 
+                    // Definir quais categorias devem usar PERCENTUAL quando presente
+                    $categorias_percentuais = [
+                        'TRIBUTOS',
+                        'CUSTO VARIÁVEL',
+                        'CUSTO VARIAVEL',
+                        'DESPESAS DE VENDA',
+                        'DESPESA DE VENDA',
+                        'DESPESA VENDA'
+                    ];
+
                     try {
                         $resultado = null;
 
                         if ($categoria_pai) {
-                            // Buscar subcategoria com categoria pai
+                            // Buscar subcategoria com categoria pai (retornar META e PERCENTUAL)
                             $categoria_pai_upper = strtoupper(trim($categoria_pai));
                             $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
                             $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
 
                             $resultado = $supabase->select('fmetaswab', [
-                                'select' => 'META',
+                                'select' => 'META,PERCENTUAL',
                                 'filters' => $filtros,
                                 'order' => 'DATA_CRI.desc',
                                 'limit' => 1
@@ -255,7 +266,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['SUBCATEGORIA'] = 'is.null';
 
                             $resultado = $supabase->select('fmetaswab', [
-                                'select' => 'META',
+                                'select' => 'META,PERCENTUAL',
                                 'filters' => $filtros,
                                 'order' => 'DATA_CRI.desc',
                                 'limit' => 1
@@ -271,7 +282,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
 
                                 $resultado = $supabase->select('fmetaswab', [
-                                    'select' => 'META',
+                                    'select' => 'META,PERCENTUAL',
                                     'filters' => $filtros,
                                     'order' => 'DATA_CRI.desc',
                                     'limit' => 1
@@ -280,8 +291,34 @@ require_once __DIR__ . '/../../sidebar.php';
                         }
 
                         // Verifica se encontrou resultado válido
-                        if (!empty($resultado) && isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
-                            return floatval($resultado[0]['META']);
+                        if (!empty($resultado) && isset($resultado[0]) && is_array($resultado[0])) {
+                            $row = $resultado[0];
+
+                            // Normalizar valores
+                            $meta_valor = isset($row['META']) && is_numeric($row['META']) ? floatval($row['META']) : null;
+                            $percentual_valor = isset($row['PERCENTUAL']) && is_numeric($row['PERCENTUAL']) ? floatval($row['PERCENTUAL']) : null;
+
+                            // Decidir se usamos percentual (quando presente e categoria pertencente ao grupo)
+                            $categoria_pai_upper = $categoria_pai ? strtoupper(trim($categoria_pai)) : null;
+                            $usar_percentual = false;
+
+                            // Se a categoria ou a categoria pai estiver na lista, permitir percentual
+                            if (in_array($categoria_upper, $categorias_percentuais, true) || ($categoria_pai_upper && in_array($categoria_pai_upper, $categorias_percentuais, true))) {
+                                $usar_percentual = true;
+                            }
+
+                            if ($usar_percentual && $percentual_valor !== null && $percentual_valor > 0) {
+                                // Preferir base operacional quando disponível
+                                $base = (isset($total_geral_operacional) && $total_geral_operacional > 0) ? $total_geral_operacional : (isset($total_geral) ? $total_geral : 0);
+                                if ($base > 0) {
+                                    return ($base * $percentual_valor) / 100.0;
+                                }
+                            }
+
+                            // Se não usarmos percentual ou não houver base, retornar META absoluto se existir
+                            if ($meta_valor !== null) {
+                                return $meta_valor;
+                            }
                         }
 
                         return 0;
