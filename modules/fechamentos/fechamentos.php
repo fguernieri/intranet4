@@ -768,7 +768,8 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
         </div>
         <div class="card-body">
           <?php if (!empty($bigBearDulcidioResumo)): ?>
-            <div class="form-group mb-4 max-w-xs">
+            <div id="card-bigbear" class="space-y-4">
+              <div class="form-group mb-4 max-w-xs">
               <label for="bigbear-bonus" class="form-label">Bonificação (%)</label>
               <input
                 type="number"
@@ -809,6 +810,11 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                   </tr>
                 </tbody>
               </table>
+            </div>
+            </div>
+            <div class="btn-group mt-4">
+              <button onclick="copiarBigBearEmail()" class="btn-secondary">&#128231; Copiar para E-mail</button>
+              <button onclick="exportarBigBearPNG()" class="btn-primary">&#128248; Exportar PNG</button>
             </div>
           <?php else: ?>
             <p class="text-gray-300">Envie o Relatório de Recebimentos para ver os dados do cliente 2506.</p>
@@ -1059,7 +1065,112 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', atualizarBonificacaoBigBear);
         atualizarBonificacaoBigBear();
     }
-});function copiarChoripanEmail() {
+});
+
+function copiarBigBearEmail() {
+    const cardOriginal = document.getElementById('card-bigbear');
+    if (!cardOriginal) {
+        alert('Sem conteudo do Big Bear para copiar.');
+        return;
+    }
+    const card = cardOriginal.cloneNode(true);
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
+
+    card.querySelectorAll('table').forEach(table => {
+        table.removeAttribute('class');
+        const linhas = table.querySelectorAll('tr');
+        linhas.forEach((linha, i) => {
+            const celulas = linha.children;
+            for (const celula of celulas) {
+                celula.removeAttribute('class');
+                celula.removeAttribute('style');
+                if (i === 0) {
+                    celula.setAttribute("style", estiloHeader);
+                } else if (
+                    linha.innerText.toUpperCase().includes("TOTAL") ||
+                    linha.innerText.toUpperCase().includes("BONIFICA")
+                ) {
+                    celula.setAttribute("style", estiloTotal);
+                } else {
+                    celula.setAttribute("style", estiloCelula);
+                }
+            }
+        });
+    });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNode(container);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+
+    document.body.removeChild(container);
+    alert('Conteudo do Big Bear copiado! Agora e so colar no e-mail.');
+}
+
+function exportarBigBearPNG() {
+    const cardOriginal = document.getElementById('card-bigbear');
+    if (!cardOriginal) {
+        alert('Sem conteudo do Big Bear para exportar.');
+        return;
+    }
+    const card = cardOriginal.cloneNode(true);
+    card.querySelectorAll('input, button').forEach(el => el.remove());
+
+    const estiloHeader = "background-color:#3b568c;font-weight:bold;border:1px solid #ccc;padding:8px;font-size:14px;";
+    const estiloCelula = "border:1px solid #ccc;padding:8px;color:#333;font-size:12px;background-color:#fff;";
+    const estiloTotal  = "background-color:#e5e7eb;font-weight:bold;border:1px solid #ccc;padding:8px;color:#111111;font-size:12px;";
+
+    card.querySelectorAll('table').forEach(table => {
+        table.removeAttribute('class');
+        const linhas = table.querySelectorAll('tr');
+        linhas.forEach((linha, i) => {
+            const celulas = linha.children;
+            for (const celula of celulas) {
+                celula.removeAttribute('class');
+                celula.removeAttribute('style');
+                if (i === 0) {
+                    celula.setAttribute("style", estiloHeader);
+                } else if (
+                    linha.innerText.toUpperCase().includes("TOTAL") ||
+                    linha.innerText.toUpperCase().includes("BONIFICA")
+                ) {
+                    celula.setAttribute("style", estiloTotal);
+                } else {
+                    celula.setAttribute("style", estiloCelula);
+                }
+            }
+        });
+    });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    html2canvas(card).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'bigbear_rios.png';
+        link.click();
+        document.body.removeChild(container);
+    });
+}
+
+function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
     if (!cardOriginal) {
         alert('Sem conteúdo do Choripan para copiar.');
