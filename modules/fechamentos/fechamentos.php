@@ -759,12 +759,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       <!-- BIG BEAR DULC�DIO -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">�Y� Fechamento Big Bear Dulc��dio</h1>
+          <h1 class="section-title text-2xl">🏆 Fechamento Big Bear Rios</h1>
         </div>
         <div class="card-body">
           <?php if (!empty($bigBearDulcidioResumo)): ?>
             <p class="mb-4 text-gray-300">
-              Resumo das quantidades do cliente c��digo 2506
+              Resumo das quantidades
               <?= $bigBearDulcidioCliente ? '(' . htmlspecialchars((string)$bigBearDulcidioCliente) . ')' : '' ?>.
             </p>
             <div class="table-container">
