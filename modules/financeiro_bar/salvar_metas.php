@@ -135,45 +135,39 @@ try {
         throw new Exception('Nenhum registro válido para salvar');
     }
     
-    // UPSERT em batch - uma única requisição para todos os registros
-    // O Supabase vai inserir novos e atualizar existentes baseado na chave única
-    $resultado = $supabase->upsert($table, $todosRegistros, [
-        'on_conflict' => 'CATEGORIA,SUBCATEGORIA,DATA_META'
-    ]);
-    
-    $totalRegistros = count($todosRegistros);
-    
-    // DEBUG: Log do resultado
-    error_log("Resultado do upsert: " . ($resultado !== false ? 'sucesso' : 'falha'));
-    
-    if ($resultado === false) {
-        // Fallback: alguns schemas/tabelas não possuem constraint compatível com ON CONFLICT
-        // (erro 42P10: "there is no unique or exclusion constraint matching the ON CONFLICT specification").
-        // Neste caso, removemos previamente os registros com as mesmas DATA_META e re-inserimos.
-        error_log("Upsert falhou - tentando fallback: delete + insert");
+    // NOVA LÓGICA: Substituir metas do(s) mês(es) selecionado(s)
+    // Passo 1: extrair DATA_META únicos dos registros para deletar tudo daquele mês
+    $datasMeta = array_values(array_unique(array_map(function($r) {
+        return $r['DATA_META'];
+    }, $todosRegistros)));
 
-        // Extrair DATA_META únicos dos registros para usar no DELETE
-        $datasMeta = array_unique(array_map(function($r) {
-            return $r['DATA_META'];
-        }, $todosRegistros));
+    // Log
+    error_log("Datas META a serem substituídas: " . implode(', ', $datasMeta));
 
-        foreach ($datasMeta as $dm) {
-            // DELETE WHERE DATA_META=eq.<data>
-            error_log("Fallback: deletando registros existentes para DATA_META=" . $dm);
-            $delResult = $supabase->delete($table, ['DATA_META' => 'eq.' . $dm]);
-            error_log("Resultado DELETE for " . $dm . ": " . var_export($delResult, true));
+    // Passo 2: deletar todas as metas existentes para cada DATA_META selecionada
+    $deleted = [];
+    foreach ($datasMeta as $dm) {
+        error_log("Deletando registros existentes para DATA_META=" . $dm . " na tabela " . $table);
+        $delResult = $supabase->delete($table, ['DATA_META' => 'eq.' . $dm]);
+        // registrar resultado (pode ser array vazio, true, false, conforme wrapper)
+        $deleted[$dm] = $delResult;
+        if ($delResult === false) {
+            error_log("Aviso: DELETE retornou false para DATA_META=" . $dm . " (ver supabase_debug.log)");
+            // não abortar imediatamente; tentaremos o insert abaixo e reportaremos o erro se falhar
         }
-
-        // Tentar INSERT em batch com os registros (sem on_conflict)
-        $insertResult = $supabase->insert($table, $todosRegistros);
-        error_log("Resultado INSERT (fallback): " . ($insertResult !== false ? 'sucesso' : 'falha'));
-
-        if ($insertResult === false) {
-            throw new Exception('Falha ao salvar metas no Supabase (upsert e fallback insert falharam)');
-        }
-        // Caso o insert tenha funcionado, considerar como sucesso e sobrescrever $resultado
-        $resultado = $insertResult;
     }
+
+    // Passo 3: inserir todos os registros do simulador (INSERT em batch)
+    error_log("Inserindo registros (INSERT batch) na tabela " . $table);
+    $insertResult = $supabase->insert($table, $todosRegistros);
+    error_log("Resultado INSERT: " . ($insertResult !== false ? 'sucesso' : 'falha'));
+
+    if ($insertResult === false) {
+        throw new Exception('Falha ao inserir metas no Supabase após deleção');
+    }
+
+    $resultado = $insertResult;
+    $totalRegistros = count($todosRegistros);
     
     // Resposta de sucesso
     echo json_encode([
