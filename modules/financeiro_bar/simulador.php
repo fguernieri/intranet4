@@ -117,7 +117,7 @@ require_once __DIR__ . '/../../sidebar.php';
 
 <div id="simulador-content" class="p-6 ml-4">
     <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl text-blue-400">Simulador Financeiro - Bar da Fabrica</h2>
+        <h2 class="text-xl text-blue-400">Simulador - Bar da Fabrica</h2>
         <div class="flex items-center gap-2">
             <a href="index.php" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition-colors flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
