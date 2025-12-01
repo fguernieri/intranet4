@@ -302,6 +302,42 @@ $percentualEspeciais   = $percentualEspeciais   ?? 0;
 $bonificacaoBastards   = $bonificacaoBastards   ?? 0;
 $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
+// ====== Fechamento Big Bear Dulcídio (Relatório de Recebimentos) ======
+$bigBearDulcidioResumo = [];
+$bigBearDulcidioTotalQtde = 0.0;
+$bigBearDulcidioCliente = '';
+
+if (!empty($dadosChoripan)) {
+    $cabCh      = $dadosChoripan[0] ?? [];
+    $idxCodigo  = array_search('Código',             $cabCh, true);
+    $idxCliente = array_search('Cliente',            $cabCh, true);
+    $idxProd    = array_search('Produto',            $cabCh, true);
+    $idxQuant   = array_search('Quantidade Vendida', $cabCh, true);
+
+    foreach (array_slice($dadosChoripan, 1) as $linha) {
+        $codigo = ($idxCodigo !== false && $idxCodigo !== null) ? trim((string)($linha[$idxCodigo] ?? '')) : '';
+        if ($codigo !== '2506') {
+            continue;
+        }
+
+        $cliente = ($idxCliente !== false && $idxCliente !== null) ? (string)($linha[$idxCliente] ?? '') : '';
+        $produto = ($idxProd    !== false && $idxProd    !== null) ? (string)($linha[$idxProd]    ?? '') : '';
+        $qtdStr  = ($idxQuant   !== false && $idxQuant   !== null) ? (string)($linha[$idxQuant]   ?? '0') : '0';
+
+        // normaliza quantidade (mantém decimais com ponto)
+        $qtdStr = preg_replace('/[^0-9,.-]/u', '', $qtdStr);
+        $quantidade = (float)str_replace(',', '.', $qtdStr);
+
+        if ($produto === '') {
+            continue;
+        }
+
+        $bigBearDulcidioCliente = $bigBearDulcidioCliente ?: $cliente;
+        $bigBearDulcidioResumo[$produto] = ($bigBearDulcidioResumo[$produto] ?? 0.0) + $quantidade;
+        $bigBearDulcidioTotalQtde += $quantidade;
+    }
+}
+
 // ====== Fechamento Hermes e Renato (a partir do mesmo XLS de Vendas) ======
 // Consolida a soma da Coluna J (10ª coluna, índice 9) para os produtos especificados
 $hermesLataValor = 0.0;
@@ -717,6 +753,45 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
               <button type="submit" class="btn-primary w-full">Enviar XLSX | Atualizar</button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- BIG BEAR DULC�DIO -->
+      <div class="card-section">
+        <div class="card-header">
+          <h1 class="section-title text-2xl">�Y� Fechamento Big Bear Dulc��dio</h1>
+        </div>
+        <div class="card-body">
+          <?php if (!empty($bigBearDulcidioResumo)): ?>
+            <p class="mb-4 text-gray-300">
+              Resumo das quantidades do cliente c��digo 2506
+              <?= $bigBearDulcidioCliente ? '(' . htmlspecialchars((string)$bigBearDulcidioCliente) . ')' : '' ?>.
+            </p>
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Quantidade vendida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($bigBearDulcidioResumo as $produto => $qtde): ?>
+                    <tr>
+                      <td><?= htmlspecialchars((string)$produto) ?></td>
+                      <td><?= number_format((float)$qtde, 2, ',', '.') ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                  <tr class="total-row">
+                    <td>Total</td>
+                    <td><?= number_format((float)$bigBearDulcidioTotalQtde, 2, ',', '.') ?></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          <?php else: ?>
+            <p class="text-gray-300">Envie o Relat��rio de Recebimentos para ver os dados do cliente 2506.</p>
+          <?php endif; ?>
         </div>
       </div>
 
