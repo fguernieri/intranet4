@@ -4,6 +4,11 @@
 CREATE VIEW fdespesastap_detalhes AS
 SELECT 
     ROW_NUMBER() OVER (ORDER BY f.data_pagto DESC, f.categoria, f.vlr_pago DESC) AS lancamento_id,
+    f.nr_empresa,
+    f.nr_filial,
+    f.nr_lanc,
+    f.seq_lanc,
+    v.visto,
     DATE_TRUNC('month', f.data_pagto)::DATE AS data_mes,
     f.data_pagto,
     f.categoria,
@@ -28,6 +33,11 @@ SELECT
     f.vlr_lancamento,
     f.vlr_total
 FROM fcontaspagartap f
+LEFT JOIN public.fcontaspagartap_vistos v
+    ON f.nr_empresa = v.nr_empresa
+   AND f.nr_filial = v.nr_filial
+   AND f.nr_lanc = v.nr_lanc
+   AND f.seq_lanc = v.seq_lanc
 LEFT JOIN (
     -- Pegar apenas o registro com maior nível para cada categoria
     SELECT DISTINCT ON (categoria) 
