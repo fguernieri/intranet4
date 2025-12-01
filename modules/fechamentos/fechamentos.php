@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -17,7 +17,7 @@ if (isset($_GET['limpar']) && $_GET['limpar'] === '1') {
     foreach ($tmpFiles as $tmpFile) {
         if (file_exists($tmpFile)) {
             $tempo = filemtime($tmpFile);
-            // só apaga se tiver +60 segundos
+            // sÃ³ apaga se tiver +60 segundos
             if (time() - $tempo > 60) {
                 @unlink($tmpFile);
             }
@@ -50,7 +50,7 @@ function extrairMesesUnicos($colunaDatas) {
 function filtrarPorMesEProduto($dados, $mesFiltro, $keywords, $cabecalho) {
     $filtrados = [];
     $idxProduto = array_search('Produto', $cabecalho, true);
-    $idxData = 0; // primeira coluna é Data
+    $idxData = 0; // primeira coluna Ã© Data
 
     foreach (array_slice($dados, 1) as $linha) {
         $data = $linha[$idxData] ?? '';
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['arquivo'])) {
                     try {
                         $valor = $cell->getFormattedValue();
                     } catch (Exception $e) {
-                        $valor = '[ERRO DE FÓRMULA]';
+                        $valor = '[ERRO DE FÃ“RMULA]';
                     }
                     if (is_string($valor) && preg_match('/^="?(.*?)"?$/', $valor, $m)) {
                         $valor = trim($m[1]);
@@ -126,7 +126,7 @@ $rebateEspeciais = filter_var($rawEspecial, FILTER_VALIDATE_FLOAT);
 $rebateWelt      = ($rebateWelt      !== false) ? (float)$rebateWelt      : 1.00;
 $rebateEspeciais = ($rebateEspeciais !== false) ? (float)$rebateEspeciais : 0.50;
 
-// ====== Fechamento Choripan: ingestão / cache ======
+// ====== Fechamento Choripan: ingestÃ£o / cache ======
 $dadosChoripan = [];
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
@@ -154,7 +154,7 @@ if (
                     try {
                         $valorCh = $cellCh->getFormattedValue();
                     } catch (Exception $eCh) {
-                        $valorCh = '[ERRO DE FÓRMULA]';
+                        $valorCh = '[ERRO DE FÃ“RMULA]';
                     }
                     if (is_string($valorCh) && preg_match('/^="?(.+?)"?$/', $valorCh, $mCh)) {
                         $valorCh = trim($mCh[1]);
@@ -162,7 +162,7 @@ if (
                     $linhaCh[] = $valorCh;
                 }
 
-                // identifica cabeçalho e índices
+                // identifica cabeÃ§alho e Ã­ndices
                 if (empty($cabecalhoCh)) {
                     $cabecalhoCh   = $linhaCh;
                     $idxProdutoCh  = array_search('Produto', $cabecalhoCh, true);
@@ -196,14 +196,14 @@ if (
         }
     }
 } else {
-    // fora do submit choripan, mantém vazio (ou carrega último cache se quiser)
+    // fora do submit choripan, mantÃ©m vazio (ou carrega Ãºltimo cache se quiser)
     $cache = __DIR__ . '/tmp_choripan.json';
     if (is_file($cache)) {
         $dadosChoripan = json_decode(file_get_contents($cache), true) ?: [];
     }
 }
 
-// ====== Fechamento Choripan: totalização e repasses ======
+// ====== Fechamento Choripan: totalizaÃ§Ã£o e repasses ======
 $totaisChoripan = [];
 $repasseWelt = $repasseEspeciais = $totalRepasse = 0.0;
 
@@ -227,7 +227,7 @@ if (!empty($dadosChoripan)) {
             ($totaisChoripan[$cliente][$produto] ?? 0) + $quant;
     }
 
-    // cálculo dos repasses
+    // cÃ¡lculo dos repasses
     $quantWelt   = 0;
     $quantOutros = 0;
     foreach ($totaisChoripan as $cli => $produtos) {
@@ -293,7 +293,7 @@ if (!empty($dadosChoripan)) {
     $bonificacaoEspeciais = (int) round($litrosEspeciais * ($percentualEspeciais   / 100));
 }
 
-// Expor variáveis (garantindo definidos)
+// Expor variÃ¡veis (garantindo definidos)
 $totaisGodSave         = $totaisGodSave         ?? [];
 $litrosBastards        = $litrosBastards        ?? 0;
 $litrosEspeciais       = $litrosEspeciais       ?? 0;
@@ -303,7 +303,7 @@ $bonificacaoBastards   = $bonificacaoBastards   ?? 0;
 $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 
 // ====== Fechamento Hermes e Renato (a partir do mesmo XLS de Vendas) ======
-// Consolida a soma da Coluna J (10ª coluna, índice 9) para os produtos especificados
+// Consolida a soma da Coluna J (10Âª coluna, Ã­ndice 9) para os produtos especificados
 $hermesLataValor = 0.0;
 $hermesValor     = 0.0;
 $hermesTotal     = 0.0;
@@ -312,23 +312,23 @@ if (!empty($dadosChoripan)) {
     $cabHerm   = $dadosChoripan[0] ?? [];
     $idxProdH  = array_search('Produto', $cabHerm, true);
 
-    // Função local para converter valores monetários (com R$, ponto e vírgula) para float
+    // FunÃ§Ã£o local para converter valores monetÃ¡rios (com R$, ponto e vÃ­rgula) para float
     $toFloat = function($str) {
         $s = (string)$str;
         $s = trim($s);
-        // remove qualquer caractere que não seja dígito, vírgula, ponto, sinal
+        // remove qualquer caractere que nÃ£o seja dÃ­gito, vÃ­rgula, ponto, sinal
         $s = preg_replace('/[^0-9,.-]/u', '', $s);
-        // se houver mais de uma vírgula, mantém apenas a última como decimal
+        // se houver mais de uma vÃ­rgula, mantÃ©m apenas a Ãºltima como decimal
         $parts = explode(',', $s);
         if (count($parts) > 1) {
             $decimal = array_pop($parts);
             $int = implode('', $parts);
             $s = $int . '.' . $decimal;
         } else {
-            // não tem vírgula, troca possível separador decimal ponto
+            // nÃ£o tem vÃ­rgula, troca possÃ­vel separador decimal ponto
             $s = str_replace(',', '.', $s);
         }
-        // remove espaços
+        // remove espaÃ§os
         $s = str_replace([' '], '', $s);
         return is_numeric($s) ? (float)$s : 0.0;
     };
@@ -348,9 +348,104 @@ if (!empty($dadosChoripan)) {
 }
 
 $hermesTotal = (float)$hermesLataValor + (float)$hermesValor;
-$hermesRepassePercent = 10.0; // valor inicial padrão, ajustável via input (JS)
+$hermesRepassePercent = 10.0; // valor inicial padrÃ£o, ajustÃ¡vel via input (JS)
 $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100), 2);
 
+// ====== Fechamento Big Bear (cliente 2506) ======
+$bigBearCodigoCliente         = '2506';
+$bigBearPercentualBonificacao = 10;
+$bigBearTotaisPorProduto      = [];
+$bigBearQuantidadeTotal       = 0.0;
+$bigBearBonificacaoCalculada  = 0.0;
+
+if (!empty($dadosChoripan)) {
+    $cabChBigBear = $dadosChoripan[0] ?? [];
+
+    $localizarIndice = static function(array $cabecalho, array $opcoes) {
+        foreach ($cabecalho as $idx => $rotulo) {
+            $rotuloNormalizado = strtolower(trim((string)$rotulo));
+            $rotuloNormalizado = preg_replace('/\s+/', ' ', $rotuloNormalizado ?? '');
+            foreach ($opcoes as $alvo) {
+                $alvoNormalizado = strtolower(trim($alvo));
+                if ($rotuloNormalizado === $alvoNormalizado) {
+                    return $idx;
+                }
+                if ($alvoNormalizado !== '' && strpos($rotuloNormalizado, $alvoNormalizado) !== false) {
+                    return $idx;
+                }
+            }
+        }
+        return null;
+    };
+
+    $converterQuantidade = static function($valor) {
+        if (is_numeric($valor)) {
+            return (float)$valor;
+        }
+        $str = preg_replace('/[^0-9,.-]/', '', (string)$valor);
+        $str = trim($str);
+        if ($str === '' || $str === '-' || $str === ',' || $str === '.') {
+            return 0.0;
+        }
+        if (strpos($str, ',') !== false) {
+            $str = str_replace('.', '', $str);
+            $str = str_replace(',', '.', $str);
+        } elseif (substr_count($str, '.') > 1) {
+            $str = str_replace('.', '', $str);
+        }
+        return is_numeric($str) ? (float)$str : 0.0;
+    };
+
+    $idxCodigo = $localizarIndice($cabChBigBear, [
+        'código cliente',
+        'codigo cliente',
+        'cod. cliente',
+        'cód. cliente',
+        'codigo',
+        'código',
+        'cliente codigo',
+        'cliente cód',
+    ]);
+    $idxProduto = $localizarIndice($cabChBigBear, ['produto']);
+    $idxQuantidade = $localizarIndice($cabChBigBear, [
+        'quantidade vendida',
+        'quantidade',
+        'qtde. total',
+        'qtde',
+        'qtde total',
+    ]);
+
+    if ($idxCodigo !== null && $idxProduto !== null && $idxQuantidade !== null) {
+        foreach (array_slice($dadosChoripan, 1) as $linha) {
+            $codigoLinha = trim((string)($linha[$idxCodigo] ?? ''));
+            if ($codigoLinha !== $bigBearCodigoCliente) {
+                continue;
+            }
+
+            $produtoLinha = trim((string)($linha[$idxProduto] ?? ''));
+            if ($produtoLinha === '') {
+                continue;
+            }
+
+            $quantidadeLinha = $converterQuantidade($linha[$idxQuantidade] ?? 0);
+            if ($quantidadeLinha === 0.0) {
+                continue;
+            }
+
+            $bigBearTotaisPorProduto[$produtoLinha] = ($bigBearTotaisPorProduto[$produtoLinha] ?? 0) + $quantidadeLinha;
+            $bigBearQuantidadeTotal += $quantidadeLinha;
+        }
+
+        if (!empty($bigBearTotaisPorProduto)) {
+            ksort($bigBearTotaisPorProduto, SORT_NATURAL | SORT_FLAG_CASE);
+        }
+    }
+}
+
+$bigBearTotaisPorProduto      = $bigBearTotaisPorProduto      ?? [];
+$bigBearQuantidadeTotal       = $bigBearQuantidadeTotal       ?? 0.0;
+$bigBearPercentualBonificacao = $bigBearPercentualBonificacao ?? 10;
+$bigBearBonificacaoCalculada  = (float)$bigBearQuantidadeTotal * ((float)$bigBearPercentualBonificacao / 100);
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -514,10 +609,10 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
 
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">📊 Fechamento Bulldog</h1>
+          <h1 class="section-title text-2xl">ðŸ“Š Fechamento Bulldog</h1>
         </div>
         <div class="card-body">
-            <p class="mb-2">Cloudify > Relatórios Gerais > Vendas > Relatório de vendas</p>
+            <p class="mb-2">Cloudify > RelatÃ³rios Gerais > Vendas > RelatÃ³rio de vendas</p>
             <p class="mb-2">Inicio e Fim > Grupo de Produtos > T - SOUVENIR > Filiais > Bastards Taproom > Excel</p>
           <form method="POST" enctype="multipart/form-data" class="mb-6">
             <div class="form-group">
@@ -535,12 +630,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       <?php if (!empty($mesesDisponiveis)): ?>
       <div class="card-section">
         <div class="card-header">
-          <h2 class="section-title">🔍 Filtros de Pesquisa</h2>
+          <h2 class="section-title">ðŸ” Filtros de Pesquisa</h2>
         </div>
         <div class="card-body">
           <form method="GET" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-group">
-              <label for="mes" class="form-label">🗓️ Mês</label>
+              <label for="mes" class="form-label">ðŸ—“ï¸ MÃªs</label>
               <select name="mes" id="mes" class="form-control">
                 <option value="">-- Todos os meses --</option>
                 <?php foreach ($mesesDisponiveis as $mes): ?>
@@ -551,9 +646,9 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
               </select>
             </div>
             <div class="form-group">
-              <label for="keywords" class="form-label">🔍 Palavras-chave (produto)</label>
+              <label for="keywords" class="form-label">ðŸ” Palavras-chave (produto)</label>
               <input type="text" name="keywords" id="keywords"
-                value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÇARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
+                value="<?= htmlspecialchars($_GET['keywords'] ?? 'MAÃ‡ARICO, CHARUTO, CINZEIRO, CORTADOR') ?>"
                 class="form-control"
                 placeholder="ex: fitzgerald, gin, spritz">
             </div>
@@ -569,12 +664,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
         <div class="card-section">
           <div class="card-header">
             <div class="flex justify-between items-center">
-              <h2 class="section-title">📋 Detalhes das Vendas</h2>
+              <h2 class="section-title">ðŸ“‹ Detalhes das Vendas</h2>
               <button
                 onclick="document.getElementById('tabela-detalhes').classList.toggle('hidden')"
                 class="btn-secondary"
               >
-                🔽 Mostrar/Esconder Detalhes
+                ðŸ”½ Mostrar/Esconder Detalhes
               </button>
             </div>
           </div>
@@ -586,7 +681,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                     <?php
                     $cabecalho = $dados[0] ?? [];
                     $indices = [];
-                    $colunasDesejadas = ['Data', 'Produto', 'Preço', 'Qtde. total', 'Total'];
+                    $colunasDesejadas = ['Data', 'Produto', 'PreÃ§o', 'Qtde. total', 'Total'];
 
                     foreach ($colunasDesejadas as $coluna) {
                       $idx = array_search($coluna, $cabecalho, true);
@@ -615,7 +710,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
         <!-- RESUMO POR PRODUTO -->
         <div class="card-section">
           <div class="card-header">
-            <h2 class="section-title text-xl">📊 Resumo por Produto</h2>
+            <h2 class="section-title text-xl">ðŸ“Š Resumo por Produto</h2>
           </div>
           <div class="card-body">
             <div class="table-container">
@@ -623,7 +718,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                 <thead>
                   <tr>
                     <th>Produto</th>
-                    <th>Preço</th>
+                    <th>PreÃ§o</th>
                     <th>Soma Qtde. total</th>
                     <th>Soma Total</th>
                   </tr>
@@ -632,7 +727,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                   <?php
                   $resumo = [];
                   $idxProdutoResumo = $indices['Produto'] ?? null;
-                  $idxPrecoResumo   = $indices['Preço'] ?? null;
+                  $idxPrecoResumo   = $indices['PreÃ§o'] ?? null;
                   $idxQtdeResumo    = $indices['Qtde. total'] ?? null;
                   $idxTotalResumo   = $indices['Total'] ?? null;
 
@@ -681,7 +776,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                 </tbody>
               </table>
             </div>
-            <button onclick="copiarResumoEmail()" class="mt-4 btn-primary">📋 Copiar para E-mail</button>
+            <button onclick="copiarResumoEmail()" class="mt-4 btn-primary">ðŸ“‹ Copiar para E-mail</button>
           </div>
         </div>
       <?php endif; ?>
@@ -692,14 +787,14 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       });
       </script>
 
-      <!-- Relatório de Vendas -->
+      <!-- RelatÃ³rio de Vendas -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">📤 Upload Relatório de Recebimentos</h1>
+          <h1 class="section-title text-2xl">ðŸ“¤ Upload RelatÃ³rio de Recebimentos</h1>
 
         </div>
         <div class="card-body">
-            <p class="mb-2">ARB > Relatórios > Comercial > Vendas > Vendas por cliente</p>
+            <p class="mb-2">ARB > RelatÃ³rios > Comercial > Vendas > Vendas por cliente</p>
             <p class="mb-2">Data Pagamento > Inicial e Final > Buscar > Produto > Excel</p>
           <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
             <input type="hidden" name="formulario" value="choripan" />
@@ -723,7 +818,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       <!-- GOD SAVE -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">🏆 Fechamento GOD</h1>
+          <h1 class="section-title text-2xl">ðŸ† Fechamento GOD</h1>
         </div>
         <div class="card-body">
           <div id="card-godsave" class="mt-6">
@@ -786,17 +881,76 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
               </table>
             </div>
             <div class="btn-group mt-4">
-              <button onclick="copiarGodSaveEmail()" class="btn-secondary">📋 Copiar para E-mail</button>
-              <button onclick="exportarGodSavePNG()" class="btn-primary">🖼️ Exportar PNG</button>
+              <button onclick="copiarGodSaveEmail()" class="btn-secondary">ðŸ“‹ Copiar para E-mail</button>
+              <button onclick="exportarGodSavePNG()" class="btn-primary">ðŸ–¼ï¸ Exportar PNG</button>
             </div>
           </div>
         </div>
       </div>
       
+      <!-- BIG BEAR -->
+      <div class="card-section">
+        <div class="card-header">
+          <h1 class="section-title text-2xl">Fechamento Big Bear</h1>
+        </div>
+        <div class="card-body">
+          <?php if (!empty($bigBearTotaisPorProduto)): ?>
+            <p class="text-sm text-gray-300 mb-4">Consolidado para o cliente de código <?= htmlspecialchars((string)$bigBearCodigoCliente) ?>.</p>
+            <div id="card-bigbear" class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Quantidade vendida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($bigBearTotaisPorProduto as $produto => $qtde): ?>
+                    <tr>
+                      <td><?= htmlspecialchars((string)$produto) ?></td>
+                      <td><?= number_format((float)$qtde, 0, ",", ".") ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                  <tr class="total-row">
+                    <td>Total geral</td>
+                    <td><?= number_format((float)$bigBearQuantidadeTotal, 0, ",", ".") ?></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mt-6">
+              <div class="form-group">
+                <label for="percent_bigbear" class="form-label">Bonificação (%)</label>
+                <input
+                  type="number"
+                  id="percent_bigbear"
+                  step="0.01"
+                  value="<?= htmlspecialchars((string)$bigBearPercentualBonificacao) ?>"
+                  oninput="atualizarBonificacaoBigBear()"
+                  class="form-control"
+                />
+              </div>
+              <div class="md:col-span-2">
+                <div class="border border-gray-700 rounded-lg p-4 bg-gray-800">
+                  <p class="text-sm text-gray-300">Bonificação projetada</p>
+                  <p class="text-2xl font-semibold text-yellow-400">
+                    <span id="percent_bigbear_value"><?= htmlspecialchars((string)$bigBearPercentualBonificacao) ?></span>% =
+                    <span id="bonificacao-bigbear-text"><?= number_format((float)$bigBearBonificacaoCalculada, 2, ",", ".") ?></span> unidades
+                  </p>
+                </div>
+              </div>
+            </div>
+          <?php else: ?>
+            <p class="text-gray-300">Envie o relatório de recebimentos para visualizar o consolidado do Big Bear.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
       <!-- HERMES E RENATO -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">🥃 Fechamento Hermes e Renato</h1>
+          <h1 class="section-title text-2xl">ðŸ¥ƒ Fechamento Hermes e Renato</h1>
         </div>
         <div class="card-body">
           <div id="card-hermes" class="space-y-4">
@@ -847,8 +1001,8 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
             </div>
 
             <div class="btn-group">
-              <button onclick="copiarHermesEmail()" class="btn-secondary">📧 Copiar para E-mail</button>
-              <button onclick="exportarHermesPNG()" class="btn-primary">🖼️ Exportar PNG</button>
+              <button onclick="copiarHermesEmail()" class="btn-secondary">ðŸ“§ Copiar para E-mail</button>
+              <button onclick="exportarHermesPNG()" class="btn-primary">ðŸ–¼ï¸ Exportar PNG</button>
             </div>
           </div>
         </div>
@@ -857,7 +1011,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
       <!-- CHORIPAN -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">🍻 Fechamento Choripan</h1>
+          <h1 class="section-title text-2xl">ðŸ» Fechamento Choripan</h1>
         </div>
         <div class="card-body">
           <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
@@ -889,15 +1043,15 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
               />
             </div>
 
-            <!-- botão -->
+            <!-- botÃ£o -->
             <div>
               <button type="submit" class="btn-primary w-full">Atualizar</button>
             </div>
           </form>
 
           <div class="btn-group mb-6">
-            <button onclick="copiarChoripanEmail()" type="button" class="btn-secondary">📋 Copiar para E-mail</button>
-            <button onclick="exportarChoripanPNG()" type="button" class="btn-primary">🖼️ Exportar PNG</button>
+            <button onclick="copiarChoripanEmail()" type="button" class="btn-secondary">ðŸ“‹ Copiar para E-mail</button>
+            <button onclick="exportarChoripanPNG()" type="button" class="btn-primary">ðŸ–¼ï¸ Exportar PNG</button>
           </div>
 
           <?php if (!empty($totaisChoripan)): ?>
@@ -941,11 +1095,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
 const litrosBastards = <?= (int)$litrosBastards ?>;
 const litrosEspeciais = <?= (int)$litrosEspeciais ?>;
 const hermesTotal = <?= json_encode((float)$hermesTotal) ?>;
+const bigBearTotalQuantidade = <?= json_encode((float)$bigBearQuantidadeTotal) ?>;
 
 function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
     if (!cardOriginal) {
-        alert('Sem conteúdo do Choripan para copiar.');
+        alert('Sem conteÃºdo do Choripan para copiar.');
         return;
     }
     const card = cardOriginal.cloneNode(true);
@@ -991,13 +1146,13 @@ function copiarChoripanEmail() {
     sel.removeAllRanges();
 
     document.body.removeChild(container);
-    alert('Conteúdo do Choripan copiado! Agora é só colar no e-mail.');
+    alert('ConteÃºdo do Choripan copiado! Agora Ã© sÃ³ colar no e-mail.');
 }
 
 function copiarGodSaveEmail() {
     const cardOriginal = document.getElementById('card-godsave');
     if (!cardOriginal) {
-        alert('Sem conteúdo do GOD Save para copiar.');
+        alert('Sem conteÃºdo do GOD Save para copiar.');
         return;
     }
     const card = cardOriginal.cloneNode(true);
@@ -1045,7 +1200,7 @@ function copiarGodSaveEmail() {
     sel.removeAllRanges();
 
     document.body.removeChild(container);
-    alert('Conteúdo do God Save copiado! Agora é só colar no e-mail.');
+    alert('ConteÃºdo do God Save copiado! Agora Ã© sÃ³ colar no e-mail.');
 }
 
 function atualizarBonificacaoGodSave() {
@@ -1063,10 +1218,32 @@ function atualizarBonificacaoGodSave() {
     }
 }
 
+function atualizarBonificacaoBigBear() {
+    const total = typeof bigBearTotalQuantidade === 'number'
+        ? bigBearTotalQuantidade
+        : parseFloat(bigBearTotalQuantidade) || 0;
+    const input = document.getElementById('percent_bigbear');
+    const resultado = document.getElementById('bonificacao-bigbear-text');
+    const percentualSpan = document.getElementById('percent_bigbear_value');
+
+    if (!input || !resultado) {
+        return;
+    }
+
+    const pct = parseFloat(input.value) || 0;
+    const valor = total * (pct / 100);
+
+    resultado.textContent = valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (percentualSpan) {
+        percentualSpan.textContent = pct.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+}
+
 function exportarChoripanPNG() {
     const cardOriginal = document.getElementById('card-choripan');
     if (!cardOriginal) {
-        alert('Sem conteúdo do Choripan para exportar.');
+        alert('Sem conteÃºdo do Choripan para exportar.');
         return;
     }
     const card = cardOriginal.cloneNode(true);
@@ -1115,7 +1292,7 @@ function exportarChoripanPNG() {
 function exportarGodSavePNG() {
     const cardOriginal = document.getElementById('card-godsave');
     if (!cardOriginal) {
-        alert('Sem conteúdo do GOD Save para exportar.');
+        alert('Sem conteÃºdo do GOD Save para exportar.');
         return;
     }
     const card = cardOriginal.cloneNode(true);
@@ -1161,6 +1338,7 @@ function exportarGodSavePNG() {
         document.body.removeChild(container);
     });
 }
+document.getElementById('percent_bigbear') && atualizarBonificacaoBigBear();
 document.getElementById('percent_bastards') && atualizarBonificacaoGodSave();
 document.getElementById('percent_hermes') && atualizarRepasseHermes();
 
@@ -1180,12 +1358,12 @@ function atualizarRepasseHermes() {
 function copiarHermesEmail() {
     const cardOriginal = document.getElementById('card-hermes');
     if (!cardOriginal) {
-        alert('Sem conteúdo do Hermes e Renato para copiar.');
+        alert('Sem conteÃºdo do Hermes e Renato para copiar.');
         return;
     }
     const table = cardOriginal.querySelector('table')?.cloneNode(true);
     if (!table) {
-        alert('Tabela do Hermes e Renato não encontrada.');
+        alert('Tabela do Hermes e Renato nÃ£o encontrada.');
         return;
     }
 
@@ -1228,18 +1406,18 @@ function copiarHermesEmail() {
     sel.removeAllRanges();
 
     document.body.removeChild(container);
-    alert('Conteúdo do Hermes e Renato copiado! Agora é só colar no e-mail.');
+    alert('ConteÃºdo do Hermes e Renato copiado! Agora Ã© sÃ³ colar no e-mail.');
 }
 
 function exportarHermesPNG() {
     const cardOriginal = document.getElementById('card-hermes');
     if (!cardOriginal) {
-        alert('Sem conteúdo do Hermes e Renato para exportar.');
+        alert('Sem conteÃºdo do Hermes e Renato para exportar.');
         return;
     }
     const table = cardOriginal.querySelector('table')?.cloneNode(true);
     if (!table) {
-        alert('Tabela do Hermes e Renato não encontrada.');
+        alert('Tabela do Hermes e Renato nÃ£o encontrada.');
         return;
     }
 
@@ -1328,3 +1506,13 @@ function copiarResumoEmail() {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
