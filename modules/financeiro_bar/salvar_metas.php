@@ -147,7 +147,32 @@ try {
     error_log("Resultado do upsert: " . ($resultado !== false ? 'sucesso' : 'falha'));
     
     if ($resultado === false) {
-        throw new Exception('Falha ao salvar metas no Supabase');
+        // Fallback: alguns schemas/tabelas não possuem constraint compatível com ON CONFLICT
+        // (erro 42P10: "there is no unique or exclusion constraint matching the ON CONFLICT specification").
+        // Neste caso, removemos previamente os registros com as mesmas DATA_META e re-inserimos.
+        error_log("Upsert falhou - tentando fallback: delete + insert");
+
+        // Extrair DATA_META únicos dos registros para usar no DELETE
+        $datasMeta = array_unique(array_map(function($r) {
+            return $r['DATA_META'];
+        }, $todosRegistros));
+
+        foreach ($datasMeta as $dm) {
+            // DELETE WHERE DATA_META=eq.<data>
+            error_log("Fallback: deletando registros existentes para DATA_META=" . $dm);
+            $delResult = $supabase->delete($table, ['DATA_META' => 'eq.' . $dm]);
+            error_log("Resultado DELETE for " . $dm . ": " . var_export($delResult, true));
+        }
+
+        // Tentar INSERT em batch com os registros (sem on_conflict)
+        $insertResult = $supabase->insert($table, $todosRegistros);
+        error_log("Resultado INSERT (fallback): " . ($insertResult !== false ? 'sucesso' : 'falha'));
+
+        if ($insertResult === false) {
+            throw new Exception('Falha ao salvar metas no Supabase (upsert e fallback insert falharam)');
+        }
+        // Caso o insert tenha funcionado, considerar como sucesso e sobrescrever $resultado
+        $resultado = $insertResult;
     }
     
     // Resposta de sucesso
