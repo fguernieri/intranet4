@@ -306,6 +306,10 @@ $bonificacaoEspeciais  = $bonificacaoEspeciais  ?? 0;
 $bigBearDulcidioResumo = [];
 $bigBearDulcidioTotalQtde = 0.0;
 $bigBearDulcidioCliente = '';
+$bigBearBonificacaoPercent = isset($_POST['bigbear_bonus'])
+    ? (float)$_POST['bigbear_bonus']
+    : 10.0;
+$bigBearBonificacaoValor = 0.0;
 
 if (!empty($dadosChoripan)) {
     $cabCh      = $dadosChoripan[0] ?? [];
@@ -337,6 +341,7 @@ if (!empty($dadosChoripan)) {
         $bigBearDulcidioTotalQtde += $quantidade;
     }
 }
+$bigBearBonificacaoValor = ($bigBearDulcidioTotalQtde * $bigBearBonificacaoPercent) / 100;
 
 // ====== Fechamento Hermes e Renato (a partir do mesmo XLS de Vendas) ======
 // Consolida a soma da Coluna J (10¬™ coluna, √≠ndice 9) para os produtos especificados
@@ -756,15 +761,27 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
         </div>
       </div>
 
-      <!-- BIG BEAR DULCÔøΩDIO -->
+            <!-- BIG BEAR DULCIDIO -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">üèÜ Fechamento Big Bear Rios</h1>
+          <h1 class="section-title text-2xl">Fechamento Big Bear DulcÌdio</h1>
         </div>
         <div class="card-body">
           <?php if (!empty($bigBearDulcidioResumo)): ?>
+            <div class="form-group mb-4 max-w-xs">
+              <label for="bigbear-bonus" class="form-label">BonificaÁ„o (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                id="bigbear-bonus"
+                name="bigbear_bonus"
+                value="<?= htmlspecialchars((string)$bigBearBonificacaoPercent) ?>"
+                class="form-control"
+                data-total="<?= htmlspecialchars((string)$bigBearDulcidioTotalQtde) ?>"
+              />
+            </div>
             <p class="mb-4 text-gray-300">
-              Resumo das quantidades
+              Resumo das quantidades do cliente cÛdigo 2506
               <?= $bigBearDulcidioCliente ? '(' . htmlspecialchars((string)$bigBearDulcidioCliente) . ')' : '' ?>.
             </p>
             <div class="table-container">
@@ -786,11 +803,15 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                     <td>Total</td>
                     <td><?= number_format((float)$bigBearDulcidioTotalQtde, 2, ',', '.') ?></td>
                   </tr>
+                  <tr class="total-row">
+                    <td>BonificaÁ„o <span id="bigbear-bonus-percent-text"><?= number_format((float)$bigBearBonificacaoPercent, 2, ',', '.') ?></span>%</td>
+                    <td><span id="bigbear-bonus-value-text"><?= number_format((float)$bigBearBonificacaoValor, 2, ',', '.') ?></span></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           <?php else: ?>
-            <p class="text-gray-300">Envie o RelatÔøΩÔøΩrio de Recebimentos para ver os dados do cliente 2506.</p>
+            <p class="text-gray-300">Envie o RelatÛrio de Recebimentos para ver os dados do cliente 2506.</p>
           <?php endif; ?>
         </div>
       </div>
@@ -1017,7 +1038,28 @@ const litrosBastards = <?= (int)$litrosBastards ?>;
 const litrosEspeciais = <?= (int)$litrosEspeciais ?>;
 const hermesTotal = <?= json_encode((float)$hermesTotal) ?>;
 
-function copiarChoripanEmail() {
+const bigBearTotalQtde = <?= json_encode((float)$bigBearDulcidioTotalQtde) ?>;
+const bigBearBonusPercentInit = <?= json_encode((float)$bigBearBonificacaoPercent) ?>;
+
+function atualizarBonificacaoBigBear() {
+    const input = document.getElementById('bigbear-bonus');
+    const percentSpan = document.getElementById('bigbear-bonus-percent-text');
+    const valueSpan = document.getElementById('bigbear-bonus-value-text');
+    if (!input || !percentSpan || !valueSpan) return;
+    const total = parseFloat(input.dataset.total || bigBearTotalQtde || 0) || 0;
+    const pct = parseFloat(input.value) || 0;
+    percentSpan.textContent = pct.toFixed(2).replace('.', ',');
+    const valor = total * (pct / 100);
+    valueSpan.textContent = valor.toFixed(2).replace('.', ',');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('bigbear-bonus');
+    if (input) {
+        input.addEventListener('input', atualizarBonificacaoBigBear);
+        atualizarBonificacaoBigBear();
+    }
+});function copiarChoripanEmail() {
     const cardOriginal = document.getElementById('card-choripan');
     if (!cardOriginal) {
         alert('Sem conte√∫do do Choripan para copiar.');
@@ -1403,3 +1445,5 @@ function copiarResumoEmail() {
 </script>
 </body>
 </html>
+
+
