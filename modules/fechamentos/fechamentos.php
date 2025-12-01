@@ -764,12 +764,12 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
             <!-- BIG BEAR DULCIDIO -->
       <div class="card-section">
         <div class="card-header">
-          <h1 class="section-title text-2xl">Fechamento Big Bear Dulcídio</h1>
+          <h1 class="section-title text-2xl">ðŸ¥ƒ Fechamento Big Bear Rios</h1>
         </div>
         <div class="card-body">
           <?php if (!empty($bigBearDulcidioResumo)): ?>
             <div class="form-group mb-4 max-w-xs">
-              <label for="bigbear-bonus" class="form-label">Bonificação (%)</label>
+              <label for="bigbear-bonus" class="form-label">BonificaÃ§Ã£o (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -781,8 +781,8 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
               />
             </div>
             <p class="mb-4 text-gray-300">
-              Resumo das quantidades do cliente código 2506
-              <?= $bigBearDulcidioCliente ? '(' . htmlspecialchars((string)$bigBearDulcidioCliente) . ')' : '' ?>.
+              Resumo das quantidades do cliente cÃ³digo 2506
+              <?= $bigBearDulcidioCliente ? '(' . htmlspecialchars((string)$bigBearDulcidioCliente) . ')' : '' ?>
             </p>
             <div class="table-container">
               <table class="custom-table">
@@ -804,14 +804,14 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                     <td><?= number_format((float)$bigBearDulcidioTotalQtde, 2, ',', '.') ?></td>
                   </tr>
                   <tr class="total-row">
-                    <td>Bonificação <span id="bigbear-bonus-percent-text"><?= number_format((float)$bigBearBonificacaoPercent, 2, ',', '.') ?></span>%</td>
+                    <td>BonificaÃ§Ã£oo <span id="bigbear-bonus-percent-text"><?= number_format((float)$bigBearBonificacaoPercent, 2, ',', '.') ?></span>%</td>
                     <td><span id="bigbear-bonus-value-text"><?= number_format((float)$bigBearBonificacaoValor, 2, ',', '.') ?></span></td>
                   </tr>
                 </tbody>
               </table>
             </div>
           <?php else: ?>
-            <p class="text-gray-300">Envie o Relatório de Recebimentos para ver os dados do cliente 2506.</p>
+            <p class="text-gray-300">Envie o RelatÃ³rio de Recebimentos para ver os dados do cliente 2506.</p>
           <?php endif; ?>
         </div>
       </div>
