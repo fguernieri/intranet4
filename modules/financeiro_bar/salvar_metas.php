@@ -193,14 +193,34 @@ try {
     // Log do erro
     error_log("Erro ao salvar metas no Supabase: " . $e->getMessage());
     
-    // Resposta de erro
-    echo json_encode([
+    // Tentar anexar as últimas linhas do log do Supabase para facilitar debug em produção
+    $supabaseLogTail = null;
+    $debugFilePath = __DIR__ . '/supabase_debug.log';
+    if (file_exists($debugFilePath) && is_readable($debugFilePath)) {
+        $lines = @file($debugFilePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines !== false) {
+            $tail = array_slice($lines, max(0, count($lines) - 200));
+            $supabaseLogTail = implode("\n", $tail);
+        }
+    }
+
+    // Resposta de erro com debug adicional do Supabase (se disponível)
+    $errorResponse = [
         'success' => false,
         'message' => $e->getMessage(),
         'debug_info' => [
             'file' => $e->getFile(),
             'line' => $e->getLine()
         ]
-    ]);
+    ];
+
+    if ($supabaseLogTail !== null) {
+        // Incluir apenas um trecho do log para não enviar payloads gigantes
+        $errorResponse['supabase_debug_tail'] = $supabaseLogTail;
+    } else {
+        $errorResponse['supabase_debug_tail'] = 'log not available';
+    }
+
+    echo json_encode($errorResponse);
 }
 ?>
