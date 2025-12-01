@@ -1515,13 +1515,22 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
-                                                                    // Render checkbox when detalhe contains `id` (new schema). Use marcarComoLidoById.
+                                                                    // Support both new schema with `id` and legacy composite numeric keys
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
                                                                 <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
                                                                         onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1701,12 +1710,22 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
+                                                                    // Suporta tanto novo esquema com `id` quanto esquema legado com chaves numéricas
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
                                                                 <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
                                                                         onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -1873,11 +1892,20 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
                                                                 <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
                                                                         onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2009,11 +2037,20 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
                                                                 <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
                                                                         onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2155,13 +2192,19 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                             <div class="ml-3">
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
+                                                                    // Suporta ambos os formatos: novo esquema com campo `id` e esquema legado com chaves numéricas
+                                                                    $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
                                                                     $__keys = extractNumericKeys($detalhe);
                                                                     $__ne = $__keys['ne'];
                                                                     $__nf = $__keys['nf'];
                                                                     $__nl = $__keys['nl'];
                                                                     $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                <?php if ($__id > 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
                                                                         onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
@@ -2336,11 +2379,20 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__id > 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2468,11 +2520,20 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__id > 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2600,11 +2661,20 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__id > 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
                                                                         style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
-                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" aria-label="Marcar como lido"
+                                                                        style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);appearance:checkbox;-webkit-appearance:checkbox;display:inline-block;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset;background-clip:padding-box;" 
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
@@ -2798,10 +2868,18 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                                                                 <span class="visto-badge"><?= renderVistoLabel($detalhe, $visto_val) ?></span>
                                                                 <?php
                                                                     $__id = isset($detalhe['id']) ? intval($detalhe['id']) : 0;
+                                                                    $__keys = extractNumericKeys($detalhe);
+                                                                    $__ne = $__keys['ne'];
+                                                                    $__nf = $__keys['nf'];
+                                                                    $__nl = $__keys['nl'];
+                                                                    $__ns = $__keys['ns'];
                                                                 ?>
-                                                                <?php if ($visto_val !== true && $__id > 0): ?>
+                                                                <?php if ($__id > 0): ?>
                                                                     <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);" aria-label="Marcar como lido"
-                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)">
+                                                                        onclick="marcarComoLidoById(<?= $__id ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
+                                                                <?php elseif ($__ne > 0 && $__nf > 0 && $__nl > 0 && $__ns >= 0): ?>
+                                                                    <input type="checkbox" class="ml-2 w-4 h-4 cursor-pointer bg-white border-gray-300 rounded" style="accent-color:#f59e0b;border:1px solid rgba(156,163,175,0.18);" aria-label="Marcar como lido"
+                                                                        onclick="marcarComoLido(<?= $__ne ?>, <?= $__nf ?>, <?= $__nl ?>, <?= $__ns ?>, this)" <?= ($visto_val === true) ? 'checked' : '' ?> >
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>

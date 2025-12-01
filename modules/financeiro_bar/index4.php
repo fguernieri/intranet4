@@ -712,26 +712,32 @@ require_once __DIR__ . '/../../sidebar.php';
                 }
                 
                 // Renderiza um badge legível para o status 'visto'
+                // Renderiza um badge legível para o status 'visto'. Por padrão retorna string vazia
+                // para exibir apenas o controle visual. Para depuração use ?show_visto_text=1
                 function renderVistoLabel($detalhe, $visto_val = null) {
-                    // Normaliza valor vindo na linha (pode ser booleano, string 't'/'true'/'1', etc.)
-                    $val = null;
-                    if (isset($detalhe['visto'])) {
-                        $rv = $detalhe['visto'];
-                        if (is_string($rv)) $rv = in_array(strtolower($rv), ['t','true','1'], true);
-                        $val = ($rv === true) ? true : false;
-                    } else {
-                        if ($visto_val === true) $val = true;
-                        elseif ($visto_val === false) $val = false;
-                        else $val = null;
+                    if (isset($_GET['show_visto_text']) && $_GET['show_visto_text'] === '1') {
+                        // Normaliza valor vindo na linha (pode ser booleano, string 't'/'true'/'1', etc.)
+                        $val = null;
+                        if (isset($detalhe['visto'])) {
+                            $rv = $detalhe['visto'];
+                            if (is_string($rv)) $rv = in_array(strtolower($rv), ['t','true','1'], true);
+                            $val = ($rv === true) ? true : false;
+                        } else {
+                            if ($visto_val === true) $val = true;
+                            elseif ($visto_val === false) $val = false;
+                            else $val = null;
+                        }
+
+                        if ($val === true) {
+                            return '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+                        } elseif ($val === false) {
+                            return '<span class="text-xs px-2 py-0.5 rounded bg-red-600 text-white">Não lido</span>';
+                        } else {
+                            return '<span class="text-xs text-gray-500">—</span>';
+                        }
                     }
 
-                    if ($val === true) {
-                        return '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
-                    } elseif ($val === false) {
-                        return '<span class="text-xs px-2 py-0.5 rounded bg-orange-500 text-white">Não lido</span>';
-                    } else {
-                        return '<span class="text-xs text-gray-500">—</span>';
-                    }
+                    return '';
                 }
 
                 // Formata percentual do valor sobre a RECEITA OPERACIONAL (total_geral_operacional)
@@ -2424,13 +2430,20 @@ async function marcarComoLido(nr_empresa, nr_filial, nr_lanc, seq_lanc, btnEl) {
 
         const j = await resp.json();
         if (j.success) {
-            const container = btnEl.closest('div');
+            const newVisto = (typeof j.visto !== 'undefined') ? Boolean(j.visto) : true;
+            const container = btnEl ? btnEl.closest('div') : null;
             if (container) {
                 const badge = container.querySelector('.visto-badge');
-                if (badge) badge.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>';
+                if (badge) {
+                    badge.innerHTML = newVisto ? '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>' : '<span class="text-xs px-2 py-0.5 rounded bg-red-600 text-white">Não lido</span>';
+                }
             }
-            // remove the control (checkbox) to avoid further action
-            try { btnEl.remove(); } catch (e) {}
+
+            if (isCheckbox) {
+                try { btnEl.checked = newVisto; btnEl.disabled = false; btnEl.classList.remove('opacity-60'); } catch (e) {}
+            } else {
+                try { btnEl.disabled = false; } catch (e) {}
+            }
         } else {
             alert('Erro: ' + (j.error || 'unknown'));
             if (isCheckbox) {
@@ -2472,9 +2485,8 @@ async function marcarTodosComoLidos() {
         });
         const j = await resp.json();
         if (j.success) {
-            // Update UI: set all badges to Lido and remove checkboxes
-            document.querySelectorAll('.visto-badge').forEach(b => { b.innerHTML = '<span class="text-xs px-2 py-0.5 rounded bg-green-600 text-white">Lido</span>'; });
-            document.querySelectorAll('input[type=checkbox]').forEach(c => { try { c.remove(); } catch(e){} });
+            // Update UI: set all switches to checked so they appear green; textual badges are hidden via CSS
+            document.querySelectorAll('input[type=checkbox][aria-label="Marcar como lido"]').forEach(c => { try { c.checked = true; c.disabled = false; c.classList.remove('opacity-60'); } catch(e){} });
             if (btn) { btn.textContent = 'Marcado'; setTimeout(()=>{ if(btn) btn.textContent = 'Marcar tudo como lido'; }, 2500); }
             alert('Todos os lançamentos do período foram marcados como lidos.');
         } else {
@@ -2491,4 +2503,40 @@ document.addEventListener('DOMContentLoaded', function(){
     var mk = document.getElementById('markAllBtn');
     if (mk) mk.addEventListener('click', function(e){ e.stopPropagation(); marcarTodosComoLidos(); });
 });
+</script>
+
+<script>
+// Convert plain checkboxes (aria-label="Marcar como lido") into styled toggle switches (red=unchecked, green=checked)
+(function(){
+    function makeSwitchForInput(inp){
+        if(!inp || inp.dataset.switchified) return;
+        inp.classList.remove('ml-2','w-4','h-4');
+        inp.classList.add('peer','sr-only');
+        inp.dataset.switchified = '1';
+
+        var label = document.createElement('label');
+        label.className = 'inline-flex items-center cursor-pointer';
+
+        inp.parentNode.insertBefore(label, inp);
+        label.appendChild(inp);
+
+        var track = document.createElement('span');
+        track.className = 'w-12 h-7 rounded-full bg-red-600 peer-checked:bg-green-600 transition-colors duration-200 relative inline-block ml-2';
+        track.setAttribute('aria-hidden','true');
+
+        var knob = document.createElement('span');
+        knob.className = 'absolute left-0 top-0 w-6 h-6 bg-white rounded-full shadow transform transition-transform duration-200 peer-checked:translate-x-5';
+        track.appendChild(knob);
+
+        label.appendChild(track);
+    }
+
+    function transform(){
+        document.querySelectorAll('input[type=checkbox][aria-label="Marcar como lido"]').forEach(function(inp){
+            makeSwitchForInput(inp);
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', transform); else transform();
+})();
 </script>
