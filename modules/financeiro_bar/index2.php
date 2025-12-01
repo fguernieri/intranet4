@@ -568,7 +568,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 
                 // Função para obter meta da tabela fmetastap
                 function obterMeta($categoria, $categoria_pai = null, $periodo = null) {
-                    global $supabase, $periodo_selecionado;
+                    global $supabase, $periodo_selecionado, $total_geral, $total_geral_operacional;
                     
                     if (!$supabase) {
                         return 0; // Se conexão não existe, retorna 0
@@ -584,7 +584,8 @@ require_once __DIR__ . '/../../sidebar.php';
                     }
                     
                     $categoria_upper = strtoupper(trim($categoria));
-                    
+                    $categoria_pai_upper = $categoria_pai ? strtoupper(trim($categoria_pai)) : null;
+
                     try {
                         $filtros = [];
                         
@@ -595,7 +596,6 @@ require_once __DIR__ . '/../../sidebar.php';
                         
                         if ($categoria_pai) {
                             // Buscar subcategoria: CATEGORIA = pai E SUBCATEGORIA = filha
-                            $categoria_pai_upper = strtoupper(trim($categoria_pai));
                             $filtros['CATEGORIA'] = "eq.$categoria_pai_upper";
                             $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
                         } else {
@@ -603,21 +603,45 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['CATEGORIA'] = "eq.$categoria_upper";
                             $filtros['SUBCATEGORIA'] = "is.null";
                         }
-                        
+
                         $resultado = $supabase->select('fmetastap', [
                             'select' => 'META, PERCENTUAL',
                             'filters' => $filtros,
                             'order' => 'DATA_CRI.desc',
                             'limit' => 1
                         ]);
-                        
-                        // Verifica se encontrou resultado válido
-                        if (!empty($resultado) && isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
-                            return floatval($resultado[0]['META']);
+
+                        // Se não houver resultado, retorna 0
+                        if (empty($resultado) || !isset($resultado[0])) {
+                            return 0;
                         }
-                        
-                        // Meta não encontrada, retorna 0
-                        return 0;
+
+                        $meta_db = isset($resultado[0]['META']) && is_numeric($resultado[0]['META']) ? floatval($resultado[0]['META']) : 0;
+                        $percentual_db = isset($resultado[0]['PERCENTUAL']) && is_numeric($resultado[0]['PERCENTUAL']) ? floatval($resultado[0]['PERCENTUAL']) : 0;
+
+                        // Categorias que devem usar percentual sobre receita
+                        $categorias_percentuais = [
+                            'TRIBUTOS',
+                            'CUSTO VARIÁVEL',
+                            'CUSTO VARIAVEL',
+                            'DESPESAS DE VENDA',
+                            'DESPESA DE VENDA'
+                        ];
+
+                        $usar_percentual = false;
+                        if (in_array($categoria_upper, $categorias_percentuais, true)) $usar_percentual = true;
+                        if ($categoria_pai_upper && in_array($categoria_pai_upper, $categorias_percentuais, true)) $usar_percentual = true;
+
+                        // Escolher base de cálculo: preferir receita operacional quando disponível
+                        $base_receita = (isset($total_geral_operacional) && floatval($total_geral_operacional) > 0) ? floatval($total_geral_operacional) : (isset($total_geral) ? floatval($total_geral) : 0);
+
+                        // Se devemos usar percentual e houver percentual válido e base > 0, calcular a meta a partir do percentual
+                        if ($usar_percentual && $percentual_db > 0 && $base_receita > 0) {
+                            return ($base_receita * $percentual_db) / 100.0;
+                        }
+
+                        // Caso contrário, retornar o valor absoluto salvo (META)
+                        return $meta_db;
                         
                     } catch (Exception $e) {
                         error_log("Erro ao buscar meta para '$categoria' (pai: '$categoria_pai', período: '$periodo_busca'): " . $e->getMessage());
