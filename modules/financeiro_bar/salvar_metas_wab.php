@@ -14,6 +14,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Variáveis de diagnóstico disponíveis para retorno em caso de erro
+$diagnostic_datas_meta = [];
+$diagnostic_deleted = [];
+$diagnostic_insert_result = null;
+
 // Convert uncaught exceptions to JSON response and log
 set_exception_handler(function($e){
     error_log("Uncaught exception in salvar_metas_wab.php: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
@@ -167,6 +172,7 @@ try {
     $datasMeta = array_values(array_unique(array_map(function($r) {
         return $r['DATA_META'];
     }, $todosRegistros)));
+    $diagnostic_datas_meta = $datasMeta;
 
     // Log
     error_log("Datas META a serem substituídas (WAB): " . implode(', ', $datasMeta));
@@ -185,6 +191,7 @@ try {
     // Passo 3: inserir todos os registros do simulador (INSERT em batch)
     error_log("Inserindo registros (INSERT batch) na tabela " . $table . " (WAB)");
     $insertResult = $supabase->insert($table, $todosRegistros);
+    $diagnostic_insert_result = $insertResult;
     error_log("Resultado INSERT (WAB): " . ($insertResult !== false ? 'sucesso' : 'falha'));
 
     if ($insertResult === false) {
@@ -232,6 +239,11 @@ try {
         'debug_info' => [
             'file' => $e->getFile(),
             'line' => $e->getLine()
+        ],
+        'diagnostic' => [
+            'datas_meta' => $diagnostic_datas_meta,
+            'deleted' => $deleted ?? $diagnostic_deleted,
+            'insert_result' => $diagnostic_insert_result
         ]
     ];
 
@@ -240,6 +252,71 @@ try {
     } else {
         $errorResponse['supabase_debug_tail'] = 'log not available';
     }
+
+    // Montar debug completo (supabase log + php error log + server info + trace)
+    $fullDebug = [];
+    $fullDebug[] = "--- SERVER INFO ---";
+    $fullDebug[] = 'REQUEST_URI: ' . ($_SERVER['REQUEST_URI'] ?? '');
+    $fullDebug[] = 'REMOTE_ADDR: ' . ($_SERVER['REMOTE_ADDR'] ?? '');
+    $fullDebug[] = 'SERVER_SOFTWARE: ' . ($_SERVER['SERVER_SOFTWARE'] ?? '');
+    $fullDebug[] = 'PHP_VERSION: ' . phpversion();
+    if (function_exists('curl_version')) {
+        $cv = curl_version();
+        $fullDebug[] = 'CURL_VERSION: ' . ($cv['version'] ?? '');
+    }
+
+    // Supabase config summary (redacted keys)
+    $supabaseConfigPath = __DIR__ . '/config/supabase_config.php';
+    if (file_exists($supabaseConfigPath)) {
+        $cfg = @include $supabaseConfigPath;
+        if (is_array($cfg)) {
+            $cfgSummary = [
+                'url' => $cfg['url'] ?? null,
+                'use_service_key' => $cfg['use_service_key'] ?? null,
+                'anon_key_present' => !empty($cfg['anon_key']),
+                'service_key_present' => !empty($cfg['service_key'])
+            ];
+            $fullDebug[] = "--- SUPABASE CONFIG (summary, keys redacted) ---";
+            $fullDebug[] = json_encode($cfgSummary);
+        }
+    }
+
+    $fullDebug[] = "--- SUPABASE DEBUG LOG (tail) ---";
+    if ($supabaseLogTail !== null) {
+        $fullDebug[] = $supabaseLogTail;
+    } else {
+        $fullDebug[] = 'supabase_debug.log not available or not readable';
+    }
+
+    // PHP error log
+    $phpErrorLogPath = @ini_get('error_log');
+    $phpLogTail = null;
+    if ($phpErrorLogPath && file_exists($phpErrorLogPath) && is_readable($phpErrorLogPath)) {
+        $lines = @file($phpErrorLogPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines !== false) {
+            $tail = array_slice($lines, max(0, count($lines) - 200));
+            $phpLogTail = implode("\n", $tail);
+        }
+    }
+    $fullDebug[] = "--- PHP ERROR LOG (tail) ---";
+    $fullDebug[] = $phpLogTail ?? 'php error_log not available';
+
+    $fullDebug[] = "--- EXCEPTION TRACE ---";
+    $fullDebug[] = $e->getTraceAsString();
+
+    // Combine and redact potential tokens (JWTs and long base64-like strings)
+    $fullDebugText = implode("\n", $fullDebug);
+    // Redact typical JWT tokens starting with eyJ
+    $fullDebugText = preg_replace('/eyJ[A-Za-z0-9_\-\.]{10,}/', '***REDACTED_TOKEN***', $fullDebugText);
+    // Redact long base64-like strings
+    $fullDebugText = preg_replace('/[A-Za-z0-9_\-]{40,}/', '***REDACTED***', $fullDebugText);
+
+    // Limit size to last 20000 chars to avoid huge responses
+    if (strlen($fullDebugText) > 20000) {
+        $fullDebugText = substr($fullDebugText, -20000);
+    }
+
+    $errorResponse['full_debug'] = $fullDebugText;
 
     echo json_encode($errorResponse);
 }
