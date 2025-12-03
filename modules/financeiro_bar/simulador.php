@@ -130,6 +130,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 <button id="simuladorMenuBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded transition-colors">Selecionar Bar ▾</button>
                 <div id="simuladorMenu" class="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg hidden z-50">
                     <a href="simuladorwab.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">We Are Bastards</a>
+                    <a href="simuladorfabrica.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Fábrica</a>
                 </div>
             </div>
             <script>
@@ -376,9 +377,35 @@ require_once __DIR__ . '/../../sidebar.php';
                 usort($saidas_nao_operacionais, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
-                
+
+                // Remover possíveis duplicatas por nome de categoria (evita linhas repetidas na tabela)
+                function dedupe_by_categoria_name($arr) {
+                    $out = [];
+                    $seen = [];
+                    foreach ($arr as $r) {
+                        $nome = trim(strtoupper($r['categoria'] ?? ''));
+                        if ($nome === '') continue;
+                        if (in_array($nome, $seen, true)) continue;
+                        $seen[] = $nome;
+                        $out[] = $r;
+                    }
+                    return $out;
+                }
+
+                $receitas_operacionais = dedupe_by_categoria_name($receitas_operacionais);
+                $receitas_nao_operacionais = dedupe_by_categoria_name($receitas_nao_operacionais);
+                $tributos = dedupe_by_categoria_name($tributos);
+                $custo_variavel = dedupe_by_categoria_name($custo_variavel);
+                $custo_fixo = dedupe_by_categoria_name($custo_fixo);
+                $despesa_fixa = dedupe_by_categoria_name($despesa_fixa);
+                $despesa_venda = dedupe_by_categoria_name($despesa_venda);
+                $investimento_interno = dedupe_by_categoria_name($investimento_interno);
+                $saidas_nao_operacionais = dedupe_by_categoria_name($saidas_nao_operacionais);
+
                 $total_operacional = array_sum(array_column($receitas_operacionais, 'total_receita_mes'));
                 $total_nao_operacional = array_sum(array_column($receitas_nao_operacionais, 'total_receita_mes'));
+                // Base operacional: excluir receitas não operacionais (repasses)
+                $total_geral_operacional = $total_geral - $total_nao_operacional;
                 $total_tributos = array_sum(array_column($tributos, 'total_receita_mes'));
                 $total_custo_variavel = array_sum(array_column($custo_variavel, 'total_receita_mes'));
                 $total_custo_fixo = array_sum(array_column($custo_fixo, 'total_receita_mes'));
@@ -423,22 +450,22 @@ require_once __DIR__ . '/../../sidebar.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- RECEITA BRUTA - Linha principal expansível -->
+                        <!-- RECEITA OPERACIONAL - Linha principal expansível (exclui receitas não operacionais) -->
                         <?php 
                         $meta_receita_bruta = obterMeta('RECEITA BRUTA');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
-                                RECEITA BRUTA
+                                RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
                                 <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_receita_bruta, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-bruta">
-                                R$ <?= number_format($total_geral, 2, ',', '.') ?>
+                                R$ <?= number_format($total_geral_operacional ?? $total_geral, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-receita-bruta">
-                                R$ <?= number_format($total_geral, 2, ',', '.') ?>
+                                R$ <?= number_format($total_geral_operacional ?? $total_geral, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-receita-bruta">
                                 100.00%
@@ -481,38 +508,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         </tr>
                         <?php endif; ?>
                         
-                        <!-- RECEITAS NÃO OPERACIONAIS - Subgrupo (dentro da RECEITA BRUTA) -->
-                        <?php if (!empty($receitas_nao_operacionais)): ?>
-                        <?php 
-                        $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
-                        ?>
-                        <tr class="hover:bg-gray-700 font-medium text-blue-300 text-sm">
-                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
-                                RECEITAS NÃO OPERACIONAIS
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
-                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
-                                <input type="text" 
-                                       class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
-                                       id="valor-sim-nao-operacional"
-                                       data-categoria="RECEITAS NÃO OPERACIONAIS"
-                                       data-tipo="receita-nao-operacional"
-                                       data-valor-base="<?= $total_nao_operacional ?>"
-                                       value="<?= number_format($total_nao_operacional, 2, ',', '.') ?>"
-                                       onchange="atualizarCalculos()"
-                                       onblur="formatarCampoMoeda(this)"
-                                       onfocus="removerFormatacao(this)">
-                            </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-nao-operacional">
-                                <?= number_format(($total_nao_operacional / $total_geral) * 100, 2, ',', '.') ?>%
-                            </td>
-                        </tr>
-                        <?php endif; ?>
+                        <!-- RECEITAS NÃO OPERACIONAIS - (moved below, above SAÍDAS NÃO OPERACIONAIS) -->
                     </tbody>
                     
 
@@ -959,6 +955,41 @@ require_once __DIR__ . '/../../sidebar.php';
                     </tbody>
                     <?php endif; ?>
 
+                    <!-- RECEITAS NÃO OPERACIONAIS - Linha principal (moved) -->
+                    <?php if (!empty($receitas_nao_operacionais)): ?>
+                    <tbody>
+                        <?php 
+                        $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                        ?>
+                        <tr class="hover:bg-gray-700 font-medium text-blue-300 text-sm">
+                            <td class="px-3 py-2 border-b border-gray-700">
+                                RECEITAS NÃO OPERACIONAIS
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-center">
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
+                                R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
+                                <input type="text" 
+                                       class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
+                                       id="valor-sim-nao-operacional"
+                                       data-categoria="RECEITAS NÃO OPERACIONAIS"
+                                       data-tipo="receita-nao-operacional"
+                                       data-valor-base="<?= $total_nao_operacional ?>"
+                                       value="<?= number_format($total_nao_operacional, 2, ',', '.') ?>"
+                                       onchange="atualizarCalculos()"
+                                       onblur="formatarCampoMoeda(this)"
+                                       onfocus="removerFormatacao(this)">
+                            </td>
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-nao-operacional">
+                                <?= number_format(($total_nao_operacional / $total_geral) * 100, 2, ',', '.') ?>%
+                            </td>
+                        </tr>
+                    </tbody>
+                    <?php endif; ?>
+
                     <!-- SAÍDAS NÃO OPERACIONAIS - Linha principal -->
                     <?php if (!empty($saidas_nao_operacionais)): ?>
                     <tbody>
@@ -1277,8 +1308,8 @@ function obterValorNumericoPercentual(input) {
 
 
 function atualizarCalculosPercentualSubcategoria(inputPercentual) {
-    // Obter receita bruta total
-    const receitaBrutaTotal = <?= $total_geral ?>;
+    // Obter receita operacional total (base usada para percentuais)
+    const receitaBrutaTotal = <?= $total_geral_operacional ?? $total_geral ?>;
     
     // Obter o percentual digitado
     let percentualTexto = inputPercentual.value.replace(/[^\d,]/g, '');
@@ -1316,7 +1347,7 @@ function atualizarCalculosPercentualSubcategoria(inputPercentual) {
 }
 
 function recalcularTotalCategoriaPai(prefixo, elementoValorId, elementoPercId) {
-    const receitaBrutaTotal = <?= $total_geral ?>;
+    const receitaBrutaTotal = <?= $total_geral_operacional ?? $total_geral ?>;
     let totalCategoria = 0;
     
     // Somar todos os valores das subcategorias
@@ -1397,6 +1428,26 @@ function atualizarCalculos() {
         }
     });
     
+    // Fallback: se a soma pelos inputs editáveis resultou em 0 (muitos campos podem ser TDs),
+    // tentar ler os totais principais diretamente do DOM (operacional + não operacional)
+    if (totalReceitas === 0) {
+        function parseElementValue(el) {
+            if (!el) return 0;
+            if (el.value !== undefined) return obterValorNumerico(el);
+            const txt = (el.textContent || el.innerText || '').trim();
+            if (!txt) return 0;
+            const cleaned = txt.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+
+        const elOp = document.getElementById('valor-sim-operacional');
+        const elNaoOp = document.getElementById('valor-sim-nao-operacional');
+
+        totalOperacional = parseElementValue(elOp);
+        totalNaoOperacional = parseElementValue(elNaoOp);
+        totalReceitas = totalOperacional + totalNaoOperacional;
+    }
+
     // CALCULAR VALORES DAS CATEGORIAS PAI BASEADOS NO PERCENTUAL SOBRE FATURAMENTO
     // TRIBUTOS - calcular como percentual sobre faturamento
     let percTributos = 0;
@@ -1570,6 +1621,8 @@ function atualizarCalculos() {
     recalcularTotalGrupo('custo-variavel', 'valor-sim-custo-variavel');
     // Recalcular DESPESAS DE VENDA somando as subcategorias
     recalcularTotalGrupo('despesa-venda', 'valor-sim-despesa-venda');
+    // Atualizar percentuais ao lado dos valores absolutos (pai + subcategoria)
+    try { if (typeof atualizarPercentuaisAoLado === 'function') atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
 }
 
 // Função auxiliar para recalcular total de um grupo baseado nas subcategorias
@@ -1589,6 +1642,66 @@ function recalcularTotalGrupo(grupoPrefix, totalElementId) {
     }
 }
 
+// Atualiza, ao lado do valor absoluto exibido nas células `valor-base-*`,
+// dois percentuais baseados no faturamento total: (categoria pai) e (subcategoria).
+function atualizarPercentuaisAoLado() {
+    function parseMoney(el) {
+        if (!el) return 0;
+        const txt = (el.value !== undefined ? (el.value || el.getAttribute('value') || '') : (el.textContent || el.innerText || '')).toString();
+        if (!txt) return 0;
+        const cleaned = txt.replace(/[^0-9,\-\.]/g, '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleaned) || 0;
+    }
+
+    // Obter faturamento atual (usar valor-sim-receita-bruta se presente, fallback para valor-base-receita-bruta)
+    const totalEl = document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
+    const totalGeral = parseMoney(totalEl) || 1;
+
+    // For each 'valor-base-*' cell, write a single percent into the META column (2nd cell of the row).
+    document.querySelectorAll('td[id^="valor-base-"]').forEach(td => {
+        const id = td.id;
+
+        // Compute numeric value for this cell
+        const itemVal = parseMoney(td);
+
+        // Determine parent total: if id ends with -<index> then parent id is the prefix, otherwise this is a parent row
+        const m = id.match(/(.+)-\d+$/);
+        let parentVal = itemVal;
+        if (m) {
+            const parentId = m[1];
+            const parentEl = document.getElementById(parentId);
+            parentVal = parseMoney(parentEl);
+        }
+
+        // Compute percentage to display: for subcategory show item% of faturamento; for parent show parent% of faturamento
+        const pctToShow = totalGeral > 0 ? (m ? (itemVal / totalGeral) * 100 : (parentVal / totalGeral) * 100) : 0;
+
+        // Find the row and its META cell (2nd td)
+        const tr = td.closest('tr');
+        if (!tr) return;
+        const metaCell = tr.cells && tr.cells.length >= 2 ? tr.cells[1] : null;
+        if (!metaCell) return;
+
+        // Append a small percent element to the META cell, preserving existing content
+        const formatted = pctToShow.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        // remove old percent if present
+        const oldPct = metaCell.querySelector('.simulador-inline-pct');
+        if (oldPct) oldPct.remove();
+        const pctSpan = document.createElement('span');
+        pctSpan.className = 'simulador-inline-pct';
+        pctSpan.style.fontSize = '0.75rem';
+        pctSpan.style.color = '#9ca3af';
+        pctSpan.style.marginLeft = '8px';
+        pctSpan.textContent = formatted;
+        metaCell.appendChild(pctSpan);
+    });
+}
+
+// Atualizar as anotações quando a página carrega
+document.addEventListener('DOMContentLoaded', function(){
+    try { atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
+});
+
 function resetarSimulacao() {
     // Resetar campos de valor normais (editáveis)
     const inputs = document.querySelectorAll('.valor-simulador');
@@ -1606,7 +1719,7 @@ function resetarSimulacao() {
     
     inputsPercentuaisSubcategorias.forEach(input => {
         const valorBase = parseFloat(input.dataset.valorBase) || 0;
-        const receitaBrutaOriginal = <?= $total_geral ?>;
+        const receitaBrutaOriginal = <?= $total_geral_operacional ?? $total_geral ?>;
         
         // Restaurar o percentual original
         if (receitaBrutaOriginal > 0) {
@@ -2088,6 +2201,8 @@ function coletarMetasDoSimulador() {
     // CATEGORIAS PAI: Usar IDs diretos dos elementos
     const categoriasPrincipais = [
         { id: 'valor-sim-receita-bruta', nome: 'RECEITA BRUTA', percId: 'perc-receita-bruta' },
+        { id: 'valor-sim-operacional', nome: 'RECEITAS OPERACIONAIS', percId: 'perc-operacional' },
+        { id: 'valor-sim-nao-operacional', nome: 'RECEITAS NÃO OPERACIONAIS', percId: 'perc-nao-operacional' },
         { id: 'valor-sim-tributos', nome: 'TRIBUTOS', percId: 'perc-tributos' },
         { id: 'valor-sim-receita-liquida', nome: 'RECEITA LÍQUIDA', percId: 'perc-receita-liquida' },
         { id: 'valor-sim-custo-variavel', nome: 'CUSTO VARIÁVEL', percId: 'perc-custo-variavel' },
