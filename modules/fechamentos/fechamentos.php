@@ -252,6 +252,7 @@ $percentualBonificacao = 20;
 $percentualEspeciais   = 25;
 $bonificacaoBastards   = 0;
 $bonificacaoEspeciais  = 0;
+$produtosBastards      = ['bastards pilsen', 'ze do morro'];
 
 if (!empty($dadosChoripan)) {
     $cabCh      = $dadosChoripan[0] ?? [];
@@ -282,7 +283,9 @@ if (!empty($dadosChoripan)) {
         $totaisGodSave[$cliente][$produto] =
             ($totaisGodSave[$cliente][$produto] ?? 0) + $quant;
 
-        if (strcasecmp((string)$produto, 'Bastards Pilsen') === 0) {
+        $produtoNormalizado = strtolower(trim((string)$produto));
+        $ehBastards = in_array($produtoNormalizado, $produtosBastards, true);
+        if ($ehBastards) {
             $litrosBastards += $quant;
         } else {
             $litrosEspeciais += $quant;
@@ -874,7 +877,7 @@ $hermesRepasseValor   = (float)round($hermesTotal * ($hermesRepassePercent/100),
                   <?php endforeach; ?>
                   <tr class="total-row">
                     <td class="text-center" colspan="3">
-                      TOTAL BASTARDS PILSEN <?= (int)$litrosBastards ?> L = 
+                      TOTAL BASTARDS PILSEN + ZE DO MORRO <?= (int)$litrosBastards ?> L = 
                       <span id="bonificacao-godsave-text"><?= (int)$bonificacaoBastards ?></span> L
                     </td>
                   </tr>
