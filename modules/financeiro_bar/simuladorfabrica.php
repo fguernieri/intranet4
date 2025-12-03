@@ -600,6 +600,33 @@ require_once __DIR__ . '/../../sidebar.php';
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
                 
+                // Remover possíveis duplicatas por nome de categoria (evita linhas repetidas na tabela)
+                function dedupe_by_categoria_name_fabrica($arr) {
+                    $out = [];
+                    $seen = [];
+                    foreach ($arr as $r) {
+                        $nome = trim(strtoupper($r['categoria'] ?? ''));
+                        if ($nome === '') continue;
+                        if (in_array($nome, $seen, true)) continue;
+                        $seen[] = $nome;
+                        $out[] = $r;
+                    }
+                    return $out;
+                }
+
+                $receitas_operacionais = dedupe_by_categoria_name_fabrica($receitas_operacionais);
+                $receitas_nao_operacionais = dedupe_by_categoria_name_fabrica($receitas_nao_operacionais);
+                $tributos = dedupe_by_categoria_name_fabrica($tributos);
+                $custo_variavel = dedupe_by_categoria_name_fabrica($custo_variavel);
+                $custo_fixo = dedupe_by_categoria_name_fabrica($custo_fixo);
+                $despesa_fixa = dedupe_by_categoria_name_fabrica($despesa_fixa);
+                $despesa_venda = dedupe_by_categoria_name_fabrica($despesa_venda);
+                $investimento_interno = dedupe_by_categoria_name_fabrica($investimento_interno);
+                $investimento_externo = dedupe_by_categoria_name_fabrica($investimento_externo);
+                $amortizacao = dedupe_by_categoria_name_fabrica($amortizacao);
+                $retirada_de_lucro = dedupe_by_categoria_name_fabrica($retirada_de_lucro);
+                $saidas_nao_operacionais = dedupe_by_categoria_name_fabrica($saidas_nao_operacionais);
+
                 $total_operacional = array_sum(array_column($receitas_operacionais, 'total_receita_mes'));
                 $total_nao_operacional = array_sum(array_column($receitas_nao_operacionais, 'total_receita_mes'));
                 $total_tributos = array_sum(array_column($tributos, 'total_receita_mes'));
