@@ -1131,6 +1131,33 @@ echo $GLOBALS['METAS_TABLES_DEBUG'] ?? '';
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
                 
+                // Remover possíveis duplicatas por nome de categoria (evita linhas repetidas na tabela)
+                function dedupe_by_categoria_name_index5($arr) {
+                    $out = [];
+                    $seen = [];
+                    foreach ($arr as $r) {
+                        $nome = trim(strtoupper($r['categoria'] ?? ''));
+                        if ($nome === '') continue;
+                        if (in_array($nome, $seen, true)) continue;
+                        $seen[] = $nome;
+                        $out[] = $r;
+                    }
+                    return $out;
+                }
+
+                $receitas_operacionais = dedupe_by_categoria_name_index5($receitas_operacionais);
+                $receitas_nao_operacionais = dedupe_by_categoria_name_index5($receitas_nao_operacionais);
+                $tributos = dedupe_by_categoria_name_index5($tributos);
+                $custo_variavel = dedupe_by_categoria_name_index5($custo_variavel);
+                $custo_fixo = dedupe_by_categoria_name_index5($custo_fixo);
+                $despesa_fixa = dedupe_by_categoria_name_index5($despesa_fixa);
+                $despesa_venda = dedupe_by_categoria_name_index5($despesa_venda);
+                $investimento_interno = dedupe_by_categoria_name_index5($investimento_interno);
+                $investimento_externo = dedupe_by_categoria_name_index5($investimento_externo);
+                $amortizacao = dedupe_by_categoria_name_index5($amortizacao);
+                $retirada_de_lucro = dedupe_by_categoria_name_index5($retirada_de_lucro);
+                $saidas_nao_operacionais = dedupe_by_categoria_name_index5($saidas_nao_operacionais);
+
                 $total_operacional = array_sum(array_column($receitas_operacionais, 'total_receita_mes'));
                 $total_nao_operacional = array_sum(array_column($receitas_nao_operacionais, 'total_receita_mes'));
                 // Total considerado como RECEITA BRUTA (exclui RECEITAS NÃO OPERACIONAIS)
