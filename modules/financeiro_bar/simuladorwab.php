@@ -130,6 +130,7 @@ require_once __DIR__ . '/../../sidebar.php';
                 <button id="simuladorWabMenuBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded transition-colors">Selecionar Bar ▾</button>
                 <div id="simuladorWabMenu" class="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg hidden z-50">
                     <a href="simulador.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Bar da Fabrica</a>
+                    <a href="simuladorfabrica.php" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">Fábrica</a>
                 </div>
             </div>
             <script>
@@ -425,7 +426,31 @@ require_once __DIR__ . '/../../sidebar.php';
                 usort($saidas_nao_operacionais, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
                 });
-                
+
+                // Remover possíveis duplicatas por nome de categoria (evita linhas repetidas na tabela)
+                function dedupe_by_categoria_name_wab($arr) {
+                    $out = [];
+                    $seen = [];
+                    foreach ($arr as $r) {
+                        $nome = trim(strtoupper($r['categoria'] ?? ''));
+                        if ($nome === '') continue;
+                        if (in_array($nome, $seen, true)) continue;
+                        $seen[] = $nome;
+                        $out[] = $r;
+                    }
+                    return $out;
+                }
+
+                $receitas_operacionais = dedupe_by_categoria_name_wab($receitas_operacionais);
+                $receitas_nao_operacionais = dedupe_by_categoria_name_wab($receitas_nao_operacionais);
+                $tributos = dedupe_by_categoria_name_wab($tributos);
+                $custo_variavel = dedupe_by_categoria_name_wab($custo_variavel);
+                $custo_fixo = dedupe_by_categoria_name_wab($custo_fixo);
+                $despesa_fixa = dedupe_by_categoria_name_wab($despesa_fixa);
+                $despesa_venda = dedupe_by_categoria_name_wab($despesa_venda);
+                $investimento_interno = dedupe_by_categoria_name_wab($investimento_interno);
+                $saidas_nao_operacionais = dedupe_by_categoria_name_wab($saidas_nao_operacionais);
+
                 $total_operacional = array_sum(array_column($receitas_operacionais, 'total_receita_mes'));
                 $total_nao_operacional = array_sum(array_column($receitas_nao_operacionais, 'total_receita_mes'));
                 $total_tributos = array_sum(array_column($tributos, 'total_receita_mes'));
@@ -561,13 +586,16 @@ require_once __DIR__ . '/../../sidebar.php';
                     
                     <!-- Subgrupos da RECEITA BRUTA -->
                     <tbody class="subcategorias" id="sub-receita-bruta" style="display: none;">
-                        <!-- RECEITAS OPERACIONAIS - Subgrupo -->
-                        <?php if (!empty($receitas_operacionais)): ?>
-                        <?php 
-                        $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
-                        ?>
-                        <tr class="hover:bg-gray-700 font-medium text-blue-300 text-sm">
-                            <td class="px-3 py-2 border-b border-gray-700 pl-6">
+                    </tbody>
+
+                    <!-- RECEITAS OPERACIONAIS - Linha principal (visível e editável) -->
+                    <?php if (!empty($receitas_operacionais)): ?>
+                    <?php 
+                    $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
+                    ?>
+                    <tbody>
+                        <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300">
+                            <td class="px-3 py-2 border-b border-gray-700">
                                 RECEITAS OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
@@ -577,7 +605,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($total_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
-                                <input type="text" 
+                                <input type="text"
                                        class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
                                        id="valor-sim-operacional"
                                        data-categoria="RECEITAS OPERACIONAIS"
@@ -592,10 +620,8 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= number_format(($total_operacional / $total_geral) * 100, 2, ',', '.') ?>%
                             </td>
                         </tr>
-                        <?php endif; ?>
-                        
-                        
                     </tbody>
+                    <?php endif; ?>
                     
 
                     
@@ -1060,8 +1086,8 @@ require_once __DIR__ . '/../../sidebar.php';
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
                                 R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
                             </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-nao-operacional">
-                                <input type="text" 
+                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
+                                <input type="text"
                                        class="bg-transparent text-green-400 text-right w-full border-0 outline-0 valor-simulador"
                                        id="valor-sim-nao-operacional"
                                        data-categoria="RECEITAS NÃO OPERACIONAIS"
@@ -1399,8 +1425,8 @@ function obterValorNumericoPercentual(input) {
 
 
 function atualizarCalculosPercentualSubcategoria(inputPercentual) {
-    // Obter receita bruta total
-    const receitaBrutaTotal = <?= $total_geral ?>;
+    // Obter receita operacional total (base usada para percentuais)
+    const receitaBrutaTotal = <?= $total_geral_operacional ?? $total_geral ?>;
     
     // Obter o percentual digitado
     let percentualTexto = inputPercentual.value.replace(/[^\d,]/g, '');
@@ -1438,7 +1464,7 @@ function atualizarCalculosPercentualSubcategoria(inputPercentual) {
 }
 
 function recalcularTotalCategoriaPai(prefixo, elementoValorId, elementoPercId) {
-    const receitaBrutaTotal = <?= $total_geral ?>;
+    const receitaBrutaTotal = <?= $total_geral_operacional ?? $total_geral ?>;
     let totalCategoria = 0;
     
     // Somar todos os valores das subcategorias
@@ -1471,9 +1497,9 @@ function recalcularTotalCategoriaPai(prefixo, elementoValorId, elementoPercId) {
 }
 
 function atualizarCalculos() {
-    // Buscar todos os inputs de simulação (apenas valores, não percentuais)
+    // Buscar inputs editáveis/valores do simulador
     const inputs = document.querySelectorAll('.valor-simulador');
-    
+
     let totalReceitas = 0;
     let totalTributos = 0;
     let totalOperacional = 0;
@@ -1484,17 +1510,17 @@ function atualizarCalculos() {
     let totalDespesaVenda = 0;
     let totalInvestimentoInterno = 0;
     let totalSaidasNaoOperacionais = 0;
-    
-    // Calcular totais por categoria
+
+    // Primeiro: somar todos os inputs editáveis (classe .valor-simulador)
     inputs.forEach(input => {
         const valor = obterValorNumerico(input);
         const tipo = input.dataset.tipo;
         const inputId = input.id;
-        
+
+        // Acumular por tipo quando disponível
         if (tipo === 'receita' || tipo === 'receita-operacional' || tipo === 'receita-nao-operacional') {
             totalReceitas += valor;
-            
-            // Separar operacional e não operacional
+
             if (tipo === 'receita-operacional' || (inputId.includes('operacional-') && !inputId.includes('nao-operacional-'))) {
                 totalOperacional += valor;
             } else if (tipo === 'receita-nao-operacional' || inputId.includes('nao-operacional-')) {
@@ -1518,6 +1544,27 @@ function atualizarCalculos() {
             totalSaidasNaoOperacionais += valor;
         }
     });
+
+    // Se a soma pelos inputs editáveis resultou em 0 (possível quando
+    // muitos campos são apresentados como TD's não-editáveis), fazer
+    // fallback lendo os totais principais que existem no DOM
+    if (totalReceitas === 0) {
+        function parseElementValue(el) {
+            if (!el) return 0;
+            if (el.value !== undefined) return obterValorNumerico(el);
+            const txt = (el.textContent || el.innerText || '').trim();
+            if (!txt) return 0;
+            const cleaned = txt.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+
+        const elOp = document.getElementById('valor-sim-operacional');
+        const elNaoOp = document.getElementById('valor-sim-nao-operacional');
+
+        totalOperacional = parseElementValue(elOp);
+        totalNaoOperacional = parseElementValue(elNaoOp);
+        totalReceitas = totalOperacional + totalNaoOperacional;
+    }
     
     // CALCULAR VALORES DAS CATEGORIAS PAI BASEADOS NO PERCENTUAL SOBRE FATURAMENTO
     // TRIBUTOS - calcular como percentual sobre faturamento
@@ -1544,6 +1591,8 @@ function atualizarCalculos() {
             const percTexto = elementoPercCustoVariavel.textContent || elementoPercCustoVariavel.innerText;
             percCustoVariavel = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         }
+            // Marcar timestamp de quando os totais foram atualizados
+            try { window.__simulador_last_update = Date.now(); } catch(e) { /* ignore */ }
     }
     totalCustoVariavel = (totalReceitas * percCustoVariavel) / 100;
     
@@ -1567,6 +1616,10 @@ function atualizarCalculos() {
     const impactoCaixa = lucroLiquido - totalInvestimentoInterno - totalSaidasNaoOperacionais;
     
     // Atualizar valores calculados dos grupos principais (valores originais)
+    // If a goal-seek (ponto de equilíbrio) was applied, keep a visual
+    // guarantee that IMPACTO CAIXA remains zero until the user changes inputs.
+    const goalSeekApplied = !!(window && window.__simulador_goal_seek_applied);
+
     const elementos = {
         'valor-sim-receita-bruta': totalReceitas,
         'valor-sim-operacional': totalOperacional,
@@ -1581,7 +1634,8 @@ function atualizarCalculos() {
         'valor-sim-lucro-liquido': lucroLiquido,
         'valor-sim-investimento-interno': totalInvestimentoInterno,
         'valor-sim-saidas-nao-operacionais': totalSaidasNaoOperacionais,
-        'valor-sim-impacto-caixa': impactoCaixa
+        // If goal-seek was applied, force the visual IMPACTO CAIXA to 0
+        'valor-sim-impacto-caixa': goalSeekApplied ? 0 : impactoCaixa
     };
 
     // RECALCULAR CUSTOS VARIÁVEIS BASEADOS NOS PERCENTUAIS QUANDO RECEITA MUDA
@@ -1639,6 +1693,7 @@ function atualizarCalculos() {
             lucroLiquido: lucroLiquido,
             impactoCaixa: impactoCaixa
         };
+        try { window.__simulador_last_update = Date.now(); } catch(e) { /* ignore */ }
     } catch (e) {
         // ignore if environment doesn't allow
     }
@@ -1739,6 +1794,7 @@ function atualizarCalculos() {
             lucroLiquido: lucroLiquido,
             impactoCaixa: impactoCaixa
         };
+        try { window.__simulador_last_update = Date.now(); } catch(e) { /* ignore */ }
     } catch(e) { console.warn('Não foi possível setar window.simulador_totais', e); }
     // Recalcular TRIBUTOS somando as subcategorias
     recalcularTotalGrupo('tributos', 'valor-sim-tributos');
@@ -1746,6 +1802,8 @@ function atualizarCalculos() {
     recalcularTotalGrupo('custo-variavel', 'valor-sim-custo-variavel');
     // Recalcular DESPESAS DE VENDA somando as subcategorias
     recalcularTotalGrupo('despesa-venda', 'valor-sim-despesa-venda');
+    // Atualizar percentuais ao lado dos valores absolutos (META column)
+    try { if (typeof atualizarPercentuaisAoLado === 'function') atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
 }
 
 // Função auxiliar para recalcular total de um grupo baseado nas subcategorias
@@ -1765,7 +1823,63 @@ function recalcularTotalGrupo(grupoPrefix, totalElementId) {
     }
 }
 
+// Atualiza, ao lado do valor absoluto exibido nas células `valor-base-*`,
+// um pequeno percentual dentro da célula META (2ª coluna). Preserva o conteúdo existente
+// e adiciona/atualiza um `<span class="simulador-inline-pct">` com o percentual.
+function atualizarPercentuaisAoLado() {
+    function parseMoney(el) {
+        if (!el) return 0;
+        const txt = (el.value !== undefined ? (el.value || el.getAttribute('value') || '') : (el.textContent || el.innerText || '')).toString();
+        if (!txt) return 0;
+        const cleaned = txt.replace(/[^0-9,\-\.]/g, '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleaned) || 0;
+    }
+
+    // Obter faturamento atual (usar valor-sim-receita-bruta se presente, fallback para valor-base-receita-bruta)
+    const totalEl = document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
+    const totalGeral = parseMoney(totalEl) || 1;
+
+    document.querySelectorAll('td[id^="valor-base-"]').forEach(td => {
+        const id = td.id;
+        const itemVal = parseMoney(td);
+
+        const m = id.match(/(.+)-\d+$/);
+        let parentVal = itemVal;
+        if (m) {
+            const parentId = m[1];
+            const parentEl = document.getElementById(parentId);
+            parentVal = parseMoney(parentEl);
+        }
+
+        const pctToShow = totalGeral > 0 ? (m ? (itemVal / totalGeral) * 100 : (parentVal / totalGeral) * 100) : 0;
+
+        const tr = td.closest('tr');
+        if (!tr) return;
+        const metaCell = tr.cells && tr.cells.length >= 2 ? tr.cells[1] : null;
+        if (!metaCell) return;
+
+        const formatted = pctToShow.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        const oldPct = metaCell.querySelector('.simulador-inline-pct');
+        if (oldPct) oldPct.remove();
+        const pctSpan = document.createElement('span');
+        pctSpan.className = 'simulador-inline-pct';
+        pctSpan.style.fontSize = '0.75rem';
+        pctSpan.style.color = '#9ca3af';
+        pctSpan.style.marginLeft = '8px';
+        pctSpan.textContent = formatted;
+        metaCell.appendChild(pctSpan);
+    });
+}
+
+// Atualizar as anotações quando a página carrega
+document.addEventListener('DOMContentLoaded', function(){
+    try { atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
+});
+
 function resetarSimulacao() {
+    // Clear any goal-seek applied flag so subsequent recalculations behave normally
+    try { window.__simulador_goal_seek_applied = false; } catch(e) { /* ignore */ }
+
     // Resetar campos de valor normais (editáveis)
     const inputs = document.querySelectorAll('.valor-simulador');
     
@@ -1782,7 +1896,7 @@ function resetarSimulacao() {
     
     inputsPercentuaisSubcategorias.forEach(input => {
         const valorBase = parseFloat(input.dataset.valorBase) || 0;
-        const receitaBrutaOriginal = <?= $total_geral ?>;
+        const receitaBrutaOriginal = <?= $total_geral_operacional ?? $total_geral ?>;
         
         // Restaurar o percentual original
         if (receitaBrutaOriginal > 0) {
@@ -1822,16 +1936,24 @@ function calcularPontoEquilibrio() {
     // Recalcular explicitamente
     atualizarCalculos();
 
-    // Aguardar um ciclo de render + pequeno timeout para garantir que
-    // qualquer onblur/onchange/formatting tenha sido processado e que
-    // `window.simulador_totais` tenha sido atualizado.
-    if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => {
-            setTimeout(() => calcularPontoEquilibrioInterno(), 50);
-        });
-    } else {
-        setTimeout(() => calcularPontoEquilibrioInterno(), 100);
-    }
+    // Aguardar até `window.__simulador_last_update` ser atualizado por `atualizarCalculos()`
+    const startTs = (window.__simulador_last_update) ? window.__simulador_last_update : 0;
+    const deadline = Date.now() + 1200; // timeout 1.2s
+
+    (function waitForUpdate() {
+        const now = Date.now();
+        if ((window.__simulador_last_update || 0) > startTs) {
+            // pequeno delay visual antes de executar a rotina interna
+            setTimeout(() => calcularPontoEquilibrioInterno(), 25);
+            return;
+        }
+        if (now > deadline) {
+            // fallback: se não atualizou a tempo, ainda executa
+            calcularPontoEquilibrioInterno();
+            return;
+        }
+        requestAnimationFrame(waitForUpdate);
+    })();
 }
 
 function calcularPontoEquilibrioInterno() {
@@ -1858,11 +1980,16 @@ function calcularPontoEquilibrioInterno() {
     const tributos = simulTotais ? simulTotais.totalTributos : extrairValor('valor-sim-tributos');
     const custoVariavel = simulTotais ? simulTotais.totalCustoVariavel : extrairValor('valor-sim-custo-variavel');
     const despesaVenda = simulTotais ? simulTotais.totalDespesaVenda : extrairValor('valor-sim-despesa-venda');
-    
-    // Calcular percentuais (frações de 0 a 1)
-    const t = receitaBruta > 0 ? tributos / receitaBruta : 0;
-    const cv = receitaBruta > 0 ? custoVariavel / receitaBruta : 0;
-    const dv = receitaBruta > 0 ? despesaVenda / receitaBruta : 0;
+
+    // Percentuais de tributos, custo variável e despesas de venda devem ser
+    // calculados sobre a RECEITA BRUTA TOTAL (inclui receitas não operacionais).
+    // Isso garante que as taxas reflitam o mix total de faturamento.
+    const basePercentual = receitaBruta > 0 ? receitaBruta : 1;
+
+    // Calcular percentuais (frações de 0 a 1) usando a receita bruta total
+    const t = basePercentual > 0 ? tributos / basePercentual : 0;
+    const cv = basePercentual > 0 ? custoVariavel / basePercentual : 0;
+    const dv = basePercentual > 0 ? despesaVenda / basePercentual : 0;
     
     // Custos fixos (ler dos totais calculados quando disponíveis)
     const CF = simulTotais ? simulTotais.totalCustoFixo : extrairValor('valor-sim-custo-fixo');
@@ -1946,19 +2073,47 @@ function calcularPontoEquilibrioInterno() {
     }
     
     // Recalcular tudo
+    // Mark that a goal-seek was applied so we can preserve a visual IMPACTO CAIXA = 0
+    try { window.__simulador_goal_seek_applied = true; } catch(e) { /* ignore */ }
     atualizarCalculos();
-    
-    // Mostrar resultado final
-    setTimeout(() => {
-        const impactoCaixaElement = document.getElementById('valor-sim-impacto-caixa');
-        const impactoCaixaValor = impactoCaixaElement ? impactoCaixaElement.textContent : '';
-        const lucroLiquidoElement = document.getElementById('valor-sim-lucro-liquido');
-        const lucroLiquidoValor = lucroLiquidoElement ? lucroLiquidoElement.textContent : '';
-        
-        alert(`✅ Ponto de equilíbrio aplicado!\n\n` +
-              `🎯 IMPACTO CAIXA: ${impactoCaixaValor}\n` +
-              `💰 Lucro Líquido: ${lucroLiquidoValor}`);
-    }, 500);
+
+    // Esperar atualizarCalculos propagar os totais e então garantir IMPACTO CAIXA = 0 no DOM
+    const waitStart = (window.__simulador_last_update) ? window.__simulador_last_update : 0;
+    const waitDeadline = Date.now() + 1200;
+
+    (function waitThenShow() {
+        if ((window.__simulador_last_update || 0) > waitStart) {
+            // Forçar IMPACTO CAIXA para zero na interface (garantia visual imediata)
+            try {
+                const impactoCaixaElement = document.getElementById('valor-sim-impacto-caixa');
+                if (impactoCaixaElement) impactoCaixaElement.textContent = formatarMoeda(0);
+            } catch(e) { /* ignore */ }
+
+            // Mostrar resultado final usando valores atuais no DOM
+            const impactoCaixaElement = document.getElementById('valor-sim-impacto-caixa');
+            const impactoCaixaValor = impactoCaixaElement ? impactoCaixaElement.textContent : '';
+            const lucroLiquidoElement = document.getElementById('valor-sim-lucro-liquido');
+            const lucroLiquidoValor = lucroLiquidoElement ? lucroLiquidoElement.textContent : '';
+
+            alert(`✅ Ponto de equilíbrio aplicado!\n\n` +
+                  `🎯 IMPACTO CAIXA: ${impactoCaixaValor}\n` +
+                  `💰 Lucro Líquido: ${lucroLiquidoValor}`);
+            return;
+        }
+        if (Date.now() > waitDeadline) {
+            // fallback: continue anyway
+            const impactoCaixaElement = document.getElementById('valor-sim-impacto-caixa');
+            const impactoCaixaValor = impactoCaixaElement ? impactoCaixaElement.textContent : '';
+            const lucroLiquidoElement = document.getElementById('valor-sim-lucro-liquido');
+            const lucroLiquidoValor = lucroLiquidoElement ? lucroLiquidoElement.textContent : '';
+
+            alert(`✅ Ponto de equilíbrio aplicado!\n\n` +
+                  `🎯 IMPACTO CAIXA: ${impactoCaixaValor}\n` +
+                  `💰 Lucro Líquido: ${lucroLiquidoValor}`);
+            return;
+        }
+        requestAnimationFrame(waitThenShow);
+    })();
 }
 
 function aplicarMetaCustoFixo(metaValor) {
@@ -2090,6 +2245,8 @@ function corrigirInputsFormatacao() {
         // Adicionar eventos de formatação
         input.addEventListener('focus', function() { removerFormatacao(this); });
         input.addEventListener('blur', function() { formatarCampoMoeda(this); });
+        // Se o usuário editar qualquer campo, limpar a flag do goal-seek
+        input.addEventListener('input', function() { try { window.__simulador_goal_seek_applied = false; } catch(e) { /* ignore */ } });
         
         // Formatar valor inicial
         const valorBase = parseFloat(input.dataset.valorBase) || 0;
@@ -2144,6 +2301,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (simuladorContent && content2 && !content2.contains(simuladorContent)) {
         content2.appendChild(simuladorContent);
+    }
+
+    // Garantir que todos os blocos de subcategorias venham recolhidos ao carregar a página
+    try {
+        document.querySelectorAll('.subcategorias').forEach(tb => {
+            tb.style.display = 'none';
+        });
+        // também garantir que o bloco principal de sub-receita-bruta esteja fechado
+        const subReceita = document.getElementById('sub-receita-bruta');
+        if (subReceita) subReceita.style.display = 'none';
+    } catch (e) {
+        console.warn('Falha ao recolher subcategorias por padrão:', e);
     }
 });
 
@@ -2281,6 +2450,8 @@ function coletarMetasDoSimulador() {
     // CATEGORIAS PAI: Usar IDs diretos dos elementos
     const categoriasPrincipais = [
         { id: 'valor-sim-receita-bruta', nome: 'RECEITA BRUTA', percId: 'perc-receita-bruta' },
+        { id: 'valor-sim-operacional', nome: 'RECEITAS OPERACIONAIS', percId: 'perc-operacional' },
+        { id: 'valor-sim-nao-operacional', nome: 'RECEITAS NÃO OPERACIONAIS', percId: 'perc-nao-operacional' },
         { id: 'valor-sim-tributos', nome: 'TRIBUTOS', percId: 'perc-tributos' },
         { id: 'valor-sim-receita-liquida', nome: 'RECEITA LÍQUIDA', percId: 'perc-receita-liquida' },
         { id: 'valor-sim-custo-variavel', nome: 'CUSTO VARIÁVEL', percId: 'perc-custo-variavel' },
