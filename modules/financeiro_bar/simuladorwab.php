@@ -219,12 +219,14 @@ require_once __DIR__ . '/../../sidebar.php';
                 $saidas_nao_operacionais = [];
                 
                 // Função para obter meta da tabela fmetaswab
-                // Prioriza o campo PERCENTUAL para categorias-pai TRIBUTOS, CUSTO VARIÁVEL e DESPESAS DE VENDA (e subcategorias)
+                // Retorna um array com keys ['meta' => valor_absoluto, 'percentual' => percentual_bruto]
+                // Mantém a lógica que preferia aplicar PERCENTUAL como base operacional quando aplicável,
+                // mas devolve ambos os valores para que a UI mostre R$ e %.
                 function obterMeta($categoria, $categoria_pai = null) {
                     global $supabase, $periodo_selecionado, $total_geral_operacional, $total_geral;
 
                     if (!$supabase) {
-                        return 0; // Se conexão não existe, retorna 0
+                        return ['meta' => 0, 'percentual' => 0]; // Se conexão não existe, retorna estrutura vazia
                     }
 
                     // Converter período YYYY/MM para DATA_META YYYY-MM-01 se disponível
@@ -297,7 +299,7 @@ require_once __DIR__ . '/../../sidebar.php';
 
                             // Normalizar valores
                             $meta_valor = isset($row['META']) && is_numeric($row['META']) ? floatval($row['META']) : null;
-                            $percentual_valor = isset($row['PERCENTUAL']) && is_numeric($row['PERCENTUAL']) ? floatval($row['PERCENTUAL']) : null;
+                            $percentual_valor = isset($row['PERCENTUAL']) && is_numeric($row['PERCENTUAL']) ? floatval($row['PERCENTUAL']) : 0;
 
                             // Decidir se usamos percentual (quando presente e categoria pertencente ao grupo)
                             $categoria_pai_upper = $categoria_pai ? strtoupper(trim($categoria_pai)) : null;
@@ -308,25 +310,29 @@ require_once __DIR__ . '/../../sidebar.php';
                                 $usar_percentual = true;
                             }
 
+                            $computed_meta = 0;
+
                             if ($usar_percentual && $percentual_valor !== null && $percentual_valor > 0) {
                                 // Preferir base operacional quando disponível
                                 $base = (isset($total_geral_operacional) && $total_geral_operacional > 0) ? $total_geral_operacional : (isset($total_geral) ? $total_geral : 0);
                                 if ($base > 0) {
-                                    return ($base * $percentual_valor) / 100.0;
+                                    $computed_meta = ($base * $percentual_valor) / 100.0;
                                 }
                             }
 
-                            // Se não usarmos percentual ou não houver base, retornar META absoluto se existir
-                            if ($meta_valor !== null) {
-                                return $meta_valor;
+                            // Se não computamos pelo percentual, usar o META absoluto quando presente
+                            if ($computed_meta <= 0 && $meta_valor !== null) {
+                                $computed_meta = $meta_valor;
                             }
+
+                            return ['meta' => $computed_meta, 'percentual' => $percentual_valor ?? 0];
                         }
 
-                        return 0;
+                        return ['meta' => 0, 'percentual' => 0];
 
                     } catch (Exception $e) {
                         error_log("Erro ao buscar meta para '$categoria' (pai: '$categoria_pai', periodo: '{$periodo_selecionado}'): " . $e->getMessage());
-                        return 0;
+                        return ['meta' => 0, 'percentual' => 0];
                     }
                 }
                 
@@ -488,43 +494,69 @@ require_once __DIR__ . '/../../sidebar.php';
                 // --- Prefetch de todas as metas pertinentes ---
                 // Isso garante que as linhas calculadas também possam exibir um valor de meta
                 // (se houver) ou uma derivação a partir de componentes.
-                $meta_receita_bruta = obterMeta('RECEITA BRUTA');
-                $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
-                $meta_tributos = obterMeta('TRIBUTOS');
-                $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
-                $meta_custo_fixo = obterMeta('CUSTO FIXO');
-                $meta_despesa_fixa = obterMeta('DESPESA FIXA');
-                $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
-                $meta_investimento_interno = obterMeta('INVESTIMENTO INTERNO');
-                $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
-                $meta_saidas_nao_operacionais = obterMeta('SAÍDAS NÃO OPERACIONAIS');
-                $meta_impacto_caixa = obterMeta('IMPACTO CAIXA');
+                // --- Prefetch de todas as metas pertinentes ---
+                // Obter ambos os valores (meta absoluto e percentual) e expor duas variáveis
+                // por meta: `$meta_x` (valor absoluto) e `$meta_x_pct` (percentual)
+                $_m = obterMeta('RECEITA BRUTA');
+                $meta_receita_bruta = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_receita_bruta_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('RECEITAS OPERACIONAIS');
+                $meta_operacional = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_operacional_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('TRIBUTOS');
+                $meta_tributos = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_tributos_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('CUSTO VARIÁVEL');
+                $meta_custo_variavel = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_custo_variavel_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('CUSTO FIXO');
+                $meta_custo_fixo = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_custo_fixo_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('DESPESA FIXA');
+                $meta_despesa_fixa = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_despesa_fixa_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('DESPESAS DE VENDA');
+                $meta_despesa_venda = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_despesa_venda_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('INVESTIMENTO INTERNO');
+                $meta_investimento_interno = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_investimento_interno_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                $meta_nao_operacional = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_nao_operacional_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('SAÍDAS NÃO OPERACIONAIS');
+                $meta_saidas_nao_operacionais = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_saidas_nao_operacionais_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+
+                $_m = obterMeta('IMPACTO CAIXA');
+                $meta_impacto_caixa = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_impacto_caixa_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
 
                 // Metas calculadas: pegar somente da tabela de metas. Se não existir, manter 0.
-                $meta_receita_liquida = obterMeta('RECEITA LÍQUIDA');
-                $base_receita_liquida = ($total_geral - $total_tributos);
+                $_m = obterMeta('RECEITA LÍQUIDA');
+                $meta_receita_liquida = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_receita_liquida_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+                // Base da receita líquida deve ser a receita operacional (não incluir receitas não operacionais)
+                $base_receita_liquida = $receita_liquida_operacional;
 
-                $meta_lucro_bruto = obterMeta('LUCRO BRUTO');
-                $base_lucro_bruto = ($total_geral - $total_tributos) - $total_custo_variavel;
+                $_m = obterMeta('LUCRO BRUTO');
+                $meta_lucro_bruto = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_lucro_bruto_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+                $base_lucro_bruto = $lucro_bruto_operacional;
 
-                $meta_lucro_liquido = obterMeta('LUCRO LÍQUIDO');
-                $base_lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
-
-                // Fallbacks seguros para evitar notices
-                $meta_receita_bruta = $meta_receita_bruta ?? 0;
-                $meta_operacional = $meta_operacional ?? 0;
-                $meta_tributos = $meta_tributos ?? 0;
-                $meta_custo_variavel = $meta_custo_variavel ?? 0;
-                $meta_custo_fixo = $meta_custo_fixo ?? 0;
-                $meta_despesa_fixa = $meta_despesa_fixa ?? 0;
-                $meta_despesa_venda = $meta_despesa_venda ?? 0;
-                $meta_investimento_interno = $meta_investimento_interno ?? 0;
-                $meta_nao_operacional = $meta_nao_operacional ?? 0;
-                $meta_saidas_nao_operacionais = $meta_saidas_nao_operacionais ?? 0;
-                $meta_impacto_caixa = $meta_impacto_caixa ?? 0;
-                $meta_receita_liquida = $meta_receita_liquida ?? 0;
-                $meta_lucro_bruto = $meta_lucro_bruto ?? 0;
-                $meta_lucro_liquido = $meta_lucro_liquido ?? 0;
+                $_m = obterMeta('LUCRO LÍQUIDO');
+                $meta_lucro_liquido = is_array($_m) ? ($_m['meta'] ?? 0) : ($_m ?? 0);
+                $meta_lucro_liquido_pct = is_array($_m) ? ($_m['percentual'] ?? 0) : 0;
+                $base_lucro_liquido = $lucro_liquido_operacional;
 
                 // DEBUG: imprimir metas e bases como comentário HTML para inspeção rápida
                 echo "<!-- METAS_DEBUG: ";
@@ -563,23 +595,23 @@ require_once __DIR__ . '/../../sidebar.php';
                     <tbody>
                         <!-- RECEITA BRUTA - Linha principal expansível -->
                         <?php 
-                        $meta_receita_bruta = obterMeta('RECEITA BRUTA');
+                        // meta já pré-carregada acima: $meta_receita_bruta e $meta_receita_bruta_pct
                         ?>
                         <tr id="row-receita-bruta" data-toggle="receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_receita_bruta, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_operacional, 0, ',', '.') ?> (<?= number_format($meta_operacional_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-bruta">
-                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
+                                R$ <?= number_format($total_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-receita-bruta">
-                                R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
+                                R$ <?= number_format($total_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-receita-bruta">
-                                100,00%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($total_operacional / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -591,7 +623,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- RECEITAS OPERACIONAIS - Linha principal (visível e editável) -->
                     <?php if (!empty($receitas_operacionais)): ?>
                     <?php 
-                    $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
+                    // meta já pré-carregada acima: $meta_operacional e $meta_operacional_pct
                     ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300">
@@ -599,7 +631,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 RECEITAS OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_operacional, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_operacional, 0, ',', '.') ?> (<?= number_format($meta_operacional_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-operacional">
                                 R$ <?= number_format($total_operacional, 2, ',', '.') ?>
@@ -617,7 +649,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                        onfocus="removerFormatacao(this)">
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-operacional">
-                                <?= number_format(($total_operacional / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($total_operacional / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -629,14 +661,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($tributos)): ?>
                     <tbody>
                         <?php 
-                        $meta_tributos = obterMeta('TRIBUTOS');
+                        // meta já pré-carregada acima: $meta_tributos e $meta_tributos_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('tributos')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) TRIBUTOS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_tributos, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_tributos, 0, ',', '.') ?> (<?= number_format($meta_tributos_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-tributos">
                                 R$ <?= number_format($total_tributos, 2, ',', '.') ?>
@@ -645,7 +677,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($total_tributos, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-tributos">
-                                <?= number_format(($total_tributos / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($total_tributos / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -656,7 +688,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'TRIBUTOS');
+                        $_mmi = obterMeta($categoria_individual, 'TRIBUTOS');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'tributos-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -664,7 +698,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -678,7 +712,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                        data-categoria="<?= htmlspecialchars($categoria_individual) ?>"
                                        data-tipo="percentual-tributo"
                                        data-valor-base="<?= $valor_individual ?>"
-                                       value="<?= number_format(($valor_individual / $total_geral) * 100, 2, ',', '.') ?>"
+                                       value="<?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($valor_individual / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>"
                                        onchange="atualizarCalculosPercentualSubcategoria(this)"
                                        style="background: transparent; color: #fb923c; text-align: right; border: none; outline: none; width: 70px;"> %
                             </td>
@@ -695,16 +729,16 @@ require_once __DIR__ . '/../../sidebar.php';
                                 RECEITA LÍQUIDA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_receita_liquida ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_receita_liquida ?? 0, 0, ',', '.') ?> (<?= number_format($meta_receita_liquida_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-liquida">
-                                R$ <?= number_format($total_geral - $total_tributos, 2, ',', '.') ?>
+                                R$ <?= number_format($receita_liquida_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-receita-liquida">
-                                R$ <?= number_format($total_geral - $total_tributos, 2, ',', '.') ?>
+                                R$ <?= number_format($receita_liquida_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-receita-liquida">
-                                <?= number_format((($total_geral - $total_tributos) / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format((($receita_liquida_operacional) / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -713,14 +747,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($custo_variavel)): ?>
                     <tbody>
                         <?php 
-                        $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
+                        // meta já pré-carregada acima: $meta_custo_variavel e $meta_custo_variavel_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-variavel')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) CUSTO VARIÁVEL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_variavel, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_variavel, 0, ',', '.') ?> (<?= number_format($meta_custo_variavel_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-custo-variavel">
                                 R$ <?= number_format($total_custo_variavel, 2, ',', '.') ?>
@@ -740,7 +774,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        $_mmi = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'custo-variavel-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -748,7 +784,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -779,16 +815,16 @@ require_once __DIR__ . '/../../sidebar.php';
                                 LUCRO BRUTO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_lucro_bruto ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_lucro_bruto ?? 0, 0, ',', '.') ?> (<?= number_format($meta_lucro_bruto_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-lucro-bruto">
-                                R$ <?= number_format(($total_geral - $total_tributos) - $total_custo_variavel, 2, ',', '.') ?>
+                                R$ <?= number_format($lucro_bruto_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="valor-sim-lucro-bruto">
-                                R$ <?= number_format(($total_geral - $total_tributos) - $total_custo_variavel, 2, ',', '.') ?>
+                                R$ <?= number_format($lucro_bruto_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-lucro-bruto">
-                                <?= number_format(((($total_geral - $total_tributos) - $total_custo_variavel) / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format((($lucro_bruto_operacional) / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -797,14 +833,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($custo_fixo)): ?>
                     <tbody>
                         <?php 
-                        $meta_custo_fixo = obterMeta('CUSTO FIXO');
+                        // meta já pré-carregada acima: $meta_custo_fixo e $meta_custo_fixo_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-fixo')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) CUSTO FIXO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_fixo, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_fixo, 0, ',', '.') ?> (<?= number_format($meta_custo_fixo_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-custo-fixo">
                                 R$ <?= number_format($total_custo_fixo, 2, ',', '.') ?>
@@ -824,7 +860,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'CUSTO FIXO');
+                        $_mmi = obterMeta($categoria_individual, 'CUSTO FIXO');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'custo-fixo-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -832,7 +870,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -860,14 +898,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($despesa_fixa)): ?>
                     <tbody>
                         <?php 
-                        $meta_despesa_fixa = obterMeta('DESPESA FIXA');
+                        // meta já pré-carregada acima: $meta_despesa_fixa e $meta_despesa_fixa_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-fixa')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) DESPESA FIXA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_fixa, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_fixa, 0, ',', '.') ?> (<?= number_format($meta_despesa_fixa_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-despesa-fixa">
                                 R$ <?= number_format($total_despesa_fixa, 2, ',', '.') ?>
@@ -887,7 +925,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'DESPESA FIXA');
+                        $_mmi = obterMeta($categoria_individual, 'DESPESA FIXA');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'despesa-fixa-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -895,7 +935,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -923,14 +963,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($despesa_venda)): ?>
                     <tbody>
                         <?php 
-                        $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
+                        // meta já pré-carregada acima: $meta_despesa_venda e $meta_despesa_venda_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-venda')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) DESPESAS DE VENDA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_venda, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_venda, 0, ',', '.') ?> (<?= number_format($meta_despesa_venda_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-despesa-venda">
                                 R$ <?= number_format($total_despesa_venda, 2, ',', '.') ?>
@@ -950,7 +990,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        $_mmi = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'despesa-venda-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -958,7 +1000,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -983,7 +1025,8 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- LUCRO LÍQUIDO - Cálculo automático final -->
                     <?php 
-                    $lucro_liquido = (($total_geral - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
+                    // Usar apenas a versão operacional para lucro líquido
+                    $lucro_liquido = $lucro_liquido_operacional;
                     ?>
                     <?php // meta_lucro_liquido pré-carregado acima (ver METAS_DEBUG) ?>
                     <tbody>
@@ -992,7 +1035,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 LUCRO LÍQUIDO
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-center">
-                                <span class="text-xs text-gray-500 font-semibold">R$ <?= number_format($meta_lucro_liquido ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500 font-semibold">R$ <?= number_format($meta_lucro_liquido ?? 0, 0, ',', '.') ?> (<?= number_format($meta_lucro_liquido_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-right font-mono font-bold" id="valor-base-lucro-liquido">
                                 R$ <?= number_format($lucro_liquido, 2, ',', '.') ?>
@@ -1001,7 +1044,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($lucro_liquido, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-right font-mono font-bold bg-blue-900" id="perc-lucro-liquido">
-                                <?= number_format(($lucro_liquido / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($lucro_liquido / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -1010,14 +1053,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($investimento_interno)): ?>
                     <tbody>
                         <?php 
-                        $meta_investimento_interno = obterMeta('INVESTIMENTO INTERNO');
+                        // meta já pré-carregada acima: $meta_investimento_interno e $meta_investimento_interno_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-400" onclick="toggleReceita('investimento-interno')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) INVESTIMENTO INTERNO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_investimento_interno, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_investimento_interno, 0, ',', '.') ?> (<?= number_format($meta_investimento_interno_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-investimento-interno">
                                 R$ <?= number_format($total_investimento_interno, 2, ',', '.') ?>
@@ -1037,7 +1080,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'INVESTIMENTO INTERNO');
+                        $_mmi = obterMeta($categoria_individual, 'INVESTIMENTO INTERNO');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'investimento-interno-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1045,7 +1090,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-blue-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1073,7 +1118,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- RECEITAS NÃO OPERACIONAIS - Linha principal (separada) -->
                     <?php if (!empty($receitas_nao_operacionais)): ?>
                     <?php 
-                    $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                    // meta já pré-carregada acima: $meta_nao_operacional e $meta_nao_operacional_pct
                     ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300" onclick="toggleReceita('nao-operacionais')">
@@ -1081,7 +1126,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 RECEITAS NÃO OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?> (<?= number_format($meta_nao_operacional_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-nao-operacional">
                                 R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
@@ -1109,14 +1154,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($saidas_nao_operacionais)): ?>
                     <tbody>
                         <?php 
-                        $meta_saidas_nao_operacionais = obterMeta('SAÍDAS NÃO OPERACIONAIS');
+                        // meta já pré-carregada acima: $meta_saidas_nao_operacionais e $meta_saidas_nao_operacionais_pct
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-red-400" onclick="toggleReceita('saidas-nao-operacionais')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) SAÍDAS NÃO OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_saidas_nao_operacionais, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_saidas_nao_operacionais, 0, ',', '.') ?> (<?= number_format($meta_saidas_nao_operacionais_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-saidas-nao-operacionais">
                                 R$ <?= number_format($total_saidas_nao_operacionais, 2, ',', '.') ?>
@@ -1136,7 +1181,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                        $_mmi = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                        $meta_individual_val = is_array($_mmi) ? ($_mmi['meta'] ?? 0) : ($_mmi ?? 0);
+                        $meta_individual_pct = is_array($_mmi) ? ($_mmi['percentual'] ?? 0) : 0;
                         $categoria_id = 'saidas-nao-operacionais-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1144,7 +1191,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual_val ?? 0, 0, ',', '.') ?> (<?= number_format($meta_individual_pct ?? 0, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-red-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1171,9 +1218,10 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- IMPACTO CAIXA - Cálculo final -->
                     <?php 
-                    $impacto_caixa = $lucro_liquido - $total_investimento_interno - $total_saidas_nao_operacionais;
+                    // IMPACTO CAIXA agora considera também as RECEITAS NÃO OPERACIONAIS
+                    $impacto_caixa = $lucro_liquido - $total_investimento_interno - $total_saidas_nao_operacionais + $total_nao_operacional;
                     $cor_impacto = $impacto_caixa >= 0 ? 'green' : 'red';
-                    $meta_impacto_caixa = obterMeta('IMPACTO CAIXA');
+                    // meta já pré-carregada acima: $meta_impacto_caixa e $meta_impacto_caixa_pct
                     ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 font-bold text-<?= $cor_impacto ?>-400 bg-<?= $cor_impacto ?>-900 bg-opacity-20">
@@ -1181,7 +1229,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 (=) IMPACTO CAIXA
                             </td>
                             <td class="px-3 py-3 border-b-2 border-<?= $cor_impacto ?>-600 text-center">
-                                <span class="text-xs text-gray-500 font-semibold">Meta: R$ <?= number_format($meta_impacto_caixa, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500 font-semibold">Meta: R$ <?= number_format($meta_impacto_caixa, 0, ',', '.') ?> (<?= number_format($meta_impacto_caixa_pct, 2, ',', '.') ?>%)</span>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-<?= $cor_impacto ?>-600 text-right font-mono font-bold" id="valor-base-impacto-caixa">
                                 R$ <?= number_format($impacto_caixa, 2, ',', '.') ?>
@@ -1190,7 +1238,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($impacto_caixa, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-<?= $cor_impacto ?>-600 text-right font-mono font-bold bg-blue-900" id="perc-impacto-caixa">
-                                <?= number_format(($impacto_caixa / $total_geral) * 100, 2, ',', '.') ?>%
+                                <?= isset($total_geral_operacional) && $total_geral_operacional > 0 ? number_format(($impacto_caixa / $total_geral_operacional) * 100, 2, ',', '.') : '0,00' ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -1579,7 +1627,10 @@ function atualizarCalculos() {
             percTributos = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         }
     }
-    totalTributos = (totalReceitas * percTributos) / 100;
+    // Tributos devem incidir sobre a base operacional (receitas operacionais)
+    // para que a "Receita Líquida" represente: RECEITAS OPERACIONAIS - TRIBUTOS.
+    // Aplicar o percentual sobre `totalOperacional` em vez de `totalReceitas`.
+    totalTributos = (totalOperacional * percTributos) / 100;
     
     // CUSTO VARIÁVEL - calcular como percentual sobre faturamento
     let percCustoVariavel = 0;
@@ -1594,7 +1645,9 @@ function atualizarCalculos() {
             // Marcar timestamp de quando os totais foram atualizados
             try { window.__simulador_last_update = Date.now(); } catch(e) { /* ignore */ }
     }
-    totalCustoVariavel = (totalReceitas * percCustoVariavel) / 100;
+    // CUSTO VARIÁVEL deve incidir sobre a base operacional (receitas operacionais),
+    // para manter consistência com os demais cálculos do DRE.
+    totalCustoVariavel = (totalOperacional * percCustoVariavel) / 100;
     
     // DESPESAS DE VENDA - calcular como percentual sobre faturamento
     let percDespesaVenda = 0;
@@ -1607,13 +1660,16 @@ function atualizarCalculos() {
             percDespesaVenda = parseFloat(percTexto.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         }
     }
-    totalDespesaVenda = (totalReceitas * percDespesaVenda) / 100;
+    // DESPESAS DE VENDA também aplicam-se sobre a base operacional
+    totalDespesaVenda = (totalOperacional * percDespesaVenda) / 100;
     
     // Calcular valores derivados (usando os valores originais por enquanto)
-    const receitaLiquida = totalReceitas - totalTributos;
+    // Receita líquida deve ser baseada nas RECEITAS OPERACIONAIS menos tributos
+    const receitaLiquida = totalOperacional - totalTributos;
     const lucroBruto = receitaLiquida - totalCustoVariavel;
     const lucroLiquido = lucroBruto - totalCustoFixo - totalDespesaFixa - totalDespesaVenda;
-    const impactoCaixa = lucroLiquido - totalInvestimentoInterno - totalSaidasNaoOperacionais;
+    // IMPACTO CAIXA agora inclui RECEITAS NÃO OPERACIONAIS
+    const impactoCaixa = lucroLiquido - totalInvestimentoInterno - totalSaidasNaoOperacionais + totalNaoOperacional;
     
     // Atualizar valores calculados dos grupos principais (valores originais)
     // If a goal-seek (ponto de equilíbrio) was applied, keep a visual
@@ -1621,7 +1677,10 @@ function atualizarCalculos() {
     const goalSeekApplied = !!(window && window.__simulador_goal_seek_applied);
 
     const elementos = {
-        'valor-sim-receita-bruta': totalReceitas,
+        // `RECEITA OPERACIONAL` (linha principal) deve refletir o total operacional,
+        // não o total geral de receitas. Usar `totalOperacional` aqui garante que
+        // a célula espelhe o valor das `RECEITAS OPERACIONAIS`.
+        'valor-sim-receita-bruta': totalOperacional,
         'valor-sim-operacional': totalOperacional,
         'valor-sim-nao-operacional': totalNaoOperacional,
         'valor-sim-tributos': totalTributos,
@@ -1643,8 +1702,10 @@ function atualizarCalculos() {
     const inputsPercentuaisVariaveis = document.querySelectorAll('input[data-tipo^="percentual-"]:not([data-tipo*="fixo"])');
     inputsPercentuaisVariaveis.forEach(input => {
         const percentual = obterValorNumericoPercentual(input);
-        if (percentual > 0 && totalReceitas > 0) {
-            const novoValorAbsoluto = (totalReceitas * percentual) / 100;
+        if (percentual > 0) {
+            // Usar base operacional para percentuais das subcategorias variáveis
+            const basePercentual = totalOperacional > 0 ? totalOperacional : totalReceitas;
+            const novoValorAbsoluto = (basePercentual * percentual) / 100;
             
             // Atualizar o valor absoluto correspondente
             const valorElementId = input.id.replace('perc-', 'valor-sim-');
@@ -1698,15 +1759,28 @@ function atualizarCalculos() {
         // ignore if environment doesn't allow
     }
     
-    // Atualizar percentuais individuais das subcategorias (baseado no novo faturamento total)
+    // Atualizar percentuais individuais das subcategorias.
+    // Para categorias operacionais usamos `totalOperacional` como base;
+    // para itens explícitos não-operacionais usamos `totalNaoOperacional`.
     inputs.forEach(input => {
         const valor = obterValorNumerico(input);
         const categoriaId = input.id.replace('valor-sim-', '');
         const percElement = document.getElementById('perc-' + categoriaId);
-        
-        if (percElement && totalReceitas > 0) {
-            const percentual = (valor / totalReceitas) * 100;
+
+        if (!percElement) return;
+
+        // Determinar base apropriada
+        let baseForInput = totalOperacional;
+        const tipoInput = input.dataset.tipo || '';
+        if (tipoInput.includes('nao-operacional') || input.id.includes('nao-operacional')) {
+            baseForInput = totalNaoOperacional;
+        }
+
+        if (baseForInput > 0) {
+            const percentual = (valor / baseForInput) * 100;
             percElement.textContent = formatarPercentual(percentual);
+        } else {
+            percElement.textContent = '0,00%';
         }
     });
     
@@ -1740,19 +1814,21 @@ function atualizarCalculos() {
         
         const percentuaisGrupos = {
             'perc-receita-bruta': 100.00,
-            'perc-operacional': (totalOperacional / totalReceitas) * 100,
-            'perc-nao-operacional': (totalNaoOperacional / totalReceitas) * 100,
-            'perc-tributos': (totalTributosReal / totalReceitas) * 100,
-            'perc-receita-liquida': (receitaLiquida / totalReceitas) * 100,
-            'perc-custo-variavel': (totalCustoVariavelReal / totalReceitas) * 100,
-            'perc-lucro-bruto': (lucroBruto / totalReceitas) * 100,
-            'perc-custo-fixo': (totalCustoFixo / totalReceitas) * 100,
-            'perc-despesa-fixa': (totalDespesaFixa / totalReceitas) * 100,
-            'perc-despesa-venda': (totalDespesaVendaReal / totalReceitas) * 100,
-            'perc-lucro-liquido': (lucroLiquido / totalReceitas) * 100,
-            'perc-investimento-interno': (totalInvestimentoInterno / totalReceitas) * 100,
-            'perc-saidas-nao-operacionais': (totalSaidasNaoOperacionais / totalReceitas) * 100,
-            'perc-impacto-caixa': (impactoCaixa / totalReceitas) * 100
+            // Percentuais operacionais baseados na receita operacional
+            'perc-operacional': 100.00,
+            'perc-nao-operacional': (totalNaoOperacional / (totalReceitas || 1)) * 100,
+            'perc-tributos': (totalTributosReal / (totalOperacional || 1)) * 100,
+            'perc-receita-liquida': (receitaLiquida / (totalOperacional || 1)) * 100,
+            'perc-custo-variavel': (totalCustoVariavelReal / (totalOperacional || 1)) * 100,
+            'perc-lucro-bruto': (lucroBruto / (totalOperacional || 1)) * 100,
+            'perc-custo-fixo': (totalCustoFixo / (totalOperacional || 1)) * 100,
+            'perc-despesa-fixa': (totalDespesaFixa / (totalOperacional || 1)) * 100,
+            'perc-despesa-venda': (totalDespesaVendaReal / (totalOperacional || 1)) * 100,
+            'perc-lucro-liquido': (lucroLiquido / (totalOperacional || 1)) * 100,
+            'perc-investimento-interno': (totalInvestimentoInterno / (totalOperacional || 1)) * 100,
+            // Saídas não operacionais continuam relativas ao total geral
+            'perc-saidas-nao-operacionais': (totalSaidasNaoOperacionais / (totalReceitas || 1)) * 100,
+            'perc-impacto-caixa': (impactoCaixa / (totalOperacional || 1)) * 100
         };
         
         Object.keys(percentuaisGrupos).forEach(elementId => {
@@ -1769,10 +1845,16 @@ function atualizarCalculos() {
         });
     }
     
-    // Garantir que a RECEITA BRUTA sempre seja 100% na simulação
+    // Atualizar percentual da linha "RECEITA OPERACIONAL" para refletir
+    // a participação de `totalOperacional` no `totalReceitas`.
     const percReceitaBruta = document.getElementById('perc-receita-bruta');
     if (percReceitaBruta) {
-        percReceitaBruta.textContent = '100,00%';
+        if (totalReceitas > 0) {
+            const perc = (totalOperacional / totalReceitas) * 100;
+            percReceitaBruta.textContent = perc.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        } else {
+            percReceitaBruta.textContent = '0,00%';
+        }
     }
     
     // FORÇAR RECÁLCULO DOS TOTAIS DE GRUPOS BASEADOS NAS SUBCATEGORIAS
@@ -1976,17 +2058,17 @@ function calcularPontoEquilibrioInterno() {
     
     // Preferir totais já calculados por atualizarCalculos (mais determinístico)
     const simulTotais = (window && window.simulador_totais) ? window.simulador_totais : null;
-    const receitaBruta = simulTotais ? simulTotais.totalReceitas : extrairValor('valor-sim-receita-bruta');
+    // Usar TOTAL OPERACIONAL como base (conforme regra: tudo baseado em RECEITA OPERACIONAL)
+    const receitaOperacionalBase = simulTotais ? simulTotais.totalOperacional : extrairValor('valor-sim-receita-bruta');
     const tributos = simulTotais ? simulTotais.totalTributos : extrairValor('valor-sim-tributos');
     const custoVariavel = simulTotais ? simulTotais.totalCustoVariavel : extrairValor('valor-sim-custo-variavel');
     const despesaVenda = simulTotais ? simulTotais.totalDespesaVenda : extrairValor('valor-sim-despesa-venda');
 
     // Percentuais de tributos, custo variável e despesas de venda devem ser
-    // calculados sobre a RECEITA BRUTA TOTAL (inclui receitas não operacionais).
-    // Isso garante que as taxas reflitam o mix total de faturamento.
-    const basePercentual = receitaBruta > 0 ? receitaBruta : 1;
+    // calculados sobre a RECEITA OPERACIONAL conforme solicitado.
+    const basePercentual = receitaOperacionalBase > 0 ? receitaOperacionalBase : 1;
 
-    // Calcular percentuais (frações de 0 a 1) usando a receita bruta total
+    // Calcular percentuais (frações de 0 a 1) usando a receita operacional
     const t = basePercentual > 0 ? tributos / basePercentual : 0;
     const cv = basePercentual > 0 ? custoVariavel / basePercentual : 0;
     const dv = basePercentual > 0 ? despesaVenda / basePercentual : 0;
@@ -1997,8 +2079,8 @@ function calcularPontoEquilibrioInterno() {
     const II = simulTotais ? simulTotais.totalInvestimentoInterno : extrairValor('valor-sim-investimento-interno');
     const SNO = simulTotais ? simulTotais.totalSaidasNaoOperacionais : extrairValor('valor-sim-saidas-nao-operacionais');
     
-    // Receitas/saldos não operacionais
-    const receitaNaoOp = extrairValor('valor-sim-nao-operacional');
+    // Receitas/saldos não operacionais (preferir valores já consolidados em simulTotais)
+    const receitaNaoOp = simulTotais ? simulTotais.totalNaoOperacional : extrairValor('valor-sim-nao-operacional');
     const saldoNaoOp = receitaNaoOp - SNO; // receita não op - saídas não op
     
     // Fórmula baseada na hierarquia exata: IMPACTO CAIXA = 0
@@ -2007,29 +2089,28 @@ function calcularPontoEquilibrioInterno() {
     // 0 = RECEITA BRUTA×(1 - t - cv - dv) - CF - DF - II - SNO
     // RECEITA BRUTA×(1 - t - cv - dv) = CF + DF + II + SNO
     
-    const custosVariaveisPorcentual = t + cv + dv; // % sobre receita bruta
-    const custosFixosTotal = CF + DF + II + SNO; // valores absolutos (sem subtrair receita não op)
+    const custosVariaveisPorcentual = t + cv + dv; // % sobre receita operacional
+    const custosFixosTotal = CF + DF + II + SNO; // valores absolutos
     
     const alpha = 1 - custosVariaveisPorcentual; // margem disponível
-    const receitaBrutaNecessaria = custosFixosTotal / alpha;
-    
+
     if (Math.abs(alpha) < 0.0001) {
         alert('❌ Margem insuficiente! Os custos variáveis somam praticamente 100% da receita.');
         return;
     }
-    
-    if (!isFinite(receitaBrutaNecessaria) || receitaBrutaNecessaria <= 0) {
-        alert('❌ Não existe receita positiva que zere o IMPACTO CAIXA com os parâmetros atuais.');
+
+    // Calcular receita operacional necessária usando a equação correta:
+    // 0 = IMPACTO_CAIXA = x*alpha - (CF + DF + II + SNO) + RN
+    // => x = (CF + DF + II + SNO - RN) / alpha
+    const receitaOperacionalEquilibrio = (custosFixosTotal - receitaNaoOp) / alpha;
+
+    if (!isFinite(receitaOperacionalEquilibrio) || receitaOperacionalEquilibrio <= 0) {
+        alert('❌ Receita operacional calculada é inválida ou negativa com os parâmetros atuais. Ajuste custos ou receitas não operacionais.');
         return;
     }
-    
-    // Calcular receita operacional necessária
-    const receitaOperacionalEquilibrio = receitaBrutaNecessaria - receitaNaoOp;
-    
-    if (receitaOperacionalEquilibrio <= 0) {
-        alert('❌ Receita operacional calculada é negativa. Reduza a receita não operacional ou os custos fixos.');
-        return;
-    }
+
+    // Receita bruta total necessária (operacional + não operacional)
+    const receitaBrutaNecessaria = receitaOperacionalEquilibrio + receitaNaoOp;
     
 
     
