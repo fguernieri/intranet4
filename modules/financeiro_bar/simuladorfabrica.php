@@ -730,32 +730,72 @@ require_once __DIR__ . '/../../sidebar.php';
                 ?>
 
                 <?php
-                // --- Prefetch de todas as metas pertinentes ---
+                // --- Prefetch de todas as metas pertinentes (retorna ['meta'=>..., 'percentual'=>...]) ---
                 // Isso garante que as linhas calculadas também possam exibir um valor de meta
                 // (se houver) ou uma derivação a partir de componentes.
-                $meta_receita_bruta = obterMeta('RECEITA BRUTA');
-                // Meta exibida no cabeçalho 'RECEITA OPERACIONAL' (input com data-categoria="RECEITA OPERACIONAL")
-                $meta_receita_operacional = obterMeta('RECEITA OPERACIONAL');
-                $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
-                $meta_tributos = obterMeta('TRIBUTOS');
-                $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
-                $meta_custo_fixo = obterMeta('CUSTO FIXO');
-                $meta_despesa_fixa = obterMeta('DESPESA FIXA');
-                $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
-                $meta_investimento_interno = obterMeta('INVESTIMENTO INTERNO');
-                $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
-                $meta_saidas_nao_operacionais = obterMeta('SAÍDAS NÃO OPERACIONAIS');
-                $meta_impacto_caixa = obterMeta('IMPACTO CAIXA');
+                $__m = obterMeta('RECEITA BRUTA');
+                $meta_receita_bruta = $__m['meta'] ?? 0;
+                $meta_receita_bruta_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('RECEITA OPERACIONAL');
+                $meta_receita_operacional = $__m['meta'] ?? 0;
+                $meta_receita_operacional_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('RECEITAS OPERACIONAIS');
+                $meta_operacional = $__m['meta'] ?? 0;
+                $meta_operacional_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('TRIBUTOS');
+                $meta_tributos = $__m['meta'] ?? 0;
+                $meta_tributos_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('CUSTO VARIÁVEL');
+                $meta_custo_variavel = $__m['meta'] ?? 0;
+                $meta_custo_variavel_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('CUSTO FIXO');
+                $meta_custo_fixo = $__m['meta'] ?? 0;
+                $meta_custo_fixo_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('DESPESA FIXA');
+                $meta_despesa_fixa = $__m['meta'] ?? 0;
+                $meta_despesa_fixa_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('DESPESAS DE VENDA');
+                $meta_despesa_venda = $__m['meta'] ?? 0;
+                $meta_despesa_venda_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('INVESTIMENTO INTERNO');
+                $meta_investimento_interno = $__m['meta'] ?? 0;
+                $meta_investimento_interno_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                $meta_nao_operacional = $__m['meta'] ?? 0;
+                $meta_nao_operacional_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('SAÍDAS NÃO OPERACIONAIS');
+                $meta_saidas_nao_operacionais = $__m['meta'] ?? 0;
+                $meta_saidas_nao_operacionais_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('IMPACTO CAIXA');
+                $meta_impacto_caixa = $__m['meta'] ?? 0;
+                $meta_impacto_caixa_pct = $__m['percentual'] ?? 0;
 
                 // Metas calculadas: pegar somente da tabela de metas. Se não existir, manter 0.
-                $meta_receita_liquida = obterMeta('RECEITA LÍQUIDA');
+                $__m = obterMeta('RECEITA LÍQUIDA');
+                $meta_receita_liquida = $__m['meta'] ?? 0;
+                $meta_receita_liquida_pct = $__m['percentual'] ?? 0;
                 // Bases calculadas considerando apenas RECEITA OPERACIONAL
                 $base_receita_liquida = ($total_geral_operacional - $total_tributos);
 
-                $meta_lucro_bruto = obterMeta('LUCRO BRUTO');
+                $__m = obterMeta('LUCRO BRUTO');
+                $meta_lucro_bruto = $__m['meta'] ?? 0;
+                $meta_lucro_bruto_pct = $__m['percentual'] ?? 0;
                 $base_lucro_bruto = ($total_geral_operacional - $total_tributos) - $total_custo_variavel;
 
-                $meta_lucro_liquido = obterMeta('LUCRO LÍQUIDO');
+                $__m = obterMeta('LUCRO LÍQUIDO');
+                $meta_lucro_liquido = $__m['meta'] ?? 0;
+                $meta_lucro_liquido_pct = $__m['percentual'] ?? 0;
                 $base_lucro_liquido = (($total_geral_operacional - $total_tributos) - $total_custo_variavel) - $total_custo_fixo - $total_despesa_fixa - $total_despesa_venda;
 
                 // Fallbacks seguros para evitar notices
@@ -880,7 +920,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($total_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-operacional">
-                                <?= number_format($total_geral_operacional > 0 ? ($total_operacional / $total_geral_operacional) * 100 : 0, 2, ',', '.') ?>%
+                                <?= number_format(($meta_operacional_pct ?? 0) > 0 ? ($meta_operacional_pct) : ($total_geral_operacional > 0 ? ($total_operacional / $total_geral_operacional) * 100 : 0), 2, ',', '.') ?>%
                             </td>
                         </tr>
                         <?php endif; ?>
@@ -910,7 +950,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($total_tributos, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-tributos">
-                                <?= number_format($total_geral_operacional > 0 ? ($total_tributos / $total_geral_operacional) * 100 : 0, 2, ',', '.') ?>%
+                                <?= number_format(($meta_tributos_pct ?? 0) > 0 ? ($meta_tributos_pct) : ($total_geral_operacional > 0 ? ($total_tributos / $total_geral_operacional) * 100 : 0), 2, ',', '.') ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -972,7 +1012,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($base_receita_liquida, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-receita-liquida">
-                                <?= number_format($total_geral_operacional > 0 ? (($base_receita_liquida) / $total_geral_operacional) * 100 : 0, 2, ',', '.') ?>%
+                                <?= number_format(($meta_receita_liquida_pct ?? 0) > 0 ? ($meta_receita_liquida_pct) : ($total_geral_operacional > 0 ? (($base_receita_liquida) / $total_geral_operacional) * 100 : 0), 2, ',', '.') ?>%
                             </td>
                         </tr>
                     </tbody>
@@ -996,7 +1036,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 R$ <?= number_format($total_custo_variavel, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900" id="perc-custo-variavel">
-                                <?= number_format($total_geral_operacional > 0 ? ($total_custo_variavel / $total_geral_operacional) * 100 : 0, 2, ',', '.') ?>%
+                                <?= number_format(($meta_custo_variavel_pct ?? 0) > 0 ? ($meta_custo_variavel_pct) : ($total_geral_operacional > 0 ? ($total_custo_variavel / $total_geral_operacional) * 100 : 0), 2, ',', '.') ?>%
                             </td>
                         </tr>
                     </tbody>
