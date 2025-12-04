@@ -661,6 +661,14 @@ require_once __DIR__ . '/../../sidebar.php';
                 echo "Total Operacional: R$ " . number_format($total_operacional, 2) . " | ";
                 echo "Total Não Operacional: R$ " . number_format($total_nao_operacional, 2);
                 echo " -->";
+                // DEBUG: listar itens de CUSTO VARIAVEL para inspeção (útil em PROD)
+                echo "<!-- DEBUG_CUSTO_VARIAVEL: count=" . count($custo_variavel) . " ";
+                foreach ($custo_variavel as $cv_item) {
+                    $nome = trim($cv_item['categoria'] ?? 'SEM_CATEGORIA');
+                    $val = floatval($cv_item['total_receita_mes'] ?? 0);
+                    echo "[" . htmlspecialchars($nome) . ":R$" . number_format($val, 2, '.', '') . "] ";
+                }
+                echo "-->";
                 ?>
 
                 <?php
@@ -912,7 +920,6 @@ require_once __DIR__ . '/../../sidebar.php';
                     </tbody>
 
                     <!-- CUSTO VARIÁVEL - Linha principal -->
-                    <?php if (!empty($custo_variavel)): ?>
                     <tbody>
                         <?php 
                         $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
@@ -938,7 +945,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     
                     <!-- Detalhes dos CUSTOS VARIÁVEIS -->
                     <tbody class="subcategorias" id="sub-custo-variavel" style="display: none;">
-                        <?php foreach ($custo_variavel as $index => $linha): ?>
+                        <?php if (!empty($custo_variavel)): foreach ($custo_variavel as $index => $linha): ?>
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
@@ -969,9 +976,8 @@ require_once __DIR__ . '/../../sidebar.php';
                                        style="background: transparent; color: #fb923c; text-align: right; border: none; outline: none; width: 70px;"> %
                             </td>
                         </tr>
-                        <?php endforeach; ?>
+                        <?php endforeach; endif; ?>
                     </tbody>
-                    <?php endif; ?>
 
                     <!-- RETIRADA DE LUCRO - Categoria pai -->
                     <?php if (!empty($retirada_de_lucro)): ?>
