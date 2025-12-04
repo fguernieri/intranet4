@@ -458,13 +458,23 @@ require_once __DIR__ . '/../../sidebar.php';
                 function _normalize_cat($s) {
                     $s = $s ?? '';
                     $s = trim($s);
-                    // tentar transliteração básica
-                    $s = @iconv('UTF-8', 'ASCII//TRANSLIT', $s) ?: $s;
-                    $s = strtoupper($s);
-                    // remover caracteres que não são letras/números/espaço
+                    // Converter para maiúsculas multibyte
+                    $s = mb_strtoupper($s, 'UTF-8');
+                    // Substituir acentos manualmente (mais portável que depender de iconv)
+                    $map = array(
+                        'Á'=>'A','À'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','á'=>'A','à'=>'A','â'=>'A','ã'=>'A','ä'=>'A','å'=>'A',
+                        'É'=>'E','È'=>'E','Ê'=>'E','Ë'=>'E','é'=>'E','è'=>'E','ê'=>'E','ë'=>'E',
+                        'Í'=>'I','Ì'=>'I','Î'=>'I','Ï'=>'I','í'=>'I','ì'=>'I','î'=>'I','ï'=>'I',
+                        'Ó'=>'O','Ò'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O','ó'=>'O','ò'=>'O','ô'=>'O','õ'=>'O','ö'=>'O',
+                        'Ú'=>'U','Ù'=>'U','Û'=>'U','Ü'=>'U','ú'=>'U','ù'=>'U','û'=>'U','ü'=>'U',
+                        'Ç'=>'C','ç'=>'C','Ñ'=>'N','ñ'=>'N'
+                    );
+                    $s = strtr($s, $map);
+                    // Remover caracteres que não são letras/números/espaço
                     $s = preg_replace('/[^A-Z0-9 ]+/', '', $s);
-                    // normalizar múltiplos espaços
+                    // Normalizar múltiplos espaços
                     $s = preg_replace('/\s+/', ' ', $s);
+                    $s = trim($s);
                     return $s;
                 }
 
@@ -481,15 +491,15 @@ require_once __DIR__ . '/../../sidebar.php';
                         continue;
                     }
 
-                    // Separar CUSTO VARIÁVEL das despesas
-                    if (in_array($categoria_pai, ['CUSTO VARIAVEL', 'CUSTO VARIAVEL'])) {
-                        $custo_variavel[] = $linha;
+                    // Separar CUSTO FIXO das despesas (verificar primeiro para evitar conflito)
+                    if (strpos($categoria_pai, 'CUSTO FIXO') !== false || $categoria_pai === 'CUSTO FIXO') {
+                        $custo_fixo[] = $linha;
                         continue;
                     }
 
-                    // Separar CUSTO FIXO das despesas
-                    if ($categoria_pai === 'CUSTO FIXO') {
-                        $custo_fixo[] = $linha;
+                    // Separar CUSTO VARIÁVEL das despesas (detectar por presença de palavras-chave)
+                    if (strpos($categoria_pai, 'CUSTO') !== false && (strpos($categoria_pai, 'VAR') !== false || strpos($categoria_pai, 'VARIAVEL') !== false)) {
+                        $custo_variavel[] = $linha;
                         continue;
                     }
 
@@ -562,6 +572,54 @@ require_once __DIR__ . '/../../sidebar.php';
                     }
                 }
                 
+                // --- DIAGNÓSTICO ADICIONAL ---
+                // Listar categorias-pai únicas encontradas na fonte de despesas (útil em PROD)
+                $unique_parents = [];
+                foreach ($dados_despesa as $linha_dp) {
+                    $raw_pp = $linha_dp['categoria_pai'] ?? '';
+                    $norm_pp = _normalize_cat($raw_pp);
+                    if ($norm_pp === '') continue;
+                    $unique_parents[$norm_pp] = $raw_pp;
+                }
+                if (!empty($unique_parents)) {
+                    echo "<!-- UNIQUE_PARENTS: ";
+                    foreach ($unique_parents as $norm => $raw) {
+                        echo "[" . htmlspecialchars($norm) . "=>" . htmlspecialchars($raw) . "] ";
+                    }
+                    echo "-->";
+                    // Gravar em log para investigação em PROD
+                    if (function_exists('salvar_simulador_log_debug')) {
+                        try {
+                            $msg = 'UNIQUE_PARENTS: ' . json_encode(array_values($unique_parents));
+                            salvar_simulador_log_debug($msg);
+                        } catch (
+                        Exception $e) { /* ignore */ }
+                    }
+                } else {
+                    echo "<!-- UNIQUE_PARENTS: NONE -->";
+                }
+
+                // Se não foi coletado CUSTO VARIAVEL, tentar um fallback que
+                // agrupa qualquer despesa cujo parent ou categoria contenha a palavra 'CUSTO'
+                if (empty($custo_variavel)) {
+                    $fallback_cv = [];
+                    foreach ($dados_despesa as $linha_dp) {
+                        $cp_raw = $linha_dp['categoria_pai'] ?? '';
+                        $c_raw = $linha_dp['categoria'] ?? '';
+                        $cp_norm = _normalize_cat($cp_raw);
+                        $c_norm = _normalize_cat($c_raw);
+                        if (strpos($cp_norm, 'CUSTO') !== false || strpos($c_norm, 'CUSTO') !== false) {
+                            $fallback_cv[] = $linha_dp;
+                        }
+                    }
+                    if (!empty($fallback_cv)) {
+                        $custo_variavel = $fallback_cv;
+                        echo "<!-- DEBUG_CUSTOVAR_FALLBACK: added=" . count($fallback_cv) . " -->";
+                    } else {
+                        echo "<!-- DEBUG_CUSTOVAR_FALLBACK: none -->";
+                    }
+                }
+
                 // Ordenar subcategorias por valor (do maior para o menor)
                 usort($receitas_operacionais, function($a, $b) {
                     return floatval($b['total_receita_mes'] ?? 0) <=> floatval($a['total_receita_mes'] ?? 0);
