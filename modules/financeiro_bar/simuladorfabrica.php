@@ -2306,6 +2306,8 @@ function atualizarCalculos() {
     recalcularTotalGrupo('custo-variavel', 'valor-sim-custo-variavel');
     // Recalcular DESPESAS DE VENDA somando as subcategorias
     recalcularTotalGrupo('despesa-venda', 'valor-sim-despesa-venda');
+    // Atualizar percentuais ao lado dos valores absolutos (META column)
+    try { if (typeof atualizarPercentuaisAoLado === 'function') atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
 }
 
 // Função auxiliar para recalcular total de um grupo baseado nas subcategorias
@@ -2848,6 +2850,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 atualizarCalculos();
+                try { if (typeof atualizarPercentuaisAoLado === 'function') atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
             }
         } catch (e) {
             console.error('Erro ao carregar simulação:', e);
@@ -3439,6 +3442,59 @@ document.addEventListener('click', function(e) {
             toggleReceita(toggle);
         }
     }
+});
+
+// Atualiza, ao lado do valor absoluto exibido nas células `valor-base-*`,
+// um pequeno percentual dentro da célula META (2ª coluna). Preserva o conteúdo existente
+// e adiciona/atualiza um `<span class="simulador-inline-pct">` com o percentual.
+function atualizarPercentuaisAoLado() {
+    function parseMoney(el) {
+        if (!el) return 0;
+        const txt = (el.value !== undefined ? (el.value || el.getAttribute('value') || '') : (el.textContent || el.innerText || '')).toString();
+        if (!txt) return 0;
+        const cleaned = txt.replace(/[^0-9,\-\.]/g, '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleaned) || 0;
+    }
+
+    // Obter faturamento atual (usar valor-sim-receita-bruta se presente, fallback para valor-base-receita-bruta)
+    const totalEl = document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
+    const totalGeral = parseMoney(totalEl) || 1;
+
+    document.querySelectorAll('td[id^="valor-base-"]').forEach(td => {
+        const id = td.id;
+        const itemVal = parseMoney(td);
+
+        const m = id.match(/(.+)-\d+$/);
+        let parentVal = itemVal;
+        if (m) {
+            const parentId = m[1];
+            const parentEl = document.getElementById(parentId);
+            parentVal = parseMoney(parentEl);
+        }
+
+        const pctToShow = totalGeral > 0 ? (m ? (itemVal / totalGeral) * 100 : (parentVal / totalGeral) * 100) : 0;
+
+        const tr = td.closest('tr');
+        if (!tr) return;
+        const metaCell = tr.cells && tr.cells.length >= 2 ? tr.cells[1] : null;
+        if (!metaCell) return;
+
+        const formatted = pctToShow.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        const oldPct = metaCell.querySelector('.simulador-inline-pct');
+        if (oldPct) oldPct.remove();
+        const pctSpan = document.createElement('span');
+        pctSpan.className = 'simulador-inline-pct';
+        pctSpan.style.fontSize = '0.75rem';
+        pctSpan.style.color = '#9ca3af';
+        pctSpan.style.marginLeft = '8px';
+        pctSpan.textContent = formatted;
+        metaCell.appendChild(pctSpan);
+    });
+}
+
+// Atualizar as anotações quando a página carrega
+document.addEventListener('DOMContentLoaded', function(){
+    try { atualizarPercentuaisAoLado(); } catch(e) { /* ignore */ }
 });
 
 </script>
