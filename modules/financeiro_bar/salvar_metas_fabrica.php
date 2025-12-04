@@ -151,33 +151,31 @@ try {
         throw new Exception('Nenhum registro válido para salvar');
     }
 
-    // Upsert na tabela fmetasfabricafinal
-    salvar_metas_log_debug('Iniciando upsert para fmetasfabricafinal (registros=' . count($todosRegistros) . ')');
-    $resultado = $supabase->upsert('fmetasfabricafinal', $todosRegistros, [
-        'on_conflict' => 'CATEGORIA,SUBCATEGORIA,DATA_META'
-    ]);
+    // Substituir metas do(s) mês(es) selecionado(s): deletar existentes e inserir (mesma técnica do WAB)
+    salvar_metas_log_debug('Iniciando substituição de metas em fmetasfabricafinal (registros=' . count($todosRegistros) . ')');
 
-    // Log raw do resultado retornado pelo client Supabase (se houver)
-    salvar_metas_log_debug('Resultado do upsert (raw): ' . var_export($resultado, true));
+    // Obter lista única de DATA_META presentes nos registros
+    $datasMeta = array_values(array_unique(array_map(function($r){ return $r['DATA_META']; }, $todosRegistros)));
+    salvar_metas_log_debug('Datas META a serem substituídas (fabrica): ' . implode(', ', $datasMeta));
 
-    // Fallback: se upsert falhar (por exemplo: falta de constraint para ON CONFLICT),
-    // efetuar delete das metas existentes para as datas envolvidas e inserir os registros
-    // em batches (evita necessidade de constraint no DB).
-    if ($resultado === false) {
-        salvar_metas_log_debug('Upsert retornou false — iniciando fallback delete+insert');
-
-        // Obter lista única de DATA_META presentes nos registros
-        $datas = array_values(array_unique(array_map(function($r){ return $r['DATA_META']; }, $todosRegistros)));
-
-        // Deletar registros existentes para cada DATA_META
-        foreach ($datas as $d) {
-            salvar_metas_log_debug('Removendo metas existentes para DATA_META=' . $d);
-            $delResult = $supabase->delete('fmetasfabricafinal', ['DATA_META' => 'eq.' . $d]);
-            salvar_metas_log_debug('Resultado delete for ' . $d . ': ' . var_export($delResult, true));
-            // não falhar no delete — prosseguir com insert mesmo se delete retornar false
+    // Deletar registros existentes para cada DATA_META
+    foreach ($datasMeta as $d) {
+        salvar_metas_log_debug('Deletando registros existentes para DATA_META=' . $d . ' na tabela fmetasfabricafinal');
+        $delResult = $supabase->delete('fmetasfabricafinal', ['DATA_META' => 'eq.' . $d]);
+        salvar_metas_log_debug('Resultado delete for ' . $d . ': ' . var_export($delResult, true));
+        if ($delResult === false) {
+            salvar_metas_log_debug('Aviso: DELETE retornou false para DATA_META=' . $d . ' (ver supabase_debug.log)');
         }
+    }
 
-        // Inserir em batches para evitar payloads muito grandes
+    // Inserir todos os registros do simulador (INSERT em batch simples)
+    salvar_metas_log_debug('Inserindo registros (INSERT batch) na tabela fmetasfabricafinal (fabrica)');
+    $insertResult = $supabase->insert('fmetasfabricafinal', $todosRegistros);
+    salvar_metas_log_debug('Resultado INSERT (raw): ' . var_export($insertResult, true));
+
+    // Se falhar no insert em lote, tentar inserir em chunks menores (fallback)
+    if ($insertResult === false) {
+        salvar_metas_log_debug('INSERT em lote retornou false — iniciando fallback por chunks');
         $batchSize = 50;
         $chunks = array_chunk($todosRegistros, $batchSize);
         $inserted = 0;
@@ -186,15 +184,15 @@ try {
             $ins = $supabase->insert('fmetasfabricafinal', $chunk);
             salvar_metas_log_debug('Resultado insert chunk: ' . var_export($ins, true));
             if ($ins === false) {
-                // Se falhar numa inserção, registrar e lançar exceção para diagnóstico
                 salvar_metas_log_debug('Falha ao inserir chunk ' . ($i+1));
                 throw new Exception('Falha ao salvar metas (insert fallback) no Supabase (fmetasfabricafinal)');
             }
             $inserted += count($chunk);
         }
-
         salvar_metas_log_debug('Fallback insert concluído. total_inseridos=' . $inserted);
-
+        $resultado = true;
+    } else {
+        $resultado = $insertResult;
     }
 
     $totalRegistros = count($todosRegistros);
