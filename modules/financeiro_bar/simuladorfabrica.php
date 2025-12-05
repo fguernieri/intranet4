@@ -317,7 +317,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
 
                             $resultado = $supabase->select('fmetasfabricafinal', [
-                                'select' => 'META',
+                                'select' => 'META,PERCENTUAL',
                                 'filters' => $filtros,
                                 'order' => 'DATA_CRI.desc',
                                 'limit' => 1
@@ -328,7 +328,7 @@ require_once __DIR__ . '/../../sidebar.php';
                             $filtros['SUBCATEGORIA'] = 'is.null';
 
                             $resultado = $supabase->select('fmetasfabricafinal', [
-                                'select' => 'META',
+                                'select' => 'META,PERCENTUAL',
                                 'filters' => $filtros,
                                 'order' => 'DATA_CRI.desc',
                                 'limit' => 1
@@ -344,7 +344,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 $filtros['SUBCATEGORIA'] = "eq.$categoria_upper";
 
                                 $resultado = $supabase->select('fmetasfabricafinal', [
-                                    'select' => 'META',
+                                    'select' => 'META,PERCENTUAL',
                                     'filters' => $filtros,
                                     'order' => 'DATA_CRI.desc',
                                     'limit' => 1
@@ -354,10 +354,15 @@ require_once __DIR__ . '/../../sidebar.php';
 
                         // Verifica se encontrou resultado válido
                         if (!empty($resultado) && isset($resultado[0]['META']) && is_numeric($resultado[0]['META'])) {
-                            return floatval($resultado[0]['META']);
+                            $meta_val = floatval($resultado[0]['META']);
+                            $pct_val = 0;
+                            if (isset($resultado[0]['PERCENTUAL']) && is_numeric($resultado[0]['PERCENTUAL'])) {
+                                $pct_val = floatval($resultado[0]['PERCENTUAL']);
+                            }
+                            return ['meta' => $meta_val, 'percentual' => $pct_val];
                         }
 
-                        return 0;
+                        return ['meta' => 0, 'percentual' => 0];
 
                     } catch (Exception $e) {
                         $msg = "Erro ao buscar meta para '$categoria' (pai: '$categoria_pai', periodo: '{$periodo_selecionado}'): " . $e->getMessage();
@@ -370,6 +375,15 @@ require_once __DIR__ . '/../../sidebar.php';
                         }
                         return 0;
                     }
+                }
+
+                // Compatibilidade: função que retorna apenas o valor numérico da meta
+                function obterMetaValor($categoria, $categoria_pai = null) {
+                    $res = obterMeta($categoria, $categoria_pai);
+                    if (is_array($res)) {
+                        return floatval($res['meta'] ?? 0);
+                    }
+                    return floatval($res);
                 }
                 
                 // Categorias não operacionais (apenas repasses)
@@ -804,6 +818,15 @@ require_once __DIR__ . '/../../sidebar.php';
                 $meta_tributos = $meta_tributos ?? 0;
                 $meta_custo_variavel = $meta_custo_variavel ?? 0;
                 $meta_custo_fixo = $meta_custo_fixo ?? 0;
+                // Logar valores prefetch de metas para depuração (mostra meta e percentual)
+                if (function_exists('salvar_simulador_log_debug')) {
+                    salvar_simulador_log_debug("PREFETCH META: RECEITA_OPERACIONAL meta={$meta_operacional} pct={$meta_operacional_pct}");
+                    salvar_simulador_log_debug("PREFETCH META: RECEITA_LIQUIDA meta={$meta_receita_liquida} pct={$meta_receita_liquida_pct}");
+                    salvar_simulador_log_debug("PREFETCH META: LUCRO_BRUTO meta={$meta_lucro_bruto} pct={$meta_lucro_bruto_pct}");
+                    salvar_simulador_log_debug("PREFETCH META: LUCRO_LIQUIDO meta={$meta_lucro_liquido} pct={$meta_lucro_liquido_pct}");
+                    salvar_simulador_log_debug("PREFETCH META: RECEITAS_NAO_OPERACIONAIS meta={$meta_nao_operacional} pct={$meta_nao_operacional_pct}");
+                    salvar_simulador_log_debug("PREFETCH META: SAIDAS_NAO_OPERACIONAIS meta={$meta_saidas_nao_operacionais} pct={$meta_saidas_nao_operacionais_pct}");
+                }
                 $meta_despesa_fixa = $meta_despesa_fixa ?? 0;
                 $meta_despesa_venda = $meta_despesa_venda ?? 0;
                 $meta_investimento_interno = $meta_investimento_interno ?? 0;
@@ -869,14 +892,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <tbody>
                         <!-- RECEITA BRUTA - Linha principal expansível -->
                         <?php 
-                        $meta_receita_bruta = obterMeta('RECEITA BRUTA');
+                        $meta_receita_bruta = obterMetaValor('RECEITA BRUTA');
                         ?>
                         <tr id="row-receita-bruta" data-toggle="receita-bruta" class="hover:bg-gray-700 cursor-pointer font-semibold text-green-400" onclick="toggleReceita('receita-bruta')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 RECEITA OPERACIONAL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_receita_operacional ?? $meta_operacional ?? $meta_receita_bruta, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_receita_operacional_pct ?? $meta_operacional_pct ?? $meta_receita_bruta_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_receita_operacional ?? $meta_operacional ?? $meta_receita_bruta, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-bruta">
                                 R$ <?= number_format($total_geral_operacional, 2, ',', '.') ?>
@@ -904,14 +927,14 @@ require_once __DIR__ . '/../../sidebar.php';
                         <!-- RECEITAS OPERACIONAIS - Subgrupo -->
                         <?php if (!empty($receitas_operacionais)): ?>
                         <?php 
-                        $meta_operacional = obterMeta('RECEITAS OPERACIONAIS');
+                        $meta_operacional = obterMetaValor('RECEITAS OPERACIONAIS');
                         ?>
                         <tr class="hover:bg-gray-700 font-medium text-blue-300 text-sm">
                             <td class="px-3 py-2 border-b border-gray-700 pl-6">
                                 RECEITAS OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_operacional, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_operacional_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_operacional, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-operacional">
                                 R$ <?= number_format($total_operacional, 2, ',', '.') ?>
@@ -934,14 +957,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($tributos)): ?>
                     <tbody>
                         <?php 
-                        $meta_tributos = obterMeta('TRIBUTOS');
+                        $meta_tributos = obterMetaValor('TRIBUTOS');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('tributos')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) TRIBUTOS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_tributos, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_tributos_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_tributos, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-tributos">
                                 R$ <?= number_format($total_tributos, 2, ',', '.') ?>
@@ -961,7 +984,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'TRIBUTOS');
+                        $meta_individual = obterMetaValor($categoria_individual, 'TRIBUTOS');
                         $categoria_id = 'tributos-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1003,7 +1026,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 RECEITA LÍQUIDA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_receita_liquida ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_receita_liquida_pct ?? 0 ?>">R$ <?= number_format($meta_receita_liquida ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-receita-liquida">
                                 R$ <?= number_format($base_receita_liquida, 2, ',', '.') ?>
@@ -1020,14 +1043,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- CUSTO VARIÁVEL - Linha principal -->
                     <tbody>
                         <?php 
-                        $meta_custo_variavel = obterMeta('CUSTO VARIÁVEL');
+                        $meta_custo_variavel = obterMetaValor('CUSTO VARIÁVEL');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-variavel')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) CUSTO VARIÁVEL
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_variavel, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_custo_variavel_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_custo_variavel, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-custo-variavel">
                                 R$ <?= number_format($total_custo_variavel, 2, ',', '.') ?>
@@ -1047,7 +1070,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        $meta_individual = obterMetaValor($categoria_individual, 'CUSTO VARIÁVEL');
                         $categoria_id = 'custo-variavel-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1079,14 +1102,14 @@ require_once __DIR__ . '/../../sidebar.php';
 
                     <!-- RETIRADA DE LUCRO - Categoria pai -->
                     <?php if (!empty($retirada_de_lucro)): ?>
-                    <?php $meta_retirada = obterMeta('RETIRADA DE LUCRO'); ?>
+                    <?php $meta_retirada = obterMetaValor('RETIRADA DE LUCRO'); ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-pink-400" onclick="toggleReceita('retirada-de-lucro')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) RETIRADA DE LUCRO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_retirada, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_retirada_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_retirada, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-retirada-de-lucro">
                                 R$ <?= number_format($total_retirada_de_lucro ?? 0, 2, ',', '.') ?>
@@ -1104,7 +1127,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'RETIRADA DE LUCRO');
+                        $meta_individual = obterMetaValor($categoria_individual, 'RETIRADA DE LUCRO');
                         $categoria_id = 'retirada-de-lucro-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1147,7 +1170,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 LUCRO BRUTO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_lucro_bruto ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_lucro_bruto_pct ?? 0 ?>">R$ <?= number_format($meta_lucro_bruto ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-lucro-bruto">
                                 R$ <?= number_format($base_lucro_bruto, 2, ',', '.') ?>
@@ -1165,14 +1188,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($custo_fixo)): ?>
                     <tbody>
                         <?php 
-                        $meta_custo_fixo = obterMeta('CUSTO FIXO');
+                        $meta_custo_fixo = obterMetaValor('CUSTO FIXO');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('custo-fixo')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) CUSTO FIXO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_custo_fixo, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_custo_fixo_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_custo_fixo, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-custo-fixo">
                                 R$ <?= number_format($total_custo_fixo, 2, ',', '.') ?>
@@ -1192,7 +1215,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'CUSTO FIXO');
+                        $meta_individual = obterMetaValor($categoria_individual, 'CUSTO FIXO');
                         $categoria_id = 'custo-fixo-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1228,14 +1251,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($despesa_fixa)): ?>
                     <tbody>
                         <?php 
-                        $meta_despesa_fixa = obterMeta('DESPESA FIXA');
+                        $meta_despesa_fixa = obterMetaValor('DESPESA FIXA');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-fixa')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) DESPESA FIXA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_fixa, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_despesa_fixa_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_despesa_fixa, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-despesa-fixa">
                                 R$ <?= number_format($total_despesa_fixa, 2, ',', '.') ?>
@@ -1255,7 +1278,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'DESPESA FIXA');
+                        $meta_individual = obterMetaValor($categoria_individual, 'DESPESA FIXA');
                         $categoria_id = 'despesa-fixa-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1291,14 +1314,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($despesa_venda)): ?>
                     <tbody>
                         <?php 
-                        $meta_despesa_venda = obterMeta('DESPESAS DE VENDA');
+                        $meta_despesa_venda = obterMetaValor('DESPESAS DE VENDA');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-orange-400" onclick="toggleReceita('despesa-venda')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) DESPESAS DE VENDA
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_despesa_venda, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_despesa_venda_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_despesa_venda, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-despesa-venda">
                                 R$ <?= number_format($total_despesa_venda, 2, ',', '.') ?>
@@ -1318,7 +1341,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        $meta_individual = obterMetaValor($categoria_individual, 'DESPESAS DE VENDA');
                         $categoria_id = 'despesa-venda-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1361,7 +1384,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 LUCRO LÍQUIDO
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-center">
-                                <span class="text-xs text-gray-500 font-semibold">R$ <?= number_format($meta_lucro_liquido ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500 font-semibold" data-metapct="<?= $meta_lucro_liquido_pct ?? 0 ?>">R$ <?= number_format($meta_lucro_liquido ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-green-600 text-right font-mono font-bold" id="valor-base-lucro-liquido">
                                 R$ <?= number_format($lucro_liquido, 2, ',', '.') ?>
@@ -1379,14 +1402,14 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($investimento_interno)): ?>
                     <tbody>
                         <?php 
-                        $meta_investimento_interno = obterMeta('INVESTIMENTO INTERNO');
+                        $meta_investimento_interno = obterMetaValor('INVESTIMENTO INTERNO');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-400" onclick="toggleReceita('investimento-interno')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) INVESTIMENTO INTERNO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_investimento_interno, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_investimento_interno_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_investimento_interno, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-investimento-interno">
                                 R$ <?= number_format($total_investimento_interno, 2, ',', '.') ?>
@@ -1406,7 +1429,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'INVESTIMENTO INTERNO');
+                        $meta_individual = obterMetaValor($categoria_individual, 'INVESTIMENTO INTERNO');
                         $categoria_id = 'investimento-interno-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1442,13 +1465,13 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- INVESTIMENTO EXTERNO - Linha principal (após INVESTIMENTO INTERNO) -->
                     <?php if (!empty($investimento_externo)): ?>
                     <tbody>
-                        <?php $meta_investimento_externo = obterMeta('INVESTIMENTO EXTERNO'); ?>
+                        <?php $meta_investimento_externo = obterMetaValor('INVESTIMENTO EXTERNO'); ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-400" onclick="toggleReceita('investimento-externo')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) INVESTIMENTO EXTERNO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_investimento_externo, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_investimento_externo_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_investimento_externo, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-investimento-externo">
                                 R$ <?= number_format($total_investimento_externo, 2, ',', '.') ?>
@@ -1468,7 +1491,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'INVESTIMENTO EXTERNO');
+                        $meta_individual = obterMetaValor($categoria_individual, 'INVESTIMENTO EXTERNO');
                         $categoria_id = 'investimento-externo-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1504,13 +1527,13 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- AMORTIZAÇÃO - Linha principal (após INVESTIMENTO EXTERNO) -->
                     <?php if (!empty($amortizacao)): ?>
                     <tbody>
-                        <?php $meta_amortizacao = obterMeta('AMORTIZAÇÃO'); ?>
+                        <?php $meta_amortizacao = obterMetaValor('AMORTIZAÇÃO'); ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-indigo-400" onclick="toggleReceita('amortizacao')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) AMORTIZAÇÃO
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_amortizacao, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_amortizacao_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_amortizacao, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono" id="valor-base-amortizacao">
                                 R$ <?= number_format($total_amortizacao, 2, ',', '.') ?>
@@ -1530,7 +1553,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'AMORTIZAÇÃO');
+                        $meta_individual = obterMetaValor($categoria_individual, 'AMORTIZAÇÃO');
                         $categoria_id = 'amortizacao-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1566,7 +1589,7 @@ require_once __DIR__ . '/../../sidebar.php';
                     <!-- RECEITAS NÃO OPERACIONAIS - Linha principal (separada) -->
                     <?php if (!empty($receitas_nao_operacionais) || (!empty($total_nao_operacional) && $total_nao_operacional > 0)): ?>
                     <?php 
-                    $meta_nao_operacional = obterMeta('RECEITAS NÃO OPERACIONAIS');
+                    $meta_nao_operacional = obterMetaValor('RECEITAS NÃO OPERACIONAIS');
                     ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-blue-300" onclick="toggleReceita('nao-operacionais')">
@@ -1574,9 +1597,9 @@ require_once __DIR__ . '/../../sidebar.php';
                                 RECEITAS NÃO OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_nao_operacional_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_nao_operacional, 0, ',', '.') ?></span>
                             </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
+                            <td id="valor-base-nao-operacional" class="px-3 py-2 border-b border-gray-700 text-right font-mono">
                                 R$ <?= number_format($total_nao_operacional, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
@@ -1602,16 +1625,16 @@ require_once __DIR__ . '/../../sidebar.php';
                     <?php if (!empty($saidas_nao_operacionais) || (!empty($total_saidas_nao_operacionais) && $total_saidas_nao_operacionais > 0)): ?>
                     <tbody>
                         <?php 
-                        $meta_saidas_nao_operacionais = obterMeta('SAÍDAS NÃO OPERACIONAIS');
+                        $meta_saidas_nao_operacionais = obterMetaValor('SAÍDAS NÃO OPERACIONAIS');
                         ?>
                         <tr class="hover:bg-gray-700 cursor-pointer font-semibold text-red-400" onclick="toggleReceita('saidas-nao-operacionais')">
                             <td class="px-3 py-2 border-b border-gray-700">
                                 (-) SAÍDAS NÃO OPERACIONAIS
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">Meta: R$ <?= number_format($meta_saidas_nao_operacionais, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_saidas_nao_operacionais_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_saidas_nao_operacionais, 0, ',', '.') ?></span>
                             </td>
-                            <td class="px-3 py-2 border-b border-gray-700 text-right font-mono">
+                            <td id="valor-base-saidas-nao-operacionais" class="px-3 py-2 border-b border-gray-700 text-right font-mono">
                                 R$ <?= number_format($total_saidas_nao_operacionais, 2, ',', '.') ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono bg-blue-900">
@@ -1642,7 +1665,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                        $meta_individual = obterMetaValor($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
                         $categoria_id = 'saidas-nao-operacionais-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1691,7 +1714,7 @@ require_once __DIR__ . '/../../sidebar.php';
                         - ($total_retirada_de_lucro ?? 0)
                     );
                     $cor_impacto = $impacto_caixa >= 0 ? 'green' : 'red';
-                    $meta_impacto_caixa = obterMeta('IMPACTO CAIXA');
+                    $meta_impacto_caixa = obterMetaValor('IMPACTO CAIXA');
                     ?>
                     <tbody>
                         <tr class="hover:bg-gray-700 font-bold text-<?= $cor_impacto ?>-400 bg-<?= $cor_impacto ?>-900 bg-opacity-20">
@@ -1699,7 +1722,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 (=) IMPACTO CAIXA
                             </td>
                             <td class="px-3 py-3 border-b-2 border-<?= $cor_impacto ?>-600 text-center">
-                                <span class="text-xs text-gray-500 font-semibold">Meta: R$ <?= number_format($meta_impacto_caixa, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500 font-semibold" data-metapct="<?= $meta_impacto_caixa_pct ?? 0 ?>">Meta: R$ <?= number_format($meta_impacto_caixa, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-3 border-b-2 border-<?= $cor_impacto ?>-600 text-right font-mono font-bold" id="valor-base-impacto-caixa">
                                 R$ <?= number_format($impacto_caixa, 2, ',', '.') ?>
@@ -3226,6 +3249,20 @@ function coletarMetasDoSimulador() {
         
         const linhas = elemento.querySelectorAll('tr');
         
+        // Determinar base de receita operacional (usar totais já calculados quando disponíveis)
+        let receitaOperacionalBase = 0;
+        try {
+            if (window && window.simulador_totais && typeof window.simulador_totais.totalOperacional === 'number') {
+                receitaOperacionalBase = Number(window.simulador_totais.totalOperacional) || 0;
+            } else {
+                const el = document.getElementById('valor-sim-operacional');
+                if (el) {
+                    const txt = (el.value !== undefined ? (el.value || el.getAttribute('value') || '') : (el.textContent || el.innerText || '')).toString();
+                    receitaOperacionalBase = parseBRNumber(txt.replace(/R\$\s*/g, '')) || 0;
+                }
+            }
+        } catch(e) { receitaOperacionalBase = 0; }
+
         linhas.forEach(linha => {
             const celulas = linha.querySelectorAll('td');
             if (celulas.length < 3) return;
@@ -3330,12 +3367,23 @@ function coletarMetasDoSimulador() {
             
 
             
+            // Se houver percentual válido, calcular meta a partir do percentual (base: RECEITA OPERACIONAL)
+            let valorCalculadoAPartirPct = 0;
+            if (percentual && receitaOperacionalBase > 0) {
+                valorCalculadoAPartirPct = (percentual / 100) * receitaOperacionalBase;
+            }
+
+            // Se o valor absoluto for 0 ou discrepante (>5% relativo) em relação ao percentual, preferir o valor calculado
+            if ((valorMeta === 0 && valorCalculadoAPartirPct > 0) || (valorCalculadoAPartirPct > 0 && Math.abs(valorMeta - valorCalculadoAPartirPct) / Math.max(1, valorCalculadoAPartirPct) > 0.05)) {
+                valorMeta = Number(Number(valorCalculadoAPartirPct).toFixed(2));
+            }
+
             // SUBCATEGORIA
             metas.push({
                 categoria: tabela.categoriaPai,   // Campo CATEGORIA na fmetasfabrica
                 subcategoria: nomeSubcategoria,   // Campo SUBCATEGORIA na fmetasfabrica  
-                meta: valorMeta,                  // Campo META na fmetasfabrica
-                percentual: percentual            // Campo PERCENTUAL na fmetasfabrica
+                meta: Number(Number(valorMeta).toFixed(2)),                  // Campo META na fmetasfabrica
+                percentual: Number(Number(percentual).toFixed(4))            // Campo PERCENTUAL na fmetasfabrica
             });
         });
     });
@@ -3402,6 +3450,50 @@ function coletarMetasDoSimulador() {
         }
     } catch (e) {
         console.warn('Erro ao garantir RECEITA OPERACIONAL nas metas:', e);
+    }
+
+    // Garantir explicitamente as métricas principais e, se a meta estiver zerada,
+    // preencher a partir dos campos de "Valor Simulador" exibidos na página.
+    try {
+        const coreMetricsMap = {
+            'RECEITA OPERACIONAL': 'valor-sim-operacional',
+            'RECEITA LÍQUIDA': 'valor-sim-receita-liquida',
+            'LUCRO BRUTO': 'valor-sim-lucro-bruto',
+            'LUCRO LÍQUIDO': 'valor-sim-lucro-liquido'
+        };
+
+        Object.keys(coreMetricsMap).forEach(catName => {
+            const elemId = coreMetricsMap[catName];
+            // Tentar achar registro já coletado (case-insensitive)
+            const idx = metas.findIndex(m => (m.categoria || '').toString().toUpperCase().trim() === catName);
+
+            // Ler valor visível no simulador a partir do elemento correspondente
+            let valorFromDom = 0;
+            const el = document.getElementById(elemId);
+            if (el) {
+                let inputChild = null;
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') inputChild = el;
+                else inputChild = el.querySelector('input, textarea');
+
+                let txt = '';
+                if (inputChild) txt = inputChild.value || inputChild.textContent || '';
+                else txt = el.textContent || el.innerText || '';
+
+                valorFromDom = parseBRNumber((txt || '').toString().replace(/R\$\s*/g, '')) || 0;
+            }
+
+            if (idx === -1) {
+                // adicionar mesmo que valorFromDom seja 0 — garante persistência
+                metas.unshift({ categoria: catName, subcategoria: '', meta: valorFromDom, percentual: 0 });
+            } else {
+                // se meta presente for zero ou vazio, substituir pelo valor do DOM
+                if (!metas[idx].meta || Number(metas[idx].meta) === 0) {
+                    metas[idx].meta = valorFromDom;
+                }
+            }
+        });
+    } catch (e) {
+        console.warn('Erro ao garantir métricas principais nas metas:', e);
     }
 
     let debugInfo = '🔍 DEBUG COMISSÃO:\n\n';
@@ -3471,6 +3563,45 @@ function enviarMetasParaServidor(meses, metas, anos) {
         metas: metas,
         anos: Array.isArray(anos) ? anos : [anos] // Garantir que seja array
     };
+    
+    // Normalizar e validar valores numéricos das metas antes de enviar
+    try {
+        metas = metas.map(m => {
+            const out = Object.assign({}, m);
+            // Garantir que meta seja número (aceita string formatada pt-BR)
+            if (typeof out.meta === 'string') {
+                out.meta = parseBRNumber(out.meta);
+            } else {
+                out.meta = Number(out.meta) || 0;
+            }
+            // Arredondar para 2 casas
+            out.meta = Number(Number(out.meta).toFixed(2));
+            // Garantir percentual coerente
+            out.percentual = Number(out.percentual) || 0;
+            return out;
+        });
+
+        // Detectar valores manifestamente incorretos (muito grandes)
+        const LIMITE_SUSPEITO = 1e12; // 1 trilhão - valor acima disso é suspeito
+        const suspeitos = metas.filter(m => Math.abs(Number(m.meta) || 0) > LIMITE_SUSPEITO);
+        if (suspeitos.length > 0) {
+            let aviso = 'Foram detectados valores muito grandes em algumas metas (possível erro de formatação):\n\n';
+            suspeitos.slice(0,10).forEach(s => {
+                aviso += `• ${s.categoria}${s.subcategoria ? ' → ' + s.subcategoria : ''}: ${s.meta}\n`;
+            });
+            aviso += '\nDeseja continuar e enviar mesmo assim? (Cancelar para revisar formato)';
+            if (!confirm(aviso)) {
+                btnSalvar.innerHTML = textoOriginal;
+                btnSalvar.disabled = false;
+                return;
+            }
+        }
+
+        // Atualizar o payload com metas normalizadas
+        dados.metas = metas;
+    } catch (e) {
+        console.error('Erro ao normalizar metas antes do envio:', e);
+    }
     
     fetch('salvar_metas_fabrica.php', {
         method: 'POST',
@@ -3583,16 +3714,55 @@ function atualizarPercentuaisAoLado() {
         const metaCell = tr.cells && tr.cells.length >= 2 ? tr.cells[1] : null;
         if (!metaCell) return;
 
-        const formatted = pctToShow.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+        // Prefer percentual provided by server (data-metapct) when present on the meta cell or inside it.
+        // Some templates place the attribute on an inner <span>, so check both.
+        let serverPct = null;
+        try {
+            // Try to find an element inside the cell that contains the attribute first
+            const pctElem = (metaCell && metaCell.querySelector) ? metaCell.querySelector('[data-metapct]') : null;
+            const sourceElem = pctElem || metaCell;
+            let raw = null;
+            if (sourceElem) {
+                if (sourceElem.getAttribute && sourceElem.getAttribute('data-metapct') !== null) {
+                    raw = sourceElem.getAttribute('data-metapct');
+                } else if (sourceElem.dataset && typeof sourceElem.dataset.metapct !== 'undefined') {
+                    raw = sourceElem.dataset.metapct;
+                }
+            }
+            if (raw !== null && raw !== '') {
+                // Accept both comma and dot decimal separators
+                raw = raw.toString().replace(',', '.');
+                const v = parseFloat(raw);
+                if (!isNaN(v)) serverPct = v;
+            }
+        } catch (e) { serverPct = null; }
+        // Debugging: report what was found (only when verbose flag set)
+        try {
+            if (window.simulador_debug_verbose) {
+                // Print concise info: row id, metaCell presence, pct element outerHTML (if present), raw attr and parsed value
+                const pctElem = (metaCell && metaCell.querySelector) ? metaCell.querySelector('[data-metapct]') : null;
+                const pctOuter = pctElem ? pctElem.outerHTML : null;
+                console.debug('simulador: pct-check', {rowId: id, metaCellExists: !!metaCell, pctElemOuter: pctOuter, rawAttr: (pctElem ? pctElem.getAttribute('data-metapct') : (metaCell ? metaCell.getAttribute && metaCell.getAttribute('data-metapct') : null)), serverPct: serverPct});
+            }
+        } catch (e) { /* ignore console errors */ }
+
         const oldPct = metaCell.querySelector('.simulador-inline-pct');
-        if (oldPct) oldPct.remove();
-        const pctSpan = document.createElement('span');
-        pctSpan.className = 'simulador-inline-pct';
-        pctSpan.style.fontSize = '0.75rem';
-        pctSpan.style.color = '#9ca3af';
-        pctSpan.style.marginLeft = '8px';
-        pctSpan.textContent = formatted;
-        metaCell.appendChild(pctSpan);
+        // Exibir apenas quando houver percentual vindo do servidor (data-metapct).
+        // Se não houver, removemos qualquer percentual exibido para evitar cálculo local.
+        if (serverPct !== null) {
+            const formatted = serverPct.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+            if (oldPct) oldPct.remove();
+            const pctSpan = document.createElement('span');
+            pctSpan.className = 'simulador-inline-pct';
+            pctSpan.style.fontSize = '0.75rem';
+            pctSpan.style.color = '#9ca3af';
+            pctSpan.style.marginLeft = '8px';
+            pctSpan.textContent = formatted;
+            metaCell.appendChild(pctSpan);
+        } else {
+            // Remover percentual calculado/antigo caso exista e não haja percentual salvo
+            if (oldPct) oldPct.remove();
+        }
     });
 }
 
