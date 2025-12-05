@@ -2392,6 +2392,12 @@ function atualizarCalculos() {
             if (element && !camposEditaveis.includes(elementId)) {
                 // Se é um campo só leitura, atualiza o texto
                 if (element.tagName !== 'INPUT') {
+                    // Debug específico para IMPACTO CAIXA: logar valores brutos quando verbose
+                    if (window.simulador_debug_verbose && elementId === 'perc-impacto-caixa') {
+                        try {
+                            console.debug('simulador: impacto-debug', { impactoCaixa: impactoCaixa, baseFaturamento: baseFaturamento, percentualBruto: percentuaisGrupos[elementId] });
+                        } catch (e) { /* ignore */ }
+                    }
                     element.textContent = formatarPercentual(percentuaisGrupos[elementId]);
                 }
             }
