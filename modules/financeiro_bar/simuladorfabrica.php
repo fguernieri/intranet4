@@ -2532,11 +2532,14 @@ function recalcularTotalGrupo(grupoPrefix, totalElementId) {
 }
 
 function resetarSimulacao() {
+    // Debug start
+    if (window.simulador_debug_verbose) console.debug('simulador: resetarSimulacao START');
     // Resetar campos de valor normais (editáveis)
     const inputs = document.querySelectorAll('.valor-simulador');
     
     inputs.forEach(input => {
         const valorBase = parseBRNumber(input.dataset.valorBase) || 0;
+        if (window.simulador_debug_verbose) console.debug('simulador: resetarSimulacao apply input', {id: input.id, tipo: input.dataset.tipo, valorBase: valorBase});
         input.value = valorBase.toLocaleString('pt-BR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -2561,6 +2564,7 @@ function resetarSimulacao() {
             if (tipo === 'receita-nao-operacional') somaNaoOperacionalBase += valorBase;
         });
 
+        if (window.simulador_debug_verbose) console.debug('simulador: resetarSimulacao somaBases', {somaReceitasBase: somaReceitasBase, somaOperacionalBase: somaOperacionalBase, somaNaoOperacionalBase: somaNaoOperacionalBase});
         // Atualizar elementos principais: procurar input interno antes de escrever textContent
         function aplicarValorElemento(id, valor) {
             const el = document.getElementById(id);
@@ -2609,6 +2613,7 @@ function resetarSimulacao() {
                     if (inner) inner.value = formatted;
                     else simEl.textContent = 'R$ ' + formatted;
                 }
+                if (window.simulador_debug_verbose) console.debug('simulador: resetarSimulacao sync base->sim', {baseId: baseEl.id, simId: simId, valorNum: valorNum});
             });
         } catch (e) {
             console.warn('Erro ao sincronizar valor-base -> valor-sim:', e);
@@ -2667,6 +2672,17 @@ function resetarSimulacao() {
     // Atualizar todos os cálculos
     atualizarCalculos();
 
+    if (window.simulador_debug_verbose) {
+        try {
+            console.debug('simulador: after atualizarCalculos, window.simulador_totais=', window.simulador_totais);
+            const baseOp = document.getElementById('valor-base-operacional');
+            const simOpEl = document.getElementById('valor-sim-operacional') || document.getElementById('valor-sim-receita-bruta');
+            const baseOpVal = baseOp ? (baseOp.value || baseOp.textContent || baseOp.innerText || '') : null;
+            const simOpVal = simOpEl ? (simOpEl.value || simOpEl.textContent || simOpEl.innerText || '') : null;
+            console.debug('simulador: AFTER_CALCS values', {baseOpVal: baseOpVal, simOpVal: simOpVal});
+        } catch(e) { /* ignore */ }
+    }
+
     // Re-sincronizar COLUNA 'Valor Simulador' a partir da COLUNA 'Valor Base' após os cálculos
     // (atualizarCalculos pode reescrever alguns valores; forçamos a igualdade final)
     try {
@@ -2716,9 +2732,68 @@ function resetarSimulacao() {
             try {
                 if (simOp.tagName === 'INPUT' || simOp.tagName === 'TEXTAREA') simOp.value = formatted;
                 else simOp.textContent = 'R$ ' + formatted;
+                if (window.simulador_debug_verbose) console.debug('simulador: forced final sync receita operacional', {baseVal: baseVal, formatted: formatted, simOpId: simOp.id || null});
             } catch (e) { /* ignore */ }
         }
     } catch (e) { console.warn('Erro ao forçar igualdade RECEITA OPERACIONAL base -> sim:', e); }
+    // Forçar totalOperacional em window.simulador_totais e recalcular percentuais
+    try {
+        // Try to compute final base operational value by summing explicit "valor-base-operacional" entries
+        let baseValFinal = 0;
+        const baseOpElems = Array.from(document.querySelectorAll('[id^="valor-base-operacional"]'));
+        if (baseOpElems.length > 0) {
+            baseOpElems.forEach(el => {
+                baseValFinal += parseBRNumber(el.textContent || el.innerText || el.value || (el.getAttribute && el.getAttribute('value')) || '0') || 0;
+            });
+        } else {
+            // Fallback: sum dataset.valorBase from inputs marked as receita-operacional
+            const receitaInputs = Array.from(document.querySelectorAll('.valor-simulador[data-tipo="receita-operacional"]'));
+            if (receitaInputs.length > 0) {
+                receitaInputs.forEach(inp => {
+                    const vb = inp.dataset && inp.dataset.valorBase ? inp.dataset.valorBase : (inp.getAttribute && inp.getAttribute('value')) || inp.value || inp.textContent || '';
+                    baseValFinal += parseBRNumber(vb) || 0;
+                });
+            } else {
+                // Ultimate fallback: read single element
+                const baseOpFinal = document.getElementById('valor-base-operacional') || document.getElementById('valor-base-receita-bruta');
+                baseValFinal = baseOpFinal ? (parseBRNumber(baseOpFinal.textContent || baseOpFinal.innerText || baseOpFinal.value || '0') || 0) : 0;
+            }
+        }
+        // If there's a top-level 'valor-base-receita-bruta' prefer it as authoritative base
+        const receitaBrutaEl = document.getElementById('valor-base-receita-bruta');
+        if (receitaBrutaEl) {
+            const rb = parseBRNumber(receitaBrutaEl.textContent || receitaBrutaEl.innerText || receitaBrutaEl.value || '0') || 0;
+            if (rb > 0) {
+                baseValFinal = rb;
+                if (window.simulador_debug_verbose) console.debug('simulador: prefer valor-base-receita-bruta as baseValFinal', {rb: rb});
+            }
+        }
+
+        // Also force the visible 'valor-sim-operacional' to show the chosen baseValFinal
+        try {
+            const simOpElFinal = document.getElementById('valor-sim-operacional') || (document.getElementById('valor-sim-receita-bruta') && document.getElementById('valor-sim-receita-bruta').querySelector('input,textarea')) || document.getElementById('valor-sim-receita-bruta');
+            if (simOpElFinal) {
+                const formattedFinal = baseValFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (simOpElFinal.tagName === 'INPUT' || simOpElFinal.tagName === 'TEXTAREA') simOpElFinal.value = formattedFinal;
+                else simOpElFinal.textContent = 'R$ ' + formattedFinal;
+                if (window.simulador_debug_verbose) console.debug('simulador: forced simOpElFinal to baseValFinal', {simOpId: simOpElFinal.id || null, formattedFinal: formattedFinal});
+            }
+        } catch(e) { /* ignore */ }
+
+        if (!window.__simulador_resetting) {
+            window.__simulador_resetting = true;
+            // Atualizar simul_totais para refletir o valor base garantido
+            try {
+                window.simulador_totais = window.simulador_totais || {};
+                window.simulador_totais.totalOperacional = baseValFinal;
+                if (window.simulador_debug_verbose) console.debug('simulador: final ensure totalOperacional set to baseValFinal', {baseValFinal: baseValFinal});
+            } catch(e) { /* ignore */ }
+            // Recalcular percentuais uma vez mais para garantir consistência
+            try { atualizarCalculos(); } catch(e) { /* ignore */ }
+            window.__simulador_resetting = false;
+        }
+    } catch(e) { /* ignore */ }
+    if (window.simulador_debug_verbose) console.debug('simulador: resetarSimulacao END');
 }
 
 function calcularPontoEquilibrio() {
