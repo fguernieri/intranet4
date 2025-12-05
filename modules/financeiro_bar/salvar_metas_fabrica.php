@@ -90,7 +90,17 @@ try {
             $dataMeta = sprintf('%04d-%02d-01', intval($ano), $mesInt);
 
             foreach ($metas as $meta) {
-                if (($meta['meta'] ?? 0) == 0) continue;
+                // Algumas linhas de cálculo sempre devem ser salvas mesmo quando o valor é 0
+                $raw_meta_val = floatval($meta['meta'] ?? 0);
+                $categoria_raw = isset($meta['categoria']) ? trim($meta['categoria']) : '';
+                $categoria_upper = mb_strtoupper($categoria_raw, 'UTF-8');
+                $force_save_zero = in_array($categoria_upper, [
+                    'RECEITA OPERACIONAL',
+                    'RECEITA LÍQUIDA',
+                    'LUCRO BRUTO',
+                    'LUCRO LÍQUIDO'
+                ]);
+                if ($raw_meta_val == 0 && !$force_save_zero) continue;
 
                 $subcategoria = isset($meta['subcategoria']) && trim($meta['subcategoria']) !== '' ? trim($meta['subcategoria']) : null;
 
