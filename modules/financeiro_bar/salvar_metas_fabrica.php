@@ -172,63 +172,119 @@ try {
         throw new Exception('Nenhum registro válido para salvar');
     }
 
-    // Substituir metas do(s) mês(es) selecionado(s): deletar existentes e inserir (mesma técnica do WAB)
-    salvar_metas_log_debug('Iniciando substituição de metas em fmetasfabricafinal (registros=' . count($todosRegistros) . ')');
+    // Substituir metas do(s) mês(es) selecionado(s): apagar e gravar por DATA_META (por mês selecionado)
+    salvar_metas_log_debug('Iniciando substituição de metas por DATA_META (fabrica) — registros totais=' . count($todosRegistros));
 
-    // Obter lista única de DATA_META presentes nos registros
-    $datasMeta = array_values(array_unique(array_map(function($r){ return $r['DATA_META']; }, $todosRegistros)));
-    salvar_metas_log_debug('Datas META a serem substituídas (fabrica): ' . implode(', ', $datasMeta));
+    // Construir lista de DATA_META a partir dos meses/anos explicitamente selecionados
+    $datasMeta = [];
+    foreach ($anos as $anoItem) {
+        foreach ($meses as $mesItem) {
+            $mInt = intval($mesItem);
+            $datasMeta[] = sprintf('%04d-%02d-01', intval($anoItem), $mInt);
+        }
+    }
+    $datasMeta = array_values(array_unique($datasMeta));
+    salvar_metas_log_debug('Datas META (baseadas em meses selecionados): ' . implode(', ', $datasMeta));
 
-    // Deletar registros existentes para cada DATA_META
+    // Inserir por DATA_META — para cada data: deletar existentes e inserir apenas os registros pertencentes
+    $perDateResults = [];
+    $overallSuccess = true;
+
     foreach ($datasMeta as $d) {
+        salvar_metas_log_debug('--- Processando DATA_META=' . $d);
+
+        // Deletar registros existentes para esta DATA_META
         salvar_metas_log_debug('Deletando registros existentes para DATA_META=' . $d . ' na tabela fmetasfabricafinal');
         $delResult = $supabase->delete('fmetasfabricafinal', ['DATA_META' => 'eq.' . $d]);
         salvar_metas_log_debug('Resultado delete for ' . $d . ': ' . var_export($delResult, true));
-        if ($delResult === false) {
-            salvar_metas_log_debug('Aviso: DELETE retornou false para DATA_META=' . $d . ' (ver supabase_debug.log)');
+
+        // Filtrar registros que pertencem a esta DATA_META
+        $registrosParaData = array_values(array_filter($todosRegistros, function($r) use ($d) { return isset($r['DATA_META']) && $r['DATA_META'] === $d; }));
+        salvar_metas_log_debug('Registros a inserir para ' . $d . ': ' . count($registrosParaData));
+
+        if (empty($registrosParaData)) {
+            // Mesmo que não haja registros novos, o comportamento desejado é apagar as metas antigas
+            salvar_metas_log_debug('Nenhum registro para inserir em ' . $d . ' — operação de delete já realizada (se havia dados antigos, foram removidos).');
+            $perDateResults[$d] = ['deleted' => true, 'inserted' => 0, 'status' => 'deleted_only'];
+            continue;
         }
-    }
 
-    // Inserir todos os registros do simulador (INSERT em batch simples)
-    salvar_metas_log_debug('Inserindo registros (INSERT batch) na tabela fmetasfabricafinal (fabrica)');
-    $insertResult = $supabase->insert('fmetasfabricafinal', $todosRegistros);
-    salvar_metas_log_debug('Resultado INSERT (raw): ' . var_export($insertResult, true));
+        // Tentar inserir todos de uma vez
+        salvar_metas_log_debug('Inserindo ' . count($registrosParaData) . ' registros para DATA_META=' . $d);
+        $insRes = $supabase->insert('fmetasfabricafinal', $registrosParaData);
+        salvar_metas_log_debug('Resultado INSERT (raw) for ' . $d . ': ' . var_export($insRes, true));
 
-    // Se falhar no insert em lote, tentar inserir em chunks menores (fallback)
-    if ($insertResult === false) {
-        salvar_metas_log_debug('INSERT em lote retornou false — iniciando fallback por chunks');
-        $batchSize = 50;
-        $chunks = array_chunk($todosRegistros, $batchSize);
-        $inserted = 0;
-        foreach ($chunks as $i => $chunk) {
-            salvar_metas_log_debug(sprintf('Inserindo chunk %d/%d (size=%d)', $i+1, count($chunks), count($chunk)));
-            $ins = $supabase->insert('fmetasfabricafinal', $chunk);
-            salvar_metas_log_debug('Resultado insert chunk: ' . var_export($ins, true));
-            if ($ins === false) {
-                salvar_metas_log_debug('Falha ao inserir chunk ' . ($i+1));
-                throw new Exception('Falha ao salvar metas (insert fallback) no Supabase (fmetasfabricafinal)');
+        if ($insRes === false) {
+            // Fallback por chunks (mais resiliente) — não aborta todo o processo
+            salvar_metas_log_debug('INSERT em lote retornou false para ' . $d . ' — iniciando fallback por chunks');
+            $batchSize = 50;
+            $chunks = array_chunk($registrosParaData, $batchSize);
+            $insertedCount = 0;
+            $failed = false;
+            foreach ($chunks as $i => $chunk) {
+                salvar_metas_log_debug(sprintf('Inserindo chunk %d/%d para %s (size=%d)', $i+1, count($chunks), $d, count($chunk)));
+                $ins = $supabase->insert('fmetasfabricafinal', $chunk);
+                salvar_metas_log_debug('Resultado insert chunk: ' . var_export($ins, true));
+                if ($ins === false) {
+                    salvar_metas_log_debug('Falha ao inserir chunk ' . ($i+1) . ' para ' . $d);
+                    $failed = true;
+                    break;
+                }
+                $insertedCount += count($chunk);
             }
-            $inserted += count($chunk);
+
+            if ($failed) {
+                salvar_metas_log_debug('Erro: falha ao inserir todos os registros para DATA_META=' . $d);
+                $perDateResults[$d] = ['deleted' => ($delResult !== false), 'inserted' => $insertedCount, 'status' => 'partial_failure'];
+                $overallSuccess = false;
+                // continuar para próximos meses sem lançar exceção para não bloquear os demais
+                continue;
+            }
+
+            salvar_metas_log_debug('Fallback insert concluído para ' . $d . '. total_inseridos=' . $insertedCount);
+            $perDateResults[$d] = ['deleted' => ($delResult !== false), 'inserted' => $insertedCount, 'status' => 'ok'];
+        } else {
+            // Inserção bem-sucedida em lote
+            $insCount = is_array($insRes) ? count($insRes) : count($registrosParaData);
+            $perDateResults[$d] = ['deleted' => ($delResult !== false), 'inserted' => $insCount, 'status' => 'ok'];
         }
-        salvar_metas_log_debug('Fallback insert concluído. total_inseridos=' . $inserted);
-        $resultado = true;
-    } else {
-        $resultado = $insertResult;
     }
+
+    // Resultado final: incluir resumo por DATA_META
+    $resultado = $perDateResults;
 
     $totalRegistros = count($todosRegistros);
 
+    // Determinar se houve falhas parciais/total por DATA_META
+    $hadFailures = false;
+    foreach ($perDateResults as $d => $r) {
+        if (!isset($r['status']) || ($r['status'] !== 'ok' && $r['status'] !== 'deleted_only')) {
+            $hadFailures = true;
+            break;
+        }
+    }
+
+    $successFinal = !$hadFailures;
+    $message = $successFinal ? 'Metas salvas com sucesso (fmetasfabricafinal)' : 'Algumas datas falharam ao salvar (ver per_date_results)';
+
     $response = [
-        'success' => true,
-        'message' => 'Metas salvas com sucesso (fmetasfabricafinal)',
+        'success' => $successFinal,
+        'message' => $message,
         'table' => 'fmetasfabricafinal',
         'anos' => $anos,
         'anos_processados' => count($anos),
         'total_registros' => $totalRegistros,
         'meses_processados' => count($meses),
         'metas_processadas' => count($metas),
-        'detalhes' => $registrosProcessados
+        'detalhes' => $registrosProcessados,
+        'per_date_results' => $perDateResults
     ];
+
+    // Log final
+    salvar_metas_log_debug('Resumo per_date_results: ' . var_export($perDateResults, true));
+    if (!$successFinal) {
+        salvar_metas_log_debug('Aviso: houve falhas ao inserir algumas datas (veja per_date_results)');
+    }
 
     echo json_encode($response);
 
