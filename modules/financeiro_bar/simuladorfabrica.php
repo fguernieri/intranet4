@@ -362,6 +362,38 @@ require_once __DIR__ . '/../../sidebar.php';
                             return ['meta' => $meta_val, 'percentual' => $pct_val];
                         }
 
+                        // Fallback: se não encontrou para o período selecionado, buscar a meta mais recente
+                        // independente da DATA_META (útil quando o banco tem metas, mas não para o mês atual)
+                        try {
+                            $filtros_no_date = [];
+                            if ($categoria_pai) {
+                                $filtros_no_date['CATEGORIA'] = "eq.$categoria_pai_upper";
+                                $filtros_no_date['SUBCATEGORIA'] = "eq.$categoria_upper";
+                            } else {
+                                $filtros_no_date['CATEGORIA'] = "eq.$categoria_upper";
+                                $filtros_no_date['SUBCATEGORIA'] = 'is.null';
+                            }
+
+                            $resultado2 = $supabase->select('fmetasfabricafinal', [
+                                'select' => 'META,PERCENTUAL',
+                                'filters' => $filtros_no_date,
+                                'order' => 'DATA_CRI.desc',
+                                'limit' => 1
+                            ]);
+
+                            if (!empty($resultado2) && isset($resultado2[0]['META']) && is_numeric($resultado2[0]['META'])) {
+                                $meta_val = floatval($resultado2[0]['META']);
+                                $pct_val = 0;
+                                if (isset($resultado2[0]['PERCENTUAL']) && is_numeric($resultado2[0]['PERCENTUAL'])) {
+                                    $pct_val = floatval($resultado2[0]['PERCENTUAL']);
+                                }
+                                if (function_exists('salvar_simulador_log_debug')) salvar_simulador_log_debug("obterMeta: fallback sem DATA_META para categoria={$categoria_upper} pai={$categoria_pai}");
+                                return ['meta' => $meta_val, 'percentual' => $pct_val];
+                            }
+                        } catch (Exception $e) {
+                            // ignore fallback errors
+                        }
+
                         return ['meta' => 0, 'percentual' => 0];
 
                     } catch (Exception $e) {
@@ -783,6 +815,10 @@ require_once __DIR__ . '/../../sidebar.php';
                 $meta_investimento_interno = $__m['meta'] ?? 0;
                 $meta_investimento_interno_pct = $__m['percentual'] ?? 0;
 
+                $__m = obterMeta('INVESTIMENTO EXTERNO');
+                $meta_investimento_externo = $__m['meta'] ?? 0;
+                $meta_investimento_externo_pct = $__m['percentual'] ?? 0;
+
                 $__m = obterMeta('RECEITAS NÃO OPERACIONAIS');
                 $meta_nao_operacional = $__m['meta'] ?? 0;
                 $meta_nao_operacional_pct = $__m['percentual'] ?? 0;
@@ -794,6 +830,10 @@ require_once __DIR__ . '/../../sidebar.php';
                 $__m = obterMeta('IMPACTO CAIXA');
                 $meta_impacto_caixa = $__m['meta'] ?? 0;
                 $meta_impacto_caixa_pct = $__m['percentual'] ?? 0;
+
+                $__m = obterMeta('AMORTIZAÇÃO');
+                $meta_amortizacao = $__m['meta'] ?? 0;
+                $meta_amortizacao_pct = $__m['percentual'] ?? 0;
 
                 // Metas calculadas: pegar somente da tabela de metas. Se não existir, manter 0.
                 $__m = obterMeta('RECEITA LÍQUIDA');
@@ -984,7 +1024,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'TRIBUTOS');
+                        $__mi = obterMeta($categoria_individual, 'TRIBUTOS');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'tributos-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -992,7 +1034,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1070,7 +1112,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'CUSTO VARIÁVEL');
+                        $__mi = obterMeta($categoria_individual, 'CUSTO VARIÁVEL');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'custo-variavel-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1078,7 +1122,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1127,7 +1171,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'RETIRADA DE LUCRO');
+                        $__mi = obterMeta($categoria_individual, 'RETIRADA DE LUCRO');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'retirada-de-lucro-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1135,7 +1181,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-pink-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1215,7 +1261,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'CUSTO FIXO');
+                        $__mi = obterMeta($categoria_individual, 'CUSTO FIXO');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'custo-fixo-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1223,7 +1271,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1278,7 +1326,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'DESPESA FIXA');
+                        $__mi = obterMeta($categoria_individual, 'DESPESA FIXA');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'despesa-fixa-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1286,7 +1336,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1341,7 +1391,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'DESPESAS DE VENDA');
+                        $__mi = obterMeta($categoria_individual, 'DESPESAS DE VENDA');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'despesa-venda-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1349,7 +1401,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-orange-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1429,7 +1481,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'INVESTIMENTO INTERNO');
+                        $__mi = obterMeta($categoria_individual, 'INVESTIMENTO INTERNO');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'investimento-interno-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1437,7 +1491,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-blue-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1491,7 +1545,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'INVESTIMENTO EXTERNO');
+                        $__mi = obterMeta($categoria_individual, 'INVESTIMENTO EXTERNO');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'investimento-externo-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1499,7 +1555,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-blue-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1553,7 +1609,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'AMORTIZAÇÃO');
+                        $__mi = obterMeta($categoria_individual, 'AMORTIZAÇÃO');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'amortizacao-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1561,7 +1619,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-indigo-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -1665,7 +1723,9 @@ require_once __DIR__ . '/../../sidebar.php';
                         <?php 
                         $categoria_individual = trim($linha['categoria'] ?? 'SEM CATEGORIA');
                         $valor_individual = floatval($linha['total_receita_mes'] ?? 0);
-                        $meta_individual = obterMetaValor($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                        $__mi = obterMeta($categoria_individual, 'SAÍDAS NÃO OPERACIONAIS');
+                        $meta_individual = $__mi['meta'] ?? 0;
+                        $meta_individual_pct = $__mi['percentual'] ?? 0;
                         $categoria_id = 'saidas-nao-operacionais-' . $index;
                         ?>
                         <tr class="hover:bg-gray-700 text-gray-300">
@@ -1673,7 +1733,7 @@ require_once __DIR__ . '/../../sidebar.php';
                                 <?= htmlspecialchars($categoria_individual) ?>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-center">
-                                <span class="text-xs text-gray-500">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
+                                <span class="text-xs text-gray-500" data-metapct="<?= $meta_individual_pct ?? 0 ?>">R$ <?= number_format($meta_individual ?? 0, 0, ',', '.') ?></span>
                             </td>
                             <td class="px-3 py-2 border-b border-gray-700 text-right font-mono text-red-300" id="valor-base-<?= $categoria_id ?>">
                                 R$ <?= number_format($valor_individual, 2, ',', '.') ?>
@@ -2232,8 +2292,10 @@ function atualizarCalculos() {
     const inputsPercentuaisVariaveis = document.querySelectorAll('input[data-tipo^="percentual-"]:not([data-tipo*="fixo"])');
     inputsPercentuaisVariaveis.forEach(input => {
         const percentual = obterValorNumericoPercentual(input);
-        if (percentual > 0 && totalReceitas > 0) {
-            const novoValorAbsoluto = (totalReceitas * percentual) / 100;
+        // Usar RECEITA OPERACIONAL como base para aplicar percentuais
+        const baseParaPercentual = (totalOperacional > 0) ? totalOperacional : totalReceitas;
+        if (percentual > 0 && baseParaPercentual > 0) {
+            const novoValorAbsoluto = (baseParaPercentual * percentual) / 100;
             
             // Atualizar o valor absoluto correspondente
             const valorElementId = input.id.replace('perc-', 'valor-sim-');
@@ -2312,8 +2374,10 @@ function atualizarCalculos() {
         const categoriaId = input.id.replace('valor-sim-', '');
         const percElement = document.getElementById('perc-' + categoriaId);
         
-        if (percElement && totalReceitas > 0) {
-            const percentual = (valor / totalReceitas) * 100;
+        // Percentuais individuais devem ser calculados sobre RECEITA OPERACIONAL
+        const denomParaSubcategoria = (totalOperacional > 0) ? totalOperacional : totalReceitas;
+        if (percElement && denomParaSubcategoria > 0) {
+            const percentual = (valor / denomParaSubcategoria) * 100;
             percElement.textContent = formatarPercentual(percentual);
         }
     });
@@ -2555,10 +2619,17 @@ function resetarSimulacao() {
     
     inputsPercentuaisSubcategorias.forEach(input => {
         const valorBase = parseBRNumber(input.dataset.valorBase) || 0;
-        // Usar RECEITA OPERACIONAL como base para percentuais (corrige discrepância)
-        const receitaBrutaOriginal = <?= $total_geral_operacional ?>;
+        // Usar RECEITA OPERACIONAL como base para percentuais: ler o valor atual do DOM
+        const receitaElem = document.getElementById('valor-sim-operacional') || document.getElementById('valor-base-operacional') || document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
+        const receitaBrutaOriginal = receitaElem ? (function(el){
+            try {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return parseBRNumber(el.value || el.getAttribute('value') || '') || 0;
+                const txt = el.textContent || el.innerText || '';
+                return parseBRNumber(txt) || 0;
+            } catch(e){ return 0; }
+        })(receitaElem) : (<?= (float)$total_geral_operacional ?> || 0);
 
-        // Restaurar o percentual original
+        // Restaurar o percentual original baseado no valor atual de RECEITA OPERACIONAL
         if (receitaBrutaOriginal > 0) {
             const percentualOriginal = (valorBase / receitaBrutaOriginal) * 100;
             input.value = percentualOriginal.toLocaleString('pt-BR', {
@@ -2629,11 +2700,11 @@ function resetarSimulacao() {
 
     // Garantir explicitamente que o input principal de RECEITA OPERACIONAL
     // reflita exatamente o valor exibido na coluna 'Valor Base' para a linha
-    // correspondente (`valor-base-receita-bruta`). Em alguns casos de mapeamento
-    // de IDs e inputs embutidos, outros passos podem ter sobrescrito o valor;
-    // forçamos aqui a igualdade final.
+    // correspondente. IMPORTANT: usar `valor-base-operacional` como primeira
+    // escolha (RECEITA OPERACIONAL) — somente em último caso usar
+    // `valor-base-receita-bruta` para compatibilidade com templates antigos.
     try {
-        const baseOp = document.getElementById('valor-base-receita-bruta');
+        const baseOp = document.getElementById('valor-base-operacional') || document.getElementById('valor-base-receita-bruta');
         let simOp = document.getElementById('valor-sim-operacional');
         if (!simOp) {
             const wrapper = document.getElementById('valor-sim-receita-bruta');
@@ -3731,8 +3802,9 @@ function atualizarPercentuaisAoLado() {
         return parseFloat(cleaned) || 0;
     }
 
-    // Obter faturamento atual (usar valor-sim-receita-bruta se presente, fallback para valor-base-receita-bruta)
-    const totalEl = document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
+    // Obter faturamento atual: usar RECEITA OPERACIONAL como base (valor-sim-operacional / valor-base-operacional)
+    // Mantemos os ids antigos como fallback para compatibilidade com templates legados
+    const totalEl = document.getElementById('valor-sim-operacional') || document.getElementById('valor-base-operacional') || document.getElementById('valor-sim-receita-bruta') || document.getElementById('valor-base-receita-bruta');
     const totalGeral = parseMoney(totalEl) || 1;
 
     document.querySelectorAll('td[id^="valor-base-"]').forEach(td => {
@@ -3776,6 +3848,80 @@ function atualizarPercentuaisAoLado() {
                 if (!isNaN(v)) serverPct = v;
             }
         } catch (e) { serverPct = null; }
+
+        // Fallbacks: if no direct server pct found, try to locate a nearby/parent element
+        // that carries data-metapct (useful for grouped categories like investimento-interno/externo)
+        if (serverPct === null) {
+            try {
+                // 1) Search inside the same grouping (closest tbody or parentElement) for any data-metapct
+                const group = tr.closest('tbody') || tr.parentElement;
+                if (group) {
+                    const fallbackElem = group.querySelector('[data-metapct]');
+                    if (fallbackElem) {
+                        let raw2 = fallbackElem.getAttribute && fallbackElem.getAttribute('data-metapct');
+                        if ((raw2 === null || raw2 === undefined || raw2 === '') && fallbackElem.dataset) raw2 = fallbackElem.dataset.metapct;
+                        if (raw2) {
+                            raw2 = raw2.toString().replace(',', '.');
+                            const v2 = parseFloat(raw2);
+                            if (!isNaN(v2)) {
+                                serverPct = v2;
+                                if (window.simulador_debug_verbose) console.debug('simulador: pct-fallback-group', {rowId: id, foundIn: 'group', elem: fallbackElem.outerHTML.slice(0,200), value: v2});
+                            }
+                        }
+                    }
+                }
+
+                // 2) Walk previous sibling rows (header/parent rows often precede children)
+                if (serverPct === null) {
+                    let steps = 0;
+                    let prev = tr.previousElementSibling;
+                    while (prev && steps < 6 && serverPct === null) {
+                        const pick = prev.querySelector ? prev.querySelector('[data-metapct]') : null;
+                        if (pick) {
+                            let raw4 = pick.getAttribute && pick.getAttribute('data-metapct');
+                            if ((raw4 === null || raw4 === undefined || raw4 === '') && pick.dataset) raw4 = pick.dataset.metapct;
+                            if (raw4) {
+                                raw4 = raw4.toString().replace(',', '.');
+                                const v4 = parseFloat(raw4);
+                                if (!isNaN(v4)) {
+                                    serverPct = v4;
+                                    if (window.simulador_debug_verbose) console.debug('simulador: pct-fallback-prevRow', {rowId: id, stepsBack: steps+1, foundIn: 'prevRow', elem: pick.outerHTML.slice(0,200), value: v4});
+                                    break;
+                                }
+                            }
+                        }
+                        prev = prev.previousElementSibling;
+                        steps++;
+                    }
+                }
+
+                // 3) If still not found, search for any element whose id contains the base id (strip numeric suffix)
+                if (serverPct === null) {
+                    const baseId = id.replace(/-\d+$/, '');
+                    const parentPick = document.querySelector(`[data-metapct][id*="${baseId}"]`);
+                    if (parentPick) {
+                        let raw3 = parentPick.getAttribute && parentPick.getAttribute('data-metapct');
+                        if ((raw3 === null || raw3 === undefined || raw3 === '') && parentPick.dataset) raw3 = parentPick.dataset.metapct;
+                        if (raw3) {
+                            raw3 = raw3.toString().replace(',', '.');
+                            const v3 = parseFloat(raw3);
+                            if (!isNaN(v3)) {
+                                serverPct = v3;
+                                if (window.simulador_debug_verbose) console.debug('simulador: pct-fallback-idContains', {rowId: id, baseId: baseId, elem: parentPick.outerHTML.slice(0,200), value: v3});
+                            }
+                        }
+                    }
+                }
+            } catch (e) { /* swallow fallback errors */ }
+
+            // FINAL DIAGNOSTIC: when still null, print nearby data-metapct elements to help debugging
+            if (serverPct === null && window.simulador_debug_verbose) {
+                try {
+                    const all = Array.from(document.querySelectorAll('[data-metapct]')).slice(0,10).map(el => ({id: el.id || null, outer: (el.outerHTML||'').slice(0,200), dataset: el.dataset && el.dataset.metapct ? el.dataset.metapct : (el.getAttribute ? el.getAttribute('data-metapct') : null)}));
+                    console.debug('simulador: pct-none', {rowId: id, tr: (tr && tr.outerHTML ? tr.outerHTML.slice(0,200) : null), metaCellSnippet: (metaCell && metaCell.innerText ? metaCell.innerText.slice(0,120) : null), nearbyDataMetapct: all});
+                } catch(e) { /* ignore */ }
+            }
+        }
         // Debugging: report what was found (only when verbose flag set)
         try {
             if (window.simulador_debug_verbose) {
