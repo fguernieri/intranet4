@@ -60,6 +60,17 @@ try {
     $meses = $dados['meses'];
     $metas = $dados['metas'];
 
+    // LOG IMEDIATO DO RAW INPUT para diagnóstico (arquivo separado)
+    try {
+        $raw_log_file = __DIR__ . '/salvar_metas_fabrica_received.json';
+        @file_put_contents($raw_log_file, date('Y-m-d H:i:s') . "\n" . $input . "\n\n", FILE_APPEND | LOCK_EX);
+        error_log('salvar_metas_fabrica.php: raw payload written to ' . $raw_log_file);
+    } catch (
+        Throwable $t
+    ) {
+        error_log('salvar_metas_fabrica.php: failed to write raw payload: ' . $t->getMessage());
+    }
+
     // Suportar múltiplos anos
     $anos = [];
     if (isset($dados['anos']) && is_array($dados['anos']) && !empty($dados['anos'])) {
