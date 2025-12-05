@@ -2620,6 +2620,28 @@ function resetarSimulacao() {
     } catch (e) {
         console.warn('Erro ao re-sincronizar valor-base -> valor-sim (final):', e);
     }
+
+    // Garantir explicitamente que o input principal de RECEITA OPERACIONAL
+    // reflita exatamente o valor exibido na coluna 'Valor Base' para a linha
+    // correspondente (`valor-base-receita-bruta`). Em alguns casos de mapeamento
+    // de IDs e inputs embutidos, outros passos podem ter sobrescrito o valor;
+    // forçamos aqui a igualdade final.
+    try {
+        const baseOp = document.getElementById('valor-base-receita-bruta');
+        let simOp = document.getElementById('valor-sim-operacional');
+        if (!simOp) {
+            const wrapper = document.getElementById('valor-sim-receita-bruta');
+            if (wrapper) simOp = wrapper.querySelector('input, textarea');
+        }
+        if (baseOp && simOp) {
+            const baseVal = parseBRNumber(baseOp.textContent || baseOp.innerText || baseOp.value || '0') || 0;
+            const formatted = baseVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            try {
+                if (simOp.tagName === 'INPUT' || simOp.tagName === 'TEXTAREA') simOp.value = formatted;
+                else simOp.textContent = 'R$ ' + formatted;
+            } catch (e) { /* ignore */ }
+        }
+    } catch (e) { console.warn('Erro ao forçar igualdade RECEITA OPERACIONAL base -> sim:', e); }
 }
 
 function calcularPontoEquilibrio() {
