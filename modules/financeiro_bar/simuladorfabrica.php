@@ -3301,110 +3301,115 @@ function coletarMetasDoSimulador() {
             
             let valorMeta = 0;
             let percentual = 0;
-            
-            // ABORDAGEM HÍBRIDA: IDs específicos + busca por posição
-            
-            // 1. Tentar por IDs conhecidos primeiro
-            const elementosComId = linha.querySelectorAll('[id]');
-            elementosComId.forEach(elemento => {
-                const id = elemento.id;
-                
-                if (id.includes('valor-sim-')) {
-                    let textoValor = '';
-                    if (elemento.tagName === 'INPUT') {
-                        textoValor = elemento.value;
+
+            // 1) Preferência forte: a célula do "Valor Simulador" (normalmente coluna 4).
+            // Tentamos pegar diretamente a célula de índice 3 (0-based) quando disponível.
+            let candidateValorCell = null;
+            if (celulas.length >= 4) {
+                candidateValorCell = celulas[3];
+            } else if (celulas.length >= 3) {
+                // fallback: penúltima célula costuma ser o valor simulador
+                candidateValorCell = celulas[celulas.length - 2];
+            }
+
+            if (candidateValorCell) {
+                const inputChild = candidateValorCell.querySelector('input, textarea');
+                let txt = '';
+                if (inputChild) txt = inputChild.value || inputChild.textContent || '';
+                else txt = candidateValorCell.textContent || candidateValorCell.innerText || '';
+                txt = (txt || '').toString().trim();
+                if (txt) {
+                    if (txt.indexOf('R$') !== -1) {
+                        valorMeta = parseBRNumber(txt.replace(/R\$\s*/g, '')) || 0;
                     } else {
-                        textoValor = elemento.textContent || elemento.innerText || '';
-                    }
-                    
-                    if (textoValor.includes('R$')) {
-                        const valorLimpo = textoValor.replace(/R\$\s*/, '');
-                        valorMeta = parseBRNumber(valorLimpo) || 0;
-                    }
-                }
-                
-                if (id.includes('perc-')) {
-                    let textoPerc = '';
-                    if (elemento.tagName === 'INPUT') {
-                        textoPerc = elemento.value;
-                    } else {
-                        textoPerc = elemento.textContent || elemento.innerText || '';
-                    }
-                    
-                    if (textoPerc) {
-                        const percLimpo = textoPerc.replace(/[^\d,\-]/g, '');
-                        percentual = parseBRNumber(percLimpo) || 0;
-                    }
-                }
-            });
-            
-            // 2. BUSCA POR POSIÇÃO: Para tabelas com estrutura padrão
-            // Baseado na estrutura: [Nome] [Meta] [Valor Base] [Valor Sim] [Percentual]
-            if (celulas.length >= 5) {
-                // Última célula geralmente é o percentual (pode ser input ou texto)
-                const ultimaCelula = celulas[celulas.length - 1];
-                
-                // Buscar input dentro da célula (para percentuais editáveis)
-                const inputPerc = ultimaCelula.querySelector('input');
-                if (inputPerc && percentual === 0) {
-                    const valuePerc = inputPerc.value || '';
-                    if (valuePerc) {
-                        const percLimpo = valuePerc.replace(/[^\d,\-]/g, '');
-                        percentual = parseBRNumber(percLimpo) || 0;
-                    }
-                }
-                
-                // Se não há input, pegar texto da célula
-                if (percentual === 0) {
-                    const textoPerc = ultimaCelula.textContent.trim();
-                    if (textoPerc.includes('%')) {
-                        const percLimpo = textoPerc.replace(/[^\d,\-]/g, '');
-                        percentual = parseBRNumber(percLimpo) || 0;
-                    }
-                }
-                
-                // Penúltima célula geralmente é o valor simulador
-                if (valorMeta === 0 && celulas.length >= 4) {
-                    const penultimaCelula = celulas[celulas.length - 2];
-                    const textoValor = penultimaCelula.textContent.trim();
-                    if (textoValor.includes('R$')) {
-                        const valorLimpo = textoValor.replace(/R\$\s*/, '');
-                        valorMeta = parseBRNumber(valorLimpo) || 0;
+                        // aceitar também números sem símbolo (formatados ou não)
+                        const cleaned = txt.replace(/[^0-9,\.\-]/g, '');
+                        valorMeta = parseBRNumber(cleaned) || 0;
                     }
                 }
             }
-            
-            // 3. FALLBACK: Busca por texto em todas as células
-            if (valorMeta === 0 || percentual === 0) {
-                for (let i = 1; i < celulas.length; i++) {
-                    const texto = celulas[i].textContent.trim();
-                    
-                    // Procurar valor monetário
-                    if (texto.includes('R$') && valorMeta === 0) {
-                        const valorLimpo = texto.replace(/R\$\s*/, '');
-                        valorMeta = parseBRNumber(valorLimpo) || 0;
+
+            // 2) Se não encontramos valor acima, tentar por elemento com id que identifique 'valor-sim-'
+            if (!valorMeta) {
+                const elById = linha.querySelector('[id^="valor-sim-"]');
+                if (elById) {
+                    const vchild = elById.tagName === 'INPUT' || elById.tagName === 'TEXTAREA' ? elById : elById.querySelector('input, textarea');
+                    const txt = (vchild ? (vchild.value || vchild.textContent || '') : (elById.textContent || elById.innerText || '')).toString().trim();
+                    if (txt) valorMeta = parseBRNumber(txt.replace(/R\$\s*/g, '')) || 0;
+                }
+            }
+
+            // 3) Extrair percentual (coluna final ou elemento com id 'perc-')
+            const percElem = linha.querySelector('[id^="perc-"]') || linha.querySelector('[data-tipo^="percentual-"]') || celulas[celulas.length - 1];
+            if (percElem) {
+                const percInput = (percElem.tagName === 'INPUT' || percElem.tagName === 'TEXTAREA') ? percElem : percElem.querySelector('input, textarea');
+                let textoPerc = '';
+                if (percInput) textoPerc = percInput.value || percInput.textContent || '';
+                else textoPerc = percElem.textContent || percElem.innerText || '';
+                if (textoPerc) {
+                    const percLimpo = textoPerc.replace(/[^0-9,\-\.]/g, '');
+                    percentual = parseBRNumber(percLimpo) || 0;
+                }
+            }
+
+            // 4) Fallback: varrer células procurando primeiro por 'R$' (valor), depois por '%' (percentual)
+            if (!valorMeta || !percentual) {
+                for (let i = 0; i < celulas.length; i++) {
+                    const texto = (celulas[i].textContent || '').trim();
+                    if (!valorMeta && texto.indexOf('R$') !== -1) {
+                        valorMeta = parseBRNumber(texto.replace(/R\$\s*/g, '')) || 0;
                     }
-                    
-                    // Procurar percentual
-                    if (texto.includes('%') && !texto.includes('R$') && percentual === 0) {
-                        const percLimpo = texto.replace(/[^\d,\-]/g, '');
+                    if (!percentual && texto.indexOf('%') !== -1) {
+                        const percLimpo = texto.replace(/[^0-9,\-\.]/g, '');
                         percentual = parseBRNumber(percLimpo) || 0;
                     }
+                    if (valorMeta && percentual) break;
                 }
             }
             
 
             
-            // Se houver percentual válido, calcular meta a partir do percentual (base: RECEITA OPERACIONAL)
+            // Regra de preferências:
+            // - Algumas categorias/subcategorias devem sempre salvar o VALOR ABSOLUTO que está no simulador
+            //   (ex.: CUSTO FIXO, DESPESA FIXA, INVESTIMENTO INTERNO/EXTERNO, AMORTIZAÇÃO, SAÍDAS NÃO OPERACIONAIS)
+            // - Outras categorias (ex.: CUSTO VARIÁVEL, DESPESAS DE VENDA, TRIBUTOS) são baseadas em PERCENTUAL
+            const absoluteCategories = [
+                'CUSTO FIXO', 'DESPESA FIXA', 'INVESTIMENTO INTERNO', 'INVESTIMENTO EXTERNO', 'AMORTIZAÇÃO', 'SAÍDAS NÃO OPERACIONAIS', 'RETIRADA DE LUCRO'
+            ];
+
+            const categoriaPaiUpper = (tabela.categoriaPai || '').toString().toUpperCase().trim();
+            const ehAbsoluta = absoluteCategories.indexOf(categoriaPaiUpper) !== -1;
+
+            // Se houver percentual válido e a categoria NÃO for absoluta, calcular meta a partir do percentual (base: RECEITA OPERACIONAL)
             let valorCalculadoAPartirPct = 0;
-            if (percentual && receitaOperacionalBase > 0) {
+            if (!ehAbsoluta && percentual && receitaOperacionalBase > 0) {
                 valorCalculadoAPartirPct = (percentual / 100) * receitaOperacionalBase;
             }
 
-            // Se o valor absoluto for 0 ou discrepante (>5% relativo) em relação ao percentual, preferir o valor calculado
-            if ((valorMeta === 0 && valorCalculadoAPartirPct > 0) || (valorCalculadoAPartirPct > 0 && Math.abs(valorMeta - valorCalculadoAPartirPct) / Math.max(1, valorCalculadoAPartirPct) > 0.05)) {
-                valorMeta = Number(Number(valorCalculadoAPartirPct).toFixed(2));
+            // Para categorias percentuais, somente calcular a partir do percentual
+            // quando NÃO houver um valor absoluto explícito no simulador (valorMeta === 0).
+            // NÃO sobrescrever valores absolutos inseridos pelo usuário.
+            if (!ehAbsoluta) {
+                if (valorMeta === 0 && valorCalculadoAPartirPct > 0) {
+                    valorMeta = Number(Number(valorCalculadoAPartirPct).toFixed(2));
+                }
             }
+
+            // Debug: indicar se a subcategoria usou valor absoluto ou percentual
+            try {
+                if (window.simulador_debug_verbose) {
+                    console.debug('simulador: coleta-subcategoria', {categoriaPai: tabela.categoriaPai, nomeSubcategoria: nomeSubcategoria, valorMeta: valorMeta, percentual: percentual, receitaOperacionalBase: receitaOperacionalBase, origem: (!ehAbsoluta && valorMeta === valorCalculadoAPartirPct && valorCalculadoAPartirPct>0) ? 'percentual' : 'absoluto'});
+                }
+            } catch(e) { /* ignore */ }
+
+            // DEBUG: log detalhado por linha (somente quando verbose)
+            try {
+                if (window.simulador_debug_verbose) {
+                    const celText = [];
+                    celulas.forEach((c, i) => celText.push({i: i, text: c.textContent.trim(), id: c.id || null, innerHTML: (c.innerHTML || '').substring(0,200)}));
+                    console.debug('simulador: coleta-row', {categoriaPai: tabela.categoriaPai, nomeSubcategoria: nomeSubcategoria, celulas: celText, elementosComId: Array.from(elementosComId || []).map(e=>({id:e.id, tag:e.tagName, text:(e.textContent||'').trim().substring(0,200)})), valorMeta: valorMeta, percentual: percentual});
+                }
+            } catch(e) { /* ignore logging errors */ }
 
             // SUBCATEGORIA
             metas.push({
@@ -3627,6 +3632,13 @@ function enviarMetasParaServidor(meses, metas, anos) {
 
         // Atualizar o payload com metas normalizadas
         dados.metas = metas;
+        // DEBUG: log payload no console antes de enviar para o servidor
+        try {
+            if (window.simulador_debug_verbose) {
+                console.debug('simulador: payload-to-send', dados);
+                try { console.debug('simulador: payload-json-preview', JSON.stringify(dados).substring(0, 2000)); } catch(e) { /* ignore */ }
+            }
+        } catch(e) { /* ignore */ }
     } catch (e) {
         console.error('Erro ao normalizar metas antes do envio:', e);
     }
