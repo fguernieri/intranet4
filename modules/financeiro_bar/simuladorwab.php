@@ -199,10 +199,126 @@ require_once __DIR__ . '/../../sidebar.php';
                 <button onclick="abrirModalMetas()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
                     🎯 Salvar Metas
                 </button>
+                <button onclick="abrirModalVerMetasWab()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors text-sm">
+                    👀 Ver Metas Salvas
+                </button>
                 <button onclick="salvarSimulacao()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors text-sm">
                     💾 Salvar Simulação
                 </button>
             </div>
+
+            <script>
+            function abrirModalVerMetasWab() {
+                const periodo = encodeURIComponent('<?= $periodo_selecionado ?>');
+                const url = '/modules/financeiro_bar/metas_api.php?action=fetch&sim=wab&periodo=' + periodo;
+                console.debug('[metas][wab] fetch start', { url });
+                fetch(url)
+                    .then(r=>{
+                        console.debug('[metas][wab] response status', r.status);
+                        return r.json().catch(e=>{ console.error('[metas][wab] invalid json', e); throw e; });
+                    })
+                    .then(data => {
+                        console.debug('[metas][wab] data', data);
+                        if (!data.ok) {
+                            console.error('[metas][wab] returned not ok', data);
+                            return alert('Erro ao buscar metas');
+                        }
+                        renderModalVerMetasGeneric('wab', data.metas);
+                    }).catch(e => { console.error('[metas][wab] fetch error', e); alert('Erro de rede (veja console)'); });
+            }
+
+            // Reutiliza a mesma render/save da outra pagina (nome genérico)
+            function renderModalVerMetasGeneric(sim, metas) {
+                let html = '<div id="modalVerMetas" class="fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center">'
+                    + '<div class="bg-white rounded-lg p-4 max-w-3xl w-full mx-4">'
+                    + '<h3 class="text-lg font-bold mb-2">Metas Salvas</h3>'
+                    + '<div style="max-height:60vh;overflow:auto">'
+                    + '<table class="w-full text-left border-collapse">'
+                    + '<thead><tr><th class="p-2">Categoria</th><th class="p-2">Subcategoria</th><th class="p-2">Meta (R$)</th><th class="p-2">Meses</th><th class="p-2">Ações</th></tr></thead>'
+                    + '<tbody>';
+                metas.forEach(m => {
+                    const assigned = Array.isArray(m.meses) ? m.meses : [];
+                    const summary = (Array.isArray(assigned) && assigned.length>0) ? assigned.join(', ') : '—';
+                    html += `<tr class="border-t"><td class="p-2">${escapeHtml(m.CATEGORIA)}</td><td class="p-2">${escapeHtml(m.SUBCATEGORIA)}</td><td class="p-2">${Number(m.META).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td class="p-2"><span id="meta-summary-${m.meta_key}">${escapeHtml(summary)}</span></td><td class="p-2"><button class="px-2 py-1 bg-indigo-600 text-white rounded" onclick="openMetaMonthsPickerWab('${m.meta_key}', ${JSON.stringify(assigned)})">Editar Meses</button></td></tr>`;
+                });
+                html += '</tbody></table></div>'
+                    + '<div class="mt-3 text-right"><button onclick="closeModalVerMetas()" class="px-4 py-2 bg-gray-600 text-white rounded">Fechar</button></div>'
+                    + '</div></div>';
+
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                document.body.appendChild(wrapper);
+            }
+
+            function closeModalVerMetas() { const el = document.getElementById('modalVerMetas'); if (el) el.parentNode.removeChild(el); }
+            function saveMetaMonths(sim, meta_key) {
+                const checkboxes = Array.from(document.querySelectorAll(`input[data-meta="${meta_key}"][type="checkbox"]`));
+                const meses = checkboxes.filter(c=>c.checked).map(c=>c.dataset.month);
+                const payload = { sim: sim, meta_key: meta_key, meses: meses };
+                console.debug('[metas][wab] save request', payload);
+                fetch('/modules/financeiro_bar/metas_api.php?action=save_months', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(r=>{
+                    console.debug('[metas][wab] save status', r.status);
+                    return r.json().catch(e=>{ console.error('[metas][wab] save invalid json', e); throw e; });
+                }).then(res=>{ console.debug('[metas][wab] save response', res); if (res.ok) alert('Meses salvos'); else alert('Erro ao salvar'); }).catch(e=>{ console.error('[metas][wab] save error', e); alert('Erro de rede (veja console)'); });
+            }
+
+            function openMetaMonthsPickerWab(meta_key, assignedRaw) {
+                console.debug('[metas][wab] openMetaMonthsPicker', meta_key, assignedRaw);
+                const assigned = Array.isArray(assignedRaw) ? assignedRaw.slice() : [];
+                const currentYear = new Date().getFullYear();
+                const years = [currentYear-1, currentYear, currentYear+1, currentYear+2];
+                const assignedSet = new Set();
+                assigned.forEach(v => {
+                    const s = String(v||'').trim(); if (!s) return;
+                    if (/^\d{4}-\d{2}$/.test(s)) assignedSet.add(s);
+                    else if (/^\d{1,2}$/.test(s)) assignedSet.add(currentYear + '-' + String(s).padStart(2,'0'));
+                    else assignedSet.add(s);
+                });
+
+                let inner = '<div class="p-4 max-w-2xl w-full">';
+                inner += `<h4 class="text-lg font-bold mb-2">Selecionar Meses para a Meta</h4>`;
+                inner += '<div class="grid gap-4">';
+                years.forEach(y => {
+                    inner += `<div class="border rounded p-2"><div class="font-semibold mb-2">${y}</div><div class="flex flex-wrap">`;
+                    for (let m=1;m<=12;m++) {
+                        const key = `${y}-${String(m).padStart(2,'0')}`;
+                        const checked = assignedSet.has(key) ? 'checked' : '';
+                        inner += `<label style="width:80px;margin-right:6px"><input data-metapick="${meta_key}" data-value="${key}" type="checkbox" ${checked}/> ${m.toString().padStart(2,'0')}</label>`;
+                    }
+                    inner += '</div></div>';
+                });
+                inner += '</div>';
+                inner += '<div class="mt-3 text-right"><button id="meta-save-btn-wab" class="px-4 py-2 bg-blue-600 text-white rounded">Salvar</button> <button onclick="closeMetaMonthsPickerWab()" class="px-4 py-2 bg-gray-600 text-white rounded">Cancelar</button></div>';
+                inner += '</div>';
+
+                const modal = document.createElement('div');
+                modal.id = 'modalMetaPickerWab'; modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-70 flex items-center justify-center';
+                modal.innerHTML = `<div class="bg-white rounded-lg p-4 max-w-3xl w-full mx-4">${inner}</div>`;
+                document.body.appendChild(modal);
+
+                document.getElementById('meta-save-btn-wab').addEventListener('click', function(){
+                    const checks = Array.from(document.querySelectorAll(`input[data-metapick="${meta_key}"]`));
+                    const meses = checks.filter(c=>c.checked).map(c=>c.dataset.value);
+                    console.debug('[metas][wab] saving from picker', meta_key, meses);
+                    const payload = { sim: 'wab', meta_key: meta_key, meses: meses };
+                    fetch('/modules/financeiro_bar/metas_api.php?action=save_months', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                        .then(r=>r.json()).then(res=>{
+                            console.debug('[metas][wab] picker save response', res);
+                            if (res.ok) {
+                                const span = document.getElementById('meta-summary-' + meta_key);
+                                if (span) span.textContent = (res.meses || []).join(', ');
+                                closeMetaMonthsPickerWab(); alert('Meses salvos');
+                            } else { alert('Erro ao salvar (veja console)'); }
+                        }).catch(e=>{ console.error(e); alert('Erro de rede (veja console)'); });
+                });
+            }
+            function closeMetaMonthsPickerWab() { const el = document.getElementById('modalMetaPickerWab'); if (el) el.parentNode.removeChild(el); }
+
+            function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c];}); }
+            </script>
             
             <div class="overflow-x-auto">
                 <?php
