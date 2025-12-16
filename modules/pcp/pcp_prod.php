@@ -375,8 +375,8 @@ try {
         'OLD BUT GOLD': 30,
         'PINA A VIVA': 21,
         'RANNA RIDER': 21,
-        'WELT PILSEN': 15,
-        'WELT RED ALE': 15,
+        'BASTARDS PILSEN': 15,
+        'BASTARDS RED ALE': 15,
         'WILLIE THE BITTER': 21,
         'XP 086 WEST COAST': 21,
         'XP 094 HOP HEADS': 21,
@@ -583,6 +583,7 @@ try {
 </body>
 
 </html>
+
 
 
 
