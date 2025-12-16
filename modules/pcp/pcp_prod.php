@@ -363,7 +363,7 @@ try {
     const diasTanquePorCerveja = {
         'ACID BLOOD': 30,
         'COLAB FERMI IPA DAY': 21,
-        'COLAB TURBINADA 2XIPA': 30,
+        'COLAB TURBINADA 2XIPA': 21,
         'CRIATURA DO PANTANO': 21,
         'DOG SAVE THE BEER': 21,
         'HECTOR 5 ROUNDS': 21,
@@ -373,7 +373,7 @@ try {
         'LATIDO DA SEREIA': 21,
         'MARK THE SHADOW': 21,
         'OLD BUT GOLD': 30,
-        'PINA A VIVA': 30,
+        'PINA A VIVA': 21,
         'RANNA RIDER': 21,
         'WELT PILSEN': 15,
         'WELT RED ALE': 15,
@@ -583,6 +583,7 @@ try {
 </body>
 
 </html>
+
 
 
 
