@@ -375,13 +375,13 @@ try {
         'OLD BUT GOLD': 30,
         'PINA A VIVA': 30,
         'RANNA RIDER': 21,
-        'WELT PILSEN': 21,
-        'WELT RED ALE': 21,
+        'WELT PILSEN': 15,
+        'WELT RED ALE': 15,
         'WILLIE THE BITTER': 21,
         'XP 086 WEST COAST': 21,
         'XP 094 HOP HEADS': 21,
         'XP GOLDEN FLAMINGO': 21,
-        'ZE DO MORRO': 21
+        'ZE DO MORRO': 15
     };
     </script>
 
@@ -583,6 +583,7 @@ try {
 </body>
 
 </html>
+
 
 
 
